@@ -12,7 +12,8 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" rel="stylesheet">
+<link rel="preload" href="ownglyph-pdh.ttf" as="font" type="font/ttf" crossorigin>
 <style>
 /* 온글잎 박다현체 — (주)보이저엑스 & 박다현. 웹사이트 사용·임베딩 허용, 파일 수정 금지라 원본 그대로 씀 */
 @font-face{font-family:"OwnglyphPDH";src:url("ownglyph-pdh.ttf") format("truetype");font-display:swap;size-adjust:125%}
@@ -234,7 +235,7 @@ async function makeFirebase(){
     async getNote(id){ const d = await F.getDoc(F.doc(fs,"notes",id)); return d.exists() ? d.data().text : ""; },
     setNote:(id,t) => F.setDoc(F.doc(fs,"notes",id), {text:t}),
     async getConfig(){ const d = await F.getDoc(F.doc(fs,"config","auto")); return d.exists() ? d.data() : null; },
-    watchPhotos(cb){ return F.onSnapshot(F.query(F.collection(fs,"photos"), F.orderBy("at","desc"), F.limit(60)), s => cb(s.docs.map(d => ({id:d.id, ...d.data()})))); },
+    watchPhotos(cb, n=30){ return F.onSnapshot(F.query(F.collection(fs,"photos"), F.orderBy("at","desc"), F.limit(n)), s => cb(s.docs.map(d => ({id:d.id, ...d.data()})))); },
     async addPhoto(meta, full){ const r = await F.addDoc(F.collection(fs,"photos"), meta); await F.setDoc(F.doc(fs,"photoFull",r.id), {data:full}); },
     async getPhotoFull(id){ const d = await F.getDoc(F.doc(fs,"photoFull",id)); return d.exists() ? d.data().data : null; },
     updatePhoto:(id,p) => F.updateDoc(F.doc(fs,"photos",id), p),
@@ -275,7 +276,7 @@ function makeLocal(){
     async getNote(id){ return D.notes[id] || ""; },
     async setNote(id, t){ D.notes[id] = t; save(true); },
     async getConfig(){ return D.config ? clone(D.config) : null; },
-    watchPhotos(cb){ return sub(() => cb(Object.entries(D.photos||{}).map(([id,p]) => ({id, ...p})).sort((a,b) => b.at-a.at).slice(0,60))); },
+    watchPhotos(cb, n=30){ return sub(() => cb(Object.entries(D.photos||{}).map(([id,p]) => ({id, ...p})).sort((a,b) => b.at-a.at).slice(0,n))); },
     async addPhoto(meta, full){ const id = "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); (D.photos = D.photos||{})[id] = meta; (D.pfull = D.pfull||{})[id] = full; save(); },
     async getPhotoFull(id){ return (D.pfull||{})[id] || null; },
     async updatePhoto(id, p){ Object.assign(D.photos[id], p); save(); },
@@ -285,8 +286,8 @@ function makeLocal(){
   };
 }
 const recKey = (id,i,att) => `${id}_${i}_${att}`;
-async function loadRec(k){ const r = await DB.loadRec(k); if(!r) return null; try{ return {dur:r.dur||0, ev:JSON.parse(r.data||"[]")}; }catch(e){ return null; } }
-async function saveRec(k, snap){ const data = JSON.stringify(snap.ev); if(data.length > 900000) toast("풀이가 너무 길어요. 전체 지우기를 하고 이어서 써 주세요"); return DB.saveRec(k, {dur:snap.dur, data}); }
+async function loadRec(k){ const r = await DB.loadRec(k); if(!r) return null; try{ return {dur:r.dur||0, ev:JSON.parse(r.data||"[]"), guide:!!r.guide}; }catch(e){ return null; } }
+async function saveRec(k, snap){ const data = JSON.stringify(snap.ev); if(data.length > 900000) toast("풀이가 너무 길어요. 전체 지우기를 하고 이어서 써 주세요"); return DB.saveRec(k, {dur:snap.dur, data, guide:!!snap.guide}); }
 
 // ───────── 정답 확인 ─────────
 function parseFrac(s){ // "2 3/5", "3/5", "2" → [분자, 분모] (가분수 값)
@@ -296,12 +297,23 @@ function parseFrac(s){ // "2 3/5", "3/5", "2" → [분자, 분모] (가분수 �
   if(!d) return null;
   return [w*d+n, d];
 }
-function checkAns(a, key, kind, simp){
+function checkAns(a, key, kind, simp, form){
+  const nums = s => (String(s ?? "").match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+  const same = (p,q) => p.length===q.length && p.every((v,i) => Math.abs(v-q[i])<1e-9);
+  if(kind==="set"){ const p = nums(a).sort((u,v)=>u-v), q = nums(key).sort((u,v)=>u-v); return p.length>0 && same(p,q) && new Set(p).size===p.length; }
+  if(kind==="ratio" || kind==="divd") return same(nums(a), nums(key));
+  if(kind==="frac2"){ const p = String(a ?? "").split(","), q = String(key).split(","); return p.length===q.length && p.every((v,i) => same(nums(v), nums(q[i]))); }
+  if(kind==="cmp") return String(a ?? "").trim()===String(key).trim();
+  if(kind==="text") return String(a ?? "").replace(/\s+/g,"")===String(key).replace(/\s+/g,"") && !!String(a ?? "").trim();
+  if(kind==="pct"){ a = String(a ?? "").replace(/%/g,""); kind = "num"; }
   const n = s => String(s ?? "").trim().replace(/\s+/g," ").replace(/,/g,"");
   const x = n(a), y = n(key); if(!x) return false;
   if(kind==="frac"){
     const p = parseFrac(x), q = parseFrac(y); if(!(p && q) || p[0]*q[1]!==q[0]*p[1]) return false;
     if(simp){ const m = /(\d+)\s*\/\s*(\d+)$/.exec(x); if(m && gcd(+m[1], +m[2])!==1) return false; }  // 5·6학년: 기약분수로 써야 정답
+    const m = /^(?:(\d+)\s+)?(\d+)\/(\d+)$/.exec(x);
+    if(form==="improper" && !(m && !m[1])) return false;                       // 가분수로: 자연수 칸 없이
+    if(form==="mixed" && !(m && m[1] && +m[2] < +m[3])) return false;          // 대분수로: 자연수 + 진분수
     return true;
   }
   if(kind==="div"){ const p = (x.match(/\d+/g)||[]).map(Number), q = (y.match(/\d+/g)||[]).map(Number); return p.length>0 && p[0]===q[0] && (p[1]||0)===(q[1]||0); }
@@ -448,7 +460,458 @@ const rel = op => h => {
   return {q:`${th(a)}의 ${op}${op.includes("/") ? "은" : "는"}?`, ans:th(r), kind:"dec"};
 };
 
-const UNITS = [
+// ───────── 1~3학년 연산 ─────────
+const L = {
+  // 1학년
+  a1a: h => { let a,b; do{ a=ri(1,8); b=ri(1,8); }while(a+b>9); return [a,"+",b,a+b]; },
+  a1b: h => { const a=ri(2,9), b=ri(1,a-1); return [a,"−",b,a-b]; },
+  a1c: h => { const a=ri(1,9); return Math.random()<.5 ? [a,"+",10-a,10] : [10,"−",a,10-a]; },
+  a1d: h => { let a,b; do{ a=ri(2,9); b=ri(2,9); }while(a+b<=10); return [a,"+",b,a+b]; },
+  a1e: h => { const a=ri(11,18); let b; do{ b=ri(2,9); }while(b<=a%10 || a-b<1); return [a,"−",b,a-b]; },
+  // 2학년
+  a2a: h => { let a,b; do{ a=ri(11,89); b=ri(2,9); }while(a%10+b<10 || a+b>99); return [a,"+",b,a+b]; },
+  a2b: h => { let a,b; do{ a=ri(11,89); b=ri(11,89); }while(a%10+b%10<10 || (h ? a+b<100 : a+b>99)); return [a,"+",b,a+b]; },
+  a2c: h => { let a,b; do{ a=ri(20,99); b=ri(2,9); }while(a%10>=b); return [a,"−",b,a-b]; },
+  a2d: h => { let a,b; do{ a=ri(30,99); b=ri(11,a-10); }while(a%10>=b%10); return [a,"−",b,a-b]; },
+  // 곱셈구구
+  gg: dans => h => { const a = dans[ri(0,dans.length-1)], b = ri(1,9); return [a,"×",b,a*b]; },
+  // 3학년 세 자리 덧셈·뺄셈
+  a3a: h => { let a,b,c; do{ a=ri(100,899); b=ri(100,899); c=(a%10+b%10>=10)+(Math.floor(a/10)%10+Math.floor(b/10)%10+((a%10+b%10>=10)?1:0)>=10); }while(a+b>999 || (h ? c<2 : c>1)); return [a,"+",b,a+b]; },
+  a3b: h => { let a,b,c; do{ a=ri(200,999); b=ri(100,a-1); c=(a%10<b%10)+(Math.floor(a/10)%10-((a%10<b%10)?1:0)<Math.floor(b/10)%10); }while(h ? c<2 : c>1); return [a,"−",b,a-b]; },
+  // 3학년 곱셈
+  m3a: h => { const a=ri(1,9)*10, b=ri(2,9); return [a,"×",b,a*b]; },
+  m3b: h => { let a,b; do{ a=ri(11,99); b=ri(2,9); }while(h ? a*b<100 : (a%10)*b>=10); return [a,"×",b,a*b]; },
+  m3c: h => { const a=ri(101,999), b=ri(2,9); return [a,"×",b,a*b]; },
+  m3d: h => { const a=ri(11,99), b=ri(11,99); return [a,"×",b,a*b]; },
+};
+const lowQ = f => h => { const [a,op,b,v] = f(h); return {q:`${a} ${op} ${b}`, ans:String(v), kind:"num"}; };
+// 3학년 나눗셈 (몫과 나머지 칸에 써요)
+const divQ = (a,d) => ({q:`${a} ÷ ${d}`, ans: a%d ? `${Math.floor(a/d)}…${a%d}` : String(a/d), kind:"div"});
+const dv1 = h => { const d=ri(2,9), q=ri(2,9); return divQ(d*q, d); };
+const dv2 = h => { let d,q; do{ d=ri(2,9); q=ri(10,49); }while(d*q>99 || (h ? (d*q)%10===0 : false)); return divQ(d*q, d); };
+const dv3 = h => { let d,a; do{ d=ri(2,9); a=ri(20,99); }while(a%d===0 || Math.floor(a/d)<10 && h); return divQ(a, d); };
+const dv4 = h => { let d,q; do{ d=ri(2,9); q=ri(12,199); }while(d*q<100 || d*q>999); return divQ(d*q, d); };
+const dv5 = h => { let d,a; do{ d=ri(2,9); a=ri(100,999); }while(a%d===0); return divQ(a, d); };
+
+// 나눗셈 자리 맞추기 칸 (풀이판 배경)
+function divGuide(q){
+  const m = /^(\d+) ÷ (\d+)$/.exec(q||""); if(!m) return "";
+  const a = m[1], d = m[2], n = a.length, cell = 80, x0 = 300, top = 40;
+  const names = ["천","백","십","일"].slice(4-n);
+  let g = "";
+  for(let i=0;i<n;i++) g += `<rect x="${x0+i*cell}" y="${top}" width="${cell}" height="${700-top}" fill="${i%2 ? "#fff1f7" : "#f3efff"}"/>`;
+  for(let y=top; y<=700; y+=cell) g += `<line x1="${x0-20}" y1="${y}" x2="${x0+n*cell+20}" y2="${y}" stroke="#e9dff0" stroke-width="2"/>`;
+  for(let i=0;i<=n;i++) g += `<line x1="${x0+i*cell}" y1="${top}" x2="${x0+i*cell}" y2="700" stroke="#e9dff0" stroke-width="2"/>`;
+  names.forEach((t,i) => g += `<text x="${x0+i*cell+cell/2}" y="30" font-size="24" text-anchor="middle" fill="#e8609c" font-family="sans-serif">${t}</text>`);
+  g += `<text x="${x0-30}" y="${top+52}" font-size="24" text-anchor="end" fill="#9a8aa8" font-family="sans-serif">몫 →</text>`;
+  const by = top+cell;
+  g += `<path d="M ${x0-14} ${by} L ${x0+n*cell+14} ${by}" stroke="#e8609c" stroke-width="5" fill="none"/>`;
+  g += `<path d="M ${x0-14} ${by} Q ${x0-40} ${by+cell/2} ${x0-14} ${by+cell}" stroke="#e8609c" stroke-width="5" fill="none"/>`;
+  g += `<text x="${x0-48}" y="${by+58}" font-size="56" text-anchor="end" fill="#4a3f55" font-family="sans-serif">${d}</text>`;
+  [...a].forEach((c,i) => g += `<text x="${x0+i*cell+cell/2}" y="${by+58}" font-size="56" text-anchor="middle" fill="#4a3f55" font-family="sans-serif">${c}</text>`);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" preserveAspectRatio="none"><rect width="1000" height="700" fill="#fff"/>${g}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function applyGuide(cv, q){
+  const bg = divGuide(q);
+  cv.style.backgroundImage = bg; cv.style.backgroundSize = bg ? "100% 100%" : "";
+}
+
+// ═════════ 11math 순서대로: 1~6학년 단원별 유형 ═════════
+const Q = (q, ans, kind="num", ext={}) => ({q, ans:String(ans), kind, ...ext});
+const until = (f, ok) => { let r, k=0; do{ r = f(); k++; }while(!ok(r) && k<5000); return r; };
+const digs = n => String(n).split("").reverse().map(Number);
+const carryCnt = (a,b) => { const x=digs(a), y=digs(b); let c=0, n=0; for(let i=0;i<Math.max(x.length,y.length);i++){ const s=(x[i]||0)+(y[i]||0)+c; c = s>=10?1:0; n+=c; } return n; };
+const borrowCnt = (a,b) => { const x=digs(a), y=digs(b); let br=0, n=0; for(let i=0;i<x.length;i++){ const d=(x[i]||0)-(y[i]||0)-br; br = d<0?1:0; n+=br; } return n; };
+const ADD = (a,b) => Q(`${a} + ${b}`, a+b), SUB = (a,b) => Q(`${a} − ${b}`, a-b), MUL = (a,b) => Q(`${a} × ${b}`, a*b);
+const pick = arr => arr[ri(0, arr.length-1)];
+const nd = k => { let n; do{ n = ri(1, 10**k-1); }while(n%10===0); return n; };   // 소수 아래 k자리 (끝자리 0 아님)
+
+// 정수 식 계산 (곱셈·나눗셈 먼저, 괄호 { } ( ) 지원) — 나누어떨어지지 않거나 음수가 나오면 null
+function evalInt(expr){
+  const t = expr.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").replace(/[{]/g,"(").replace(/[}]/g,")").match(/\d+|[-+*/()]/g); let i = 0, bad = false;
+  const prim = () => { const x = t[i++]; if(x==="("){ const v = sum(); i++; return v; } return +x; };
+  const prod = () => { let v = prim(); while(t[i]==="*" || t[i]==="/"){ const o = t[i++], w = prim(); if(o==="*") v *= w; else { if(!w || v%w) bad = true; v = w ? Math.floor(v/w) : 0; } } return v; };
+  const sum = () => { let v = prod(); while(t[i]==="+" || t[i]==="-"){ const o = t[i++], w = prod(); v = o==="+" ? v+w : v-w; if(v<0) bad = true; } return v; };
+  const v = sum(); return bad || i!==t.length ? null : v;
+}
+const exprQ = f => h => { let e, v; do{ e = f(h); v = evalInt(e); }while(v===null); return Q(e, v); };
+
+// 유리수 (분수·소수 섞인 계산)
+const rq = (n,d=1) => { const g = gcd(n,d)||1; return [n/g, d/g]; };
+const rAdd = (a,b) => rq(a[0]*b[1]+b[0]*a[1], a[1]*b[1]), rSub = (a,b) => rq(a[0]*b[1]-b[0]*a[1], a[1]*b[1]);
+const rMul = (a,b) => rq(a[0]*b[0], a[1]*b[1]), rDiv = (a,b) => rq(a[0]*b[1], a[1]*b[0]);
+const decOf = () => { const k = ri(1,2), n = k===1 ? ri(1,49) : pick([25,75,125,5,15,35,45,55,65,85,95]); return {v:rq(n, 10**k), s:fmtS(n,k)}; };
+const fracOf = () => { const [n,d] = Math.random()<.7 ? prop(2,9) : mixd(2,6); return {v:rq(n,d), s:fr(n,d)}; };
+
+// ── 1학년 ──
+const C11 = [
+  ["두 수로 가르기(한 자리 수)", h => { const n=ri(2,9), a=ri(1,n-1); return Q(`${n}${jEul(n)} 가르면 ${a}${jGwa(a)} □`, n-a); }],
+  ["두 수를 모으기(한 자리 수)", h => { const a=ri(1,8), b=ri(1,9-a); return Q(`${a}${jGwa(a)} ${b}${jEul(b)} 모으면 □`, a+b); }],
+  ["몇 + 몇 (합이 9이하)", h => { const a=ri(1,8), b=ri(1,9-a); return ADD(a,b); }],
+  ["몇 - 몇 (차가 9이하)", h => { const a=ri(1,9), b=ri(0,a); return SUB(a,b); }],
+  ["한 자리 수 덧셈과 뺄셈의 관계", h => { const a=ri(1,8), b=ri(1,9-a); return Q(`${a} + ${b} = ${a+b} 이면 ${a+b} − ${a} = □`, b); }],
+  ["한 자리 수 뺄셈과 덧셈의 관계", h => { const c=ri(2,9), a=ri(1,c-1); return Q(`${c} − ${a} = ${c-a} 이면 ${c-a} + ${a} = □`, c); }],
+  ["한 자리 수 덧셈/뺄셈에서 ☐안의 수 찾기", h => { const c=ri(2,9), a=ri(1,c-1), b=c-a, t=ri(1,4);
+    return t===1 ? Q(`□ + ${b} = ${c}`, a) : t===2 ? Q(`${a} + □ = ${c}`, b) : t===3 ? Q(`${c} − □ = ${b}`, a) : Q(`□ − ${a} = ${b}`, c); }],
+];
+const nc2 = () => { const a = until(() => [ri(11,98), ri(11,98)], ([x,y]) => x%10 && y%10 && carryCnt(x,y)===0 && x+y<100); return a; };
+const C122 = [
+  ...["A","B"].map(v => [`몇십 + 몇 (받아올림 없음) ${v}`, h => ADD(ri(1,9)*10, ri(1,9))]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇 (받아올림 없음) ${v}`, h => { const [a,b] = until(() => [ri(11,98), ri(1,8)], ([a,b]) => a%10 && a%10+b<10); return ADD(a,b); }]),
+  ...["A","B"].map(v => [`몇십 + 몇십 (받아올림 없음) ${v}`, h => { const a=ri(1,8), b=ri(1,9-a); return ADD(a*10, b*10); }]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 없음) ${v}`, h => ADD(...nc2())]),
+  ...["A","B"].map(v => [`몇십 - 몇십 (받아내림 없음) ${v}`, h => { const a=ri(2,9), b=ri(1,a-1); return SUB(a*10, b*10); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇 (받아내림 없음) ${v}`, h => { const [a,b] = until(() => [ri(11,99), ri(1,9)], ([a,b]) => a%10 && b<=a%10); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇십 몇 (받아내림 없음) ${v}`, h => { const [a,b] = until(() => [ri(21,99), ri(11,89)], ([a,b]) => a%10 && b%10 && a>b && borrowCnt(a,b)===0); return SUB(a,b); }]),
+  ["두 자리 수 덧셈과 뺄셈의 관계", h => { const [a,b] = nc2(); return Q(`${a} + ${b} = ${a+b} 이면 ${a+b} − ${a} = □`, b); }],
+  ["두 자리 수 뺄셈과 덧셈의 관계", h => { const [a,b] = nc2(); const c=a+b; return Q(`${c} − ${a} = ${b} 이면 ${b} + ${a} = □`, c); }],
+];
+const C124 = [
+  ["몇 + 몇 + 몇 (합이 9이하)", h => { const [a,b,c] = until(() => [ri(1,7), ri(1,7), ri(1,7)], ([a,b,c]) => a+b+c<=9); return Q(`${a} + ${b} + ${c}`, a+b+c); }],
+  ["몇 - 몇 - 몇 (차가 9이하)", h => { const [a,b,c] = until(() => [ri(3,9), ri(1,8), ri(1,8)], ([a,b,c]) => a-b-c>=0); return Q(`${a} − ${b} − ${c}`, a-b-c); }],
+  ["몇 + 몇 - 몇 / 몇 - 몇 + 몇 (한 자리 수)", h => Math.random()<.5
+    ? (() => { const [a,b,c] = until(() => [ri(1,8), ri(1,8), ri(1,9)], ([a,b,c]) => a+b<=9 && a+b-c>=0); return Q(`${a} + ${b} − ${c}`, a+b-c); })()
+    : (() => { const [a,b,c] = until(() => [ri(2,9), ri(1,8), ri(1,8)], ([a,b,c]) => a-b>=0 && a-b+c<=9); return Q(`${a} − ${b} + ${c}`, a-b+c); })()],
+  ["10을 두 수로 가르기", h => { const a=ri(1,9); return Q(`10을 가르면 ${a}${jGwa(a)} □`, 10-a); }],
+  ["10이 되도록 두 수를 모으기", h => { const a=ri(1,9); return Q(`${a}${jGwa(a)} □를 모으면 10`, 10-a); }],
+  ["10이 되는 더하기", h => { const a=ri(1,9); return Q(`${a} + □ = 10`, 10-a); }],
+  ["10에서 빼기", h => { const a=ri(1,9); return SUB(10,a); }],
+  ["두 수의 합이 10이 되는 세 수의 덧셈 A", h => { const a=ri(1,9), c=ri(1,9); return Q(`${a} + ${10-a} + ${c}`, 10+c); }],
+  ["두 수의 합이 10이 되는 세 수의 덧셈 B", h => { const a=ri(1,9), c=ri(1,9); return Q(`${c} + ${a} + ${10-a}`, 10+c); }],
+];
+const c1 = () => until(() => [ri(2,9), ri(2,9)], ([a,b]) => a+b>10);
+const b1 = () => until(() => [ri(11,18), ri(2,9)], ([a,b]) => b>a%10 && a-b>=1);
+const C126 = [
+  ...["A","B"].map(v => [`몇 + 몇 (받아올림 있음) ${v}`, h => ADD(...c1())]),
+  ["몇 + 몇 + 몇 (받아올림 있음)", h => { const [a,b,c] = until(() => [ri(1,9), ri(1,9), ri(1,9)], ([a,b,c]) => a+b+c>10 && a+b+c<=19); return Q(`${a} + ${b} + ${c}`, a+b+c); }],
+  ...["A","B"].map(v => [`십몇 - 몇 (받아내림 있음) ${v}`, h => SUB(...b1())]),
+  ["십몇 - 몇 - 몇 (받아내림 있음)", h => { const [a,b,c] = until(() => [ri(11,18), ri(1,9), ri(1,9)], ([a,b,c]) => b>a%10 && a-b-c>=0); return Q(`${a} − ${b} − ${c}`, a-b-c); }],
+  ...["A","B"].map(v => [`몇 + 몇 / 십몇 - 몇 ${v}`, h => Math.random()<.5 ? ADD(...c1()) : SUB(...b1())]),
+];
+
+// ── 2학년 ──
+const ca = n => until(() => [ri(11,89), ri(11,89)], ([a,b]) => carryCnt(a,b)===n && (n<2 || a+b>=100));
+const tri = (r1, r2, r3, o1, o2, ok=()=>true) => { let a,b,c,v1,v; do{ a=ri(...r1); b=ri(...r2); c=ri(...r3); const op1 = o1==="±" ? pick(["+","−"]) : o1, op2 = o2==="±" ? pick(["+","−"]) : o2;
+  v1 = op1==="+" ? a+b : a-b; v = op2==="+" ? v1+c : v1-c; if(v1>=0 && v>=0 && ok(a,b,c,op1,op2)) return Q(`${a} ${op1} ${b} ${op2} ${c}`, v); }while(true); };
+const C213 = [
+  ...["A","B"].map(v => [`몇십 몇 + 몇 (받아올림 있음) ${v}`, h => { const [a,b] = until(() => [ri(11,89), ri(2,9)], ([a,b]) => a%10+b>=10 && a+b<100); return ADD(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 1번) ${v}`, h => ADD(...ca(1))]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 2번) ${v}`, h => ADD(...ca(2))]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇 (받아내림 있음) ${v}`, h => { const [a,b] = until(() => [ri(20,99), ri(2,9)], ([a,b]) => b>a%10); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇십 몇 (받아내림 1번) ${v}`, h => { const [a,b] = until(() => [ri(30,99), ri(11,89)], ([a,b]) => a>b && borrowCnt(a,b)===1); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 ± 몇 (받아올림/내림 있음) ${v}`, h => Math.random()<.5
+    ? ADD(...until(() => [ri(11,89), ri(2,9)], ([a,b]) => a%10+b>=10 && a+b<100))
+    : SUB(...until(() => [ri(20,99), ri(2,9)], ([a,b]) => b>a%10))]),
+  ...["A","B"].map(v => [`몇십 몇 ± 몇십 몇 ${v}`, h => Math.random()<.5 ? ADD(...ca(ri(0,1))) : SUB(...until(() => [ri(30,99), ri(11,89)], ([a,b]) => a>b))]),
+  ["몇십 몇 + 몇 + 몇 (받아올림 있음)", h => tri([11,79],[2,9],[2,9],"+","+", (a,b,c) => a%10+b>=10 || (a+b)%10+c>=10)],
+  ["몇십 몇 - 몇 - 몇 (받아내림 있음)", h => tri([20,99],[2,9],[2,9],"−","−", (a,b,c) => b>a%10 || c>(a-b)%10)],
+  ["몇십 몇 + 몇 - 몇 / 몇십 몇 - 몇 + 몇", h => Math.random()<.5 ? tri([11,89],[2,9],[2,9],"+","−", (a,b,c) => a+b<100) : tri([11,99],[2,9],[2,9],"−","+", (a,b,c) => a-b+c<100)],
+  ["몇십 몇 ± 몇 ± 몇", h => tri([11,89],[2,9],[2,9],"±","±", (a,b,c,o1,o2) => true)],
+  ["몇십 몇 ± 몇십 몇 ± 몇십 몇", h => tri([11,99],[11,89],[11,89],"±","±", (a,b,c) => true)],
+];
+const gg = dans => h => { const a = pick(dans), b = ri(1,9); return Math.random()<.5 ? MUL(a,b) : MUL(a,b); };
+const C222 = [
+  ["2, 5, 3, 4의 단 곱셈구구", gg([2,5,3,4])],
+  ["6, 7, 8, 9의 단 곱셈구구", gg([6,7,8,9])],
+  ["1의 단, 0의 단을 포함한 곱셈구구", h => { const a = pick([0,1,ri(2,9)]), b = ri(0,9); return Math.random()<.5 ? MUL(a,b) : MUL(b,a); }],
+  ["곱셈구구에서 ☐안의 수 찾기 A", h => { const a=ri(2,9), b=ri(1,9); return Q(`${a} × □ = ${a*b}`, b); }],
+  ["곱셈구구에서 ☐안의 수 찾기 B", h => { const a=ri(2,9), b=ri(1,9); return Q(`□ × ${b} = ${a*b}`, a); }],
+  ["곱셈구구에서 ☐안의 수 찾기 C", h => { const a=ri(2,9), b=ri(1,9); return Math.random()<.5 ? Q(`${a} × □ = ${a*b}`, b) : Q(`□ × ${b} = ${a*b}`, a); }],
+];
+
+// ── 3학년 ──
+const tens3 = () => ri(1,8)*100 + (Math.random()<.5 ? ri(1,9)*10 : 0);
+const full3 = () => until(() => ri(111,999), n => n%10 && Math.floor(n/10)%10);
+const add3 = n => until(() => [full3(), full3()], ([a,b]) => carryCnt(a,b)===n && (n===3 ? a+b>=1000 : a+b<1000));
+const sub3 = n => until(() => [full3(), full3()], ([a,b]) => a>b && borrowCnt(a,b)===n);
+const AB = (name, f) => ["A","B"].map(v => [`${name} ${v}`, f]);
+const C311 = [
+  ...AB("몇백 / 몇백 몇십의 덧셈 (받아올림 없음)", h => ADD(...until(() => [tens3(), tens3()], ([a,b]) => carryCnt(a,b)===0 && a+b<1000))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 없음)", h => ADD(...add3(0))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 1번)", h => ADD(...add3(1))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 2번)", h => ADD(...add3(2))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 3번)", h => ADD(...add3(3))),
+  ...AB("네 자리 수 + 세 자리 수", h => ADD(...until(() => [ri(1000,8999), ri(100,999)], ([a,b]) => a+b<10000))),
+  ...AB("네 자리 수 + 네 자리 수", h => ADD(...until(() => [ri(1000,8999), ri(1000,8999)], ([a,b]) => a+b<10000))),
+  ...AB("몇백 / 몇백 몇십의 뺄셈 (받아내림 없음)", h => SUB(...until(() => [tens3(), tens3()], ([a,b]) => a>b && borrowCnt(a,b)===0))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 없음)", h => SUB(...sub3(0))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 1번)", h => SUB(...sub3(1))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 2번)", h => SUB(...sub3(2))),
+  ...AB("네 자리 수 - 세 자리 수", h => SUB(ri(1000,9999), ri(100,999))),
+  ...AB("네 자리 수 - 네 자리 수", h => SUB(...until(() => [ri(1000,9999), ri(1000,9999)], ([a,b]) => a>b))),
+  ...AB("몇백 몇십 몇 ± 몇백 몇십 몇", h => Math.random()<.5 ? ADD(...add3(ri(0,2))) : SUB(...sub3(ri(0,2)))),
+  ...AB("네 자리 수 ± 네 자리 수", h => Math.random()<.5 ? ADD(...until(() => [ri(1000,8999), ri(1000,8999)], ([a,b]) => a+b<10000)) : SUB(...until(() => [ri(1000,9999), ri(1000,9999)], ([a,b]) => a>b))),
+  ["세 수의 덧셈/뺄셈 (세 자리 수)", h => tri([100,999],[100,999],[100,999],"±","±", (a,b,c,o1,o2) => (o1==="+" ? a+b : a-b) < 1000)],
+  ["세 수의 덧셈/뺄셈 (네 자리 수)", h => tri([1000,9999],[1000,9999],[1000,9999],"±","±", (a,b,c,o1,o2) => (o1==="+" ? a+b : a-b) < 10000)],
+];
+const C313 = [
+  ["나눗셈의 기초", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${a}${jEul(a)} ${b}씩 묶으면 □묶음`, q); }],
+  ["곱셈과 나눗셈의 관계", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${b} × ${q} = ${a} 이면 ${a} ÷ ${b} = □`, q); }],
+  ["나눗셈과 곱셈의 관계", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${a} ÷ ${b} = ${q} 이면 ${b} × ${q} = □`, a); }],
+  ...AB("곱셈구구 내에서의 나눗셈", h => { const b=ri(2,9), q=ri(1,9); return Q(`${b*q} ÷ ${b}`, q); }),
+];
+const tm = (lo,hi,ok) => until(() => [ri(lo,hi), ri(2,9)], ([a,b]) => ok(a%10, Math.floor(a/10)%10, b, a));
+const C314 = [
+  ...AB("몇십 X 몇", h => MUL(ri(1,9)*10, ri(2,9))),
+  ...AB("몇십 몇 X 몇 (올림 없음)", h => MUL(...tm(11,49,(o,t,b) => o && o*b<10 && t*b<10))),
+  ["몇십 몇 X 몇 (십의 자리 올림 있음) A", h => MUL(...tm(11,99,(o,t,b) => o && o*b<10 && t*b>=10))],
+  ["몇십 몇 X 몇 (십의 자리 올림 없음) B", h => MUL(...tm(11,99,(o,t,b) => o && o*b<10 && t*b>=10))],
+  ...AB("몇십 몇 X 몇 (일의 자리에서 올림)", h => MUL(...tm(11,49,(o,t,b) => o*b>=10 && t*b+Math.floor(o*b/10)<10))),
+  ...AB("몇십 몇 X 몇 (십, 일의 자리 올림 있음)", h => MUL(...tm(11,99,(o,t,b) => o*b>=10 && t*b+Math.floor(o*b/10)>=10))),
+  ...AB("몇십 몇 X 몇 (종합)", h => MUL(ri(11,99), ri(2,9))),
+];
+const nc3 = () => until(() => [ri(111,999), ri(2,9)], ([a,b]) => digs(a).every(d => d*b<10));
+const C321 = [
+  ...["A","B","C"].map(v => [`세 자리 수 X 한 자리 수 (올림 없음) ${v}`, h => MUL(...nc3())]),
+  ...["A","B","C"].map(v => [`세 자리 수 X 한 자리 수 (올림 있음) ${v}`, h => MUL(...until(() => [ri(111,999), ri(2,9)], ([a,b]) => !digs(a).every(d => d*b<10)))]),
+  ...AB("몇십 X 몇십", h => MUL(ri(1,9)*10, ri(1,9)*10)),
+  ...AB("두 자리 수 X 몇십", h => MUL(ri(11,99), ri(1,9)*10)),
+  ...AB("두 자리 수 X 두 자리 수", h => MUL(ri(11,99), ri(11,99))),
+];
+const C322 = [
+  ...AB("몇십 ÷ 몇 (내림이 없고 나머지도 없음)", h => { const [t,d] = until(() => [ri(2,9), ri(2,9)], ([t,d]) => t%d===0); return divQ(t*10, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 없고 나머지도 없음)", h => { const [t,o,d] = until(() => [ri(1,9), ri(1,9), ri(2,4)], ([t,o,d]) => t%d===0 && o%d===0); return divQ(t*10+o, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 있으나 나머지가 없음)", h => { const [a,d] = until(() => [ri(20,99), ri(2,9)], ([a,d]) => a%d===0 && Math.floor(a/10)%d!==0 && a/d>=10); return divQ(a, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 있고 나머지도 있음)", h => { const [a,d] = until(() => [ri(20,99), ri(2,9)], ([a,d]) => a%d!==0 && Math.floor(a/10)%d!==0 && a/d>=10); return divQ(a, d); }),
+  ...AB("몇백 몇십 몇 ÷ 몇 (내림/나머지 있음)", h => { const [a,d] = until(() => [ri(100,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }),
+  ["나눗셈의 몫과 나머지 A", h => { const [a,d] = until(() => [ri(10,99), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 몫과 나머지 B", h => { const [a,d] = until(() => [ri(100,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 몫과 나머지 C", h => { const [a,d] = until(() => [ri(10,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 검산", h => { const d=ri(2,9), q=ri(5,99), r=ri(1,d-1), a=d*q+r; return Q(`${a} ÷ ${d} = ${q}…${r} → 검산: ${d} × ${q} + ${r} = □`, a); }],
+];
+const imp = () => { const d=ri(2,9), n=ri(d+1, d*5); return n%d ? [n,d] : [n+1,d]; };
+const cmpQ = (a,b) => a>b ? ">" : a<b ? "<" : "=";
+const C324 = [
+  ["대분수를 가분수로 나타내기", h => { const [n,d] = imp(); return Q(`${fr(n,d)}${jEul(n%d)} 가분수로 나타내면?`, `${n}/${d}`, "frac", {form:"improper"}); }],
+  ["가분수를 대분수로 나타내기", h => { const [n,d] = imp(); return Q(`${n}/${d}${jEul(n)} 대분수로 나타내면?`, fr(n,d), "frac", {form:"mixed"}); }],
+  ["분모가 같은 가분수/대분수끼리의 크기 비교", h => { const d=ri(2,9); const [x,y] = until(() => [ri(d+1,d*5), ri(d+1,d*5)], ([x,y]) => x%d && y%d); const m = Math.random()<.5; const s = n => m ? fr(n,d) : `${n}/${d}`; return Q(`${s(x)} ○ ${s(y)}`, cmpQ(x,y), "cmp"); }],
+  ["분모가 같은 가분수와 대분수의 크기 비교", h => { const d=ri(2,9); const [x,y] = until(() => [ri(d+1,d*5), ri(d+1,d*5)], ([x,y]) => x%d && y%d); return Math.random()<.5 ? Q(`${x}/${d} ○ ${fr(y,d)}`, cmpQ(x,y), "cmp") : Q(`${fr(x,d)} ○ ${y}/${d}`, cmpQ(x,y), "cmp"); }],
+  ["어떤 수의 분수만큼 구하기 (단위분수)", h => { const d=ri(2,9), k=ri(2,9), n=d*k; return Q(`${n}의 1/${d}은 □`, k); }],
+];
+
+// ── 4학년 ──
+const C413 = [
+  ["두 자리 수 X 몇백/몇천", h => MUL(ri(11,99), ri(1,9)*pick([100,1000]))],
+  ["몇백, 몇천의 곱", h => MUL(ri(1,9)*pick([100,1000]), ri(1,9)*pick([10,100]))],
+  ...AB("세 자리 수 X 두 자리 수", h => MUL(ri(100,999), ri(11,99))),
+  ...AB("네 자리 수 X 두 자리 수", h => MUL(ri(1000,9999), ri(11,99))),
+  ["세 수의 곱셈", h => { const a=ri(11,99), b=ri(2,9), c=pick([ri(2,9), 10, 20]); return Q(`${a} × ${b} × ${c}`, a*b*c); }],
+  ["곱셈 종합", h => pick([() => MUL(ri(100,999), ri(11,99)), () => MUL(ri(1000,9999), ri(11,99)), () => MUL(ri(11,99), ri(1,9)*100)])()],
+  ...AB("몇십으로 나누기 (나머지 없음)", h => { const d=ri(2,9)*10, q=ri(2,9); return divQ(d*q, d); }),
+  ...AB("몇십으로 나누기 (나머지 있음)", h => { const d=ri(2,9)*10, q=ri(2,9), r=ri(1,d-1); return divQ(d*q+r, d); }),
+  ...AB("두 자리 수 ÷ 두 자리 수 (나머지 없음)", h => { const [d,q] = until(() => [ri(11,49), ri(2,9)], ([d,q]) => d*q<100); return divQ(d*q, d); }),
+  ...AB("두 자리 수 ÷ 두 자리 수 (나머지 있음)", h => { const [a,d] = until(() => [ri(20,99), ri(11,49)], ([a,d]) => a>d && a%d); return divQ(a, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (나머지 없음)", h => { const [d,q] = until(() => [ri(11,99), ri(2,9)], ([d,q]) => d*q>=100); return divQ(d*q, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (나머지 있음)", h => { const [a,d] = until(() => [ri(100,999), ri(11,99)], ([a,d]) => a%d && a/d<10 && a/d>=1); return divQ(a, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (몫이 두 자리)", h => { const [a,d] = until(() => [ri(100,999), ri(11,60)], ([a,d]) => a/d>=10); return divQ(a, d); }),
+];
+const pd = () => ri(3,12);
+const C421 = [
+  ["분모가 같은 진분수의 덧셈 (합이 진분수)", h => { const d=pd(); const [a,b] = until(() => [ri(1,d-1), ri(1,d-1)], ([a,b]) => a+b<d); return fracQ(a,b,d,"+"); }],
+  ["분모가 같은 진분수의 덧셈 (합이 가분수)", h => { const d=pd(); const [a,b] = until(() => [ri(1,d-1), ri(1,d-1)], ([a,b]) => a+b>d); return fracQ(a,b,d,"+"); }],
+  ["분모가 같은 대분수의 덧셈 (분자의 합 < 분모)", h => { const d=pd(); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x+y<d); return fracQ(ri(1,5)*d+x, ri(1,5)*d+y, d, "+"); }],
+  ["분모가 같은 대분수의 덧셈 (분자의 합 > 분모)", h => { const d=pd(); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x+y>d); return fracQ(ri(1,5)*d+x, ri(1,5)*d+y, d, "+"); }],
+  ["분모가 같은 진분수의 뺄셈 (진분수 - 진분수)", h => { const d=pd(); const [a,b] = until(() => [ri(2,d-1), ri(1,d-2)], ([a,b]) => a>b); return fracQ(a,b,d,"−"); }],
+  ["분모가 같은 진분수의 뺄셈 (자연수 - 진분수)", h => { const d=pd(), a=ri(1,6), b=ri(1,d-1); return {q:`${a} − ${fr(b,d)}`, ans:fr(a*d-b,d), kind:"frac"}; }],
+  ["분모가 같은 대분수의 뺄셈 <1>", h => { const d=pd(); const [x,y,w1,w2] = until(() => [ri(1,d-1), ri(1,d-1), ri(2,7), ri(1,6)], ([x,y,w1,w2]) => x>=y && w1>w2); return fracQ(w1*d+x, w2*d+y, d, "−"); }],
+  ["분모가 같은 대분수의 뺄셈 <2>", h => { const d=pd(); const [x,y,w1,w2] = until(() => [ri(1,d-1), ri(1,d-1), ri(2,7), ri(1,6)], ([x,y,w1,w2]) => x<y && w1>w2); return fracQ(w1*d+x, w2*d+y, d, "−"); }],
+  ["분모가 같은 대분수와 진분수의 덧셈", h => { const d=pd(), x=ri(1,d-1), y=ri(1,d-1); return fracQ(ri(1,6)*d+x, y, d, "+"); }],
+  ["분모가 같은 대분수와 진분수의 뺄셈", h => { const d=pd(), x=ri(1,d-1), y=ri(1,d-1); return fracQ(ri(1,6)*d+x, y, d, "−"); }],
+];
+// 소수 (0.001 단위 정수)
+const dv_ = (k, intMax) => ri(0,intMax)*1000 + nd(k)*10**(3-k);   // 정수부 0~intMax, 소수 k자리
+const dq = (a,b,op) => Q(`${th(a)} ${op} ${th(b)}`, th(op==="+" ? a+b : a-b), "dec");
+const C423 = [
+  ...AB("자연수가 없는 소수 한 자리 수끼리의 덧셈", h => dq(dv_(1,0), dv_(1,0), "+")),
+  ...AB("자연수가 없는 소수 두 자리 수 범위의 덧셈", h => dq(dv_(2,0), dv_(ri(1,2),0), "+")),
+  ...AB("자연수가 있는 소수 두 자리 수끼리의 덧셈", h => dq(dv_(2,9)+1000, dv_(2,9)+1000, "+")),
+  ...AB("자연수가 있는 소수 세 자리 수 범위의 덧셈", h => dq(dv_(3,9)+1000, dv_(ri(1,3),9)+1000, "+")),
+  ...AB("소수 한 자리 수끼리의 뺄셈", h => { const [a,b] = until(() => [dv_(1,9), dv_(1,9)], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 없는 소수 두 자리 범위의 뺄셈", h => { const [a,b] = until(() => [dv_(2,0), dv_(ri(1,2),0)], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 있는 소수 두 자리 수끼리의 뺄셈", h => { const [a,b] = until(() => [dv_(2,9)+1000, dv_(2,9)+1000], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 있는 소수 세 자리 수 범위의 뺄셈", h => { const [a,b] = until(() => [dv_(3,9)+1000, dv_(ri(1,3),9)+1000], ([a,b]) => a>b); return dq(a,b,"−"); }),
+];
+
+// ── 5학년 ──
+const N9 = () => ri(2,9), N2 = () => ri(10,60);
+const E = {
+  as:  [() => `${N2()} + ${N2()} − ${N2()}`, () => `${N2()} − ${ri(2,30)} + ${N2()}`, () => `${ri(50,99)} − ${ri(2,30)} − ${ri(2,30)}`, () => `${N2()} + ${N2()} − ${N2()} + ${N2()}`],
+  md:  [() => { const c=N9(); return `${c*ri(2,9)} × ${N9()} ÷ ${c}`; }, () => { const b=N9(); return `${b*ri(2,9)} ÷ ${b} × ${N9()}`; }, () => { const c=N9(), b=N9(); return `${b*c*ri(1,6)} ÷ ${b} ÷ ${c}`; }],
+  asm: [() => `${N2()} + ${N9()} × ${N9()} − ${ri(2,30)}`, () => `${ri(60,99)} − ${N9()} × ${N9()} + ${N2()}`, () => `${N9()} × ${N9()} − ${ri(2,30)} + ${N2()}`],
+  asd: [() => { const b=N9(); return `${b*ri(2,9)} ÷ ${b} + ${N2()} − ${ri(1,9)}`; }, () => { const c=N9(); return `${N2()} − ${c*ri(1,5)} ÷ ${c} + ${N2()}`; }, () => { const c=N9(); return `${N2()} + ${c*ri(2,9)} ÷ ${c} − ${ri(2,30)}`; }],
+  all: [() => { const e=N9(); return `${N2()} + ${N9()} × ${N9()} − ${e*ri(2,9)} ÷ ${e}`; }, () => { const c=N9(); return `${N2()} − ${ri(2,20)} + ${c*ri(2,9)} ÷ ${c} × ${N9()}`; }, () => { const d=N9(); return `${d*ri(2,9)} ÷ ${d} × ${N9()} + ${N2()} − ${ri(2,20)}`; }],
+  pas: [() => `${ri(50,99)} − (${ri(2,30)} + ${ri(2,30)})`, () => `${N2()} + (${ri(30,60)} − ${ri(2,29)})`, () => `${ri(50,99)} − (${ri(30,60)} − ${ri(2,29)})`],
+  pmd: [() => { const b=N9(), c=N9(); return `${b*c*ri(1,9)} ÷ (${b} × ${c})`; }, () => { const c=N9(); return `${N9()} × (${c*ri(2,9)} ÷ ${c})`; }, () => { const c=N9(); return `(${c*ri(2,9)} × ${N9()}) ÷ ${c}`; }],
+  pasm:[() => `(${N2()} + ${N9()}) × ${N9()} − ${N2()}`, () => `${N9()} × (${ri(20,40)} − ${ri(2,19)}) + ${N2()}`, () => `${ri(80,99)} − (${N9()} + ${N9()}) × ${ri(2,4)}`],
+  pasd:[() => { const c=N9(), k=ri(2,9), a=ri(1,c*k-1); return `(${a} + ${c*k-a}) ÷ ${c} − ${ri(0,k)}`; }, () => { const d=N9(), k=ri(2,9), b=ri(1,d*k-1); return `${ri(k,k+60)} − (${b} + ${d*k-b}) ÷ ${d}`; }, () => { const c=N9(), k=ri(2,9), b=ri(1,40); return `(${c*k+b} − ${b}) ÷ ${c} + ${N2()}`; }],
+  pall:[() => { const d=N9(); return `${N9()} × (${ri(20,40)} − ${ri(2,19)}) ÷ ${d} + ${N2()}`; }, () => { const c=N9(), k=ri(2,9), a=ri(1,c*k-1); return `(${a} + ${c*k-a}) ÷ ${c} × ${N9()} − ${ri(2,20)}`; }, () => { const e=N9(); return `${N2()} + (${ri(20,40)} − ${ri(2,19)}) × ${e} ÷ ${e}`; }],
+  brace:[() => { const e=N9(); return `{(${N9()} + ${N9()}) × ${N9()} − ${ri(1,30)}} ÷ ${e}`; }, () => `${ri(150,250)} − {${N2()} + (${ri(20,30)} − ${ri(2,19)}) × ${N9()}}`, () => { const e=N9(); return `{${N2()} + ${N9()} × (${ri(10,20)} − ${ri(2,9)})} ÷ ${e}`; }],
+};
+const ex = key => exprQ(() => pick(E[key])());
+const C511 = [
+  ["덧셈과 뺄셈의 혼합 계산", ex("as")], ["곱셈과 나눗셈의 혼합 계산", ex("md")],
+  ["덧셈, 뺄셈, 곱셈의 혼합 계산", ex("asm")], ["덧셈, 뺄셈, 나눗셈의 혼합 계산", ex("asd")],
+  ["덧셈, 뺄셈, 곱셈, 나눗셈의 혼합 계산", ex("all")],
+  ["( )가 있는 덧셈/뺄셈의 혼합 계산", ex("pas")], ["( )가 있는 곱셈/나눗셈의 혼합 계산", ex("pmd")],
+  ["( )가 있는 덧셈/뺄셈/곱셈의 혼합 계산", ex("pasm")], ["( )가 있는 덧셈/뺄셈/나눗셈의 혼합 계산", ex("pasd")],
+  ["( )가 있는 덧셈/뺄셈/곱셈/나눗셈의 혼합 계산", ex("pall")], ["{ }가 있는 덧셈/뺄셈/곱셈/나눗셈의 혼합 계산", ex("brace")],
+];
+const divisors = n => { const r = []; for(let i=1;i<=n;i++) if(n%i===0) r.push(i); return r; };
+const C512 = [
+  ["약수 구하기", h => { const n = pick([6,8,10,12,14,15,16,18,20,21,24,27,28,30,32,36,40,42,45,48]); return Q(`${n}의 약수를 모두 쓰면?`, divisors(n).join(", "), "set"); }],
+  ["배수 구하기", h => { const n=ri(2,15); return Q(`${n}의 배수를 작은 수부터 5개 쓰면?`, [1,2,3,4,5].map(i => n*i).join(", "), "set"); }],
+  ["공약수 구하기", h => { const [a,b] = pair(false); return Q(`${a}${jGwa(a)} ${b}의 공약수를 모두 쓰면?`, divisors(gcd(a,b)).join(", "), "set"); }],
+  ["최대 공약수 구하기 - 두 수를 곱으로 나타냄", x2a],
+  ["최대 공약수 구하기 - 공통 약수 이용", x2a],
+  ["공배수 구하기", h => { const [a,b] = until(() => [ri(2,12), ri(2,12)], ([a,b]) => a!==b && lcm(a,b)<=60); const l = lcm(a,b); return Q(`${a}${jGwa(a)} ${b}의 공배수를 작은 수부터 3개 쓰면?`, [l, 2*l, 3*l].join(", "), "set"); }],
+  ["최소 공배수 구하기 - 두 수를 곱으로 나타냄", x2b],
+  ["최소 공배수 구하기 - 최대공약수 이용", x2b],
+];
+const F2 = (a,b,D) => `${a[0]*D/a[1]}/${D}, ${b[0]*D/b[1]}/${D}`;
+const fin = [2,4,5,8,10,20,25,50];
+const C514 = [
+  ["크기가 같은 분수 만들기", h => { const [n,d] = prop(2,9), k=ri(2,6); return Math.random()<.5 ? Q(`${n}/${d} = □/${d*k}`, n*k) : Q(`${n*k}/${d*k} = ${n}/□`, d); }],
+  ["기약분수 구하기", x3],
+  ["분수의 통분 (곱을 공통분모로)", h => { const [a,b] = until(() => [prop(2,9), prop(2,9)], ([a,b]) => a[1]!==b[1]); return Q(`${a[0]}/${a[1]}, ${b[0]}/${b[1]}${jEul(b[0])} 두 분모의 곱으로 통분하면?`, F2(a,b,a[1]*b[1]), "frac2"); }],
+  ["분수의 통분 (최소공배수를 공통분모로)", h => { const [a,b] = until(() => [prop(2,12), prop(2,12)], ([a,b]) => a[1]!==b[1] && gcd(a[1],b[1])>1); return Q(`${a[0]}/${a[1]}, ${b[0]}/${b[1]}${jEul(b[0])} 최소공배수로 통분하면?`, F2(a,b,lcm(a[1],b[1])), "frac2"); }],
+  ["분수의 크기 비교", h => { const [a,b] = until(() => [prop(2,12), prop(2,12)], ([a,b]) => a[1]!==b[1]); return Q(`${a[0]}/${a[1]} ○ ${b[0]}/${b[1]}`, cmpQ(a[0]*b[1], b[0]*a[1]), "cmp"); }],
+  ["분수를 소수로 나타내기", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); return Q(`${n}/${d}${jEul(n)} 소수로 나타내면?`, th(n*1000/d), "dec"); }],
+  ["소수를 분수로 나타내기", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); return Q(`${th(n*1000/d)}${jEul(th(n*1000/d).slice(-1))} 기약분수로 나타내면?`, `${n}/${d}`, "frac", {simp:true}); }],
+  ["분수와 소수의 비교", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); const v = dv_(ri(1,2),0); return Q(`${n}/${d} ○ ${th(v)}`, cmpQ(n*1000/d, v), "cmp"); }],
+];
+const C515 = [
+  ["진분수의 덧셈", h => Math.random()<.5 ? a1(h) : a2(h)],
+  ["대분수의 덧셈 (받아올림 없음)", h => { let a,b; do{ [a,b] = [mixd(), mixd()]; }while(a[1]===b[1] || (a[0]%a[1])*b[1]+(b[0]%b[1])*a[1] >= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }],
+  ["대분수의 덧셈 (받아올림 있음)", h => { let a,b; do{ [a,b] = [mixd(), mixd()]; }while(a[1]===b[1] || (a[0]%a[1])*b[1]+(b[0]%b[1])*a[1] <= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }],
+  ["진분수의 뺄셈", s1],
+  ["대분수의 뺄셈 (받아내림 없음)", s23(false)],
+  ["대분수의 뺄셈 (받아내림 있음)", s23(true)],
+];
+const C522 = [
+  ["분수 X 자연수", m5a], ["자연수 X 분수", m5b], ["진분수 X 진분수", m5c],
+  ["대분수 X 대분수", h => { const a = mixd(), b = mixd(); return {q:`${fr(...a)} × ${fr(...b)}`, ...fAns(a[0]*b[0], a[1]*b[1])}; }],
+  ["세 분수의 곱셈 (진분수)", h => { const a=prop(), b=prop(), c=prop(); return {q:`${fr(...a)} × ${fr(...b)} × ${fr(...c)}`, ...fAns(a[0]*b[0]*c[0], a[1]*b[1]*c[1])}; }],
+  ["세 분수의 곱셈 (대분수, 자연수 포함)", h => { const a=mixd(2,5), b=prop(), k=ri(2,6); return {q:`${fr(...a)} × ${fr(...b)} × ${k}`, ...fAns(a[0]*b[0]*k, a[1]*b[1])}; }],
+];
+const C524 = [
+  ["소수와 자연수의 곱", h => Math.random()<.5 ? m6a(h) : m6b(h)],
+  ["곱의 소수점의 위치", h => { const k=ri(1,2), a=rDec(k, 9); if(Math.random()<.5){ const p = pick([10,100,1000]); return Q(`${fmtS(a,k)} × ${p}`, fmtS(a*p,k), "dec"); } const n = ri(11,999), p = pick([1,2,3]); return Q(`${n} × ${fmtS(1,p)}`, fmtS(n,p), "dec"); }],
+  ["소수 X 소수", m6c],
+  ["세 소수의 곱셈", h => { const a=rDec(1,2), b=rDec(1,3), c=pick([2,4,5,6]); return Q(`${fmtS(a,1)} × ${fmtS(b,1)} × ${fmtS(c,1)}`, fmtS(a*b*c,3), "dec"); }],
+];
+
+// ── 6학년 ──
+const C611 = [
+  ["분수 ÷ 자연수", f6b],
+  ["분수와 자연수의 곱셈/나눗셈 혼합", h => { const a = Math.random()<.6 ? prop(2,9) : mixd(2,6), k=ri(2,9), m=ri(2,9); return Math.random()<.5 ? {q:`${fr(...a)} × ${k} ÷ ${m}`, ...fAns(a[0]*k, a[1]*m)} : {q:`${fr(...a)} ÷ ${m} × ${k}`, ...fAns(a[0]*k, a[1]*m)}; }],
+];
+const C613 = [
+  ["소수 ÷ 자연수", d6a],
+  ["소수 ÷ 자연수 (소수 끝자리 아래 0을 내려 계산)", h => { const [q,d] = until(() => [rDec(2,4), pick([2,4,5,6,8])], ([q,d]) => (q*d)%10===0 && (q*d)%100!==0); return Q(`${fmtS(q*d/10,1)} ÷ ${d}`, fmtS(q,2), "dec"); }],
+  ["자연수 ÷ 자연수", h => { const [a,b] = until(() => [ri(1,30), pick([2,4,5,8,20,25])], ([a,b]) => a%b!==0); return Q(`${a} ÷ ${b}`, th(a*1000/b), "dec"); }],
+  ["자연수 ÷ 자연수 (반올림하여 나타냄)", h => { const [a,b] = until(() => [ri(1,60), pick([3,6,7,9,11,12])], ([a,b]) => a%b!==0); let t = Math.floor(a*10/b); if(Math.floor(a*100/b)%10>=5) t++; return Q(`${a} ÷ ${b}의 몫을 반올림하여 소수 첫째 자리까지 나타내면?`, fmtS(t,1), "dec"); }],
+];
+const hpr = v => { const d = String(v).padStart(3,"0").split("").map(Number), u = ["할","푼","리"]; return d.map((x,i) => x ? `${x}${u[i]}` : "").filter(Boolean).join(" "); };
+const C614 = [
+  ["비와 비율", h => { const b = pick(fin.filter(x => x>2)); const a = until(() => ri(1,b-1), a => gcd(a,b)===1); return Math.random()<.5 ? Q(`${a} : ${b}의 비율을 소수로 나타내면?`, th(a*1000/b), "dec") : Q(`${a} : ${b}의 비율을 기약분수로 나타내면?`, `${a}/${b}`, "frac", {simp:true}); }],
+  ["백분율과 할푼리", h => { const v = until(() => ri(1,999), v => v%10 || Math.random()<.3); return Math.random()<.5 ? Q(`${th(v)}${jEul(th(v).slice(-1))} 백분율로 나타내면? (%)`, fmtS(v,1), "pct") : Q(`${th(v)}${jEul(th(v).slice(-1))} 할푼리로 나타내면?`, hpr(v), "text"); }],
+];
+const C621 = [
+  ["분수의 나눗셈 <1>", h => { if(Math.random()<.5){ const k=ri(1,9), d=ri(2,9); return {q:`${k} ÷ 1/${d}`, ...fAns(k*d,1)}; } const d=ri(5,30); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x>y && x%y===0); return {q:`${x}/${d} ÷ ${y}/${d}`, ...fAns(x,y)}; }],
+  ["분수의 나눗셈 <2>", h => f6c(true)],
+  ["분수의 나눗셈 <3>", h => { const a = mixd(2,9), b = Math.random()<.5 ? mixd(2,9) : prop(2,9); return Math.random()<.2 ? (() => { const k=ri(2,9); return {q:`${k} ÷ ${fr(...b)}`, ...fAns(k*b[1], b[0])}; })() : {q:`${fr(...a)} ÷ ${fr(...b)}`, ...fAns(a[0]*b[1], a[1]*b[0])}; }],
+];
+const rStr = r => r[1]===1 ? String(r[0]) : fr(r[0], r[1]);
+const C622 = [
+  ["소수 한 자리 수 ÷ 소수 한 자리 수", h => { const [b,q] = until(() => [rDec(1,4), ri(2,30)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,1)} ÷ ${fmtS(b,1)}`, q, "dec"); }],
+  ["소수 두 자리 수 ÷ 소수 두 자리 수", h => { const [b,q] = until(() => [rDec(2,1), ri(2,20)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,2)} ÷ ${fmtS(b,2)}`, q, "dec"); }],
+  ["자릿수가 다른 두 소수의 나눗셈", h => { const [b,q] = until(() => [rDec(1,4), rDec(1,9)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,2)} ÷ ${fmtS(b,1)}`, fmtS(q,1), "dec"); }],
+  ["자연수 ÷ 소수", d6c],
+  ["소수의 나눗셈에서 나머지 구하기", h => { const [a,d] = until(() => [rDec(1,40), ri(2,9)], ([a,d]) => a>d*10 && a%(d*10)!==0); const q = Math.floor(a/(d*10)), r = a - q*d*10; return Q(`${fmtS(a,1)} ÷ ${d}의 몫을 자연수까지 구하면 몫과 나머지는?`, `${q}…${fmtS(r,1)}`, "divd"); }],
+  ["소수 ÷ 분수 (분수로 고쳐 계산)", h => { const [a,b] = until(() => [decOf(), fracOf()], ([a,b]) => rDiv(a.v,b.v)[1]<=40); return {q:`${a.s} ÷ ${b.s}`, ...fAns(...rDiv(a.v,b.v))}; }],
+  ["소수 ÷ 분수 (소수로 고쳐 계산)", h => { let a,b,r; do{ a = decOf(); const d = pick([2,4,5]); b = {v:rq(ri(1,d-1),d)}; b.s = `${b.v[0]}/${b.v[1]}`; r = rDiv(a.v,b.v); }while(![1,2,4,5,8,10,20,25,50,100].includes(r[1])); return Q(`${a.s} ÷ ${b.s}`, th(r[0]*1000/r[1]), "dec"); }],
+  ["분수 ÷ 소수 (분수로 고쳐 계산)", h => { const [a,b] = until(() => [fracOf(), decOf()], ([a,b]) => rDiv(a.v,b.v)[1]<=40); return {q:`${a.s} ÷ ${b.s}`, ...fAns(...rDiv(a.v,b.v))}; }],
+  ["분수 ÷ 소수 (소수로 고쳐 계산)", h => { let a,b,r; do{ const d = pick([2,4,5]); a = {v:rq(ri(1,d-1),d)}; a.s = `${a.v[0]}/${a.v[1]}`; b = decOf(); r = rDiv(a.v,b.v); }while(![1,2,4,5,8,10,20,25,50,100].includes(r[1])); return Q(`${a.s} ÷ ${b.s}`, th(r[0]*1000/r[1]), "dec"); }],
+  ["분수와 소수의 혼합 계산 (연산자가 2, 3개)", h => mixFD(ri(2,3))],
+  ["분수와 소수의 혼합 계산 (연산자가 4개 이상)", h => mixFD(4)],
+];
+function mixFD(nops){
+  while(true){
+    const vals = [], ops = [];
+    for(let i=0;i<=nops;i++){ vals.push(Math.random()<.5 ? decOf() : fracOf()); if(i<nops) ops.push(pick(["+","−","×","÷"])); }
+    // 곱셈·나눗셈 먼저
+    let terms = [vals[0].v], tops = [], ok = true;
+    for(let i=0;i<nops;i++){ const o = ops[i], v = vals[i+1].v;
+      if(o==="×") terms[terms.length-1] = rMul(terms[terms.length-1], v); else if(o==="÷") terms[terms.length-1] = rDiv(terms[terms.length-1], v); else { tops.push(o); terms.push(v); } }
+    let r = terms[0]; for(let i=0;i<tops.length;i++){ r = tops[i]==="+" ? rAdd(r, terms[i+1]) : rSub(r, terms[i+1]); if(r[0]<=0) ok = false; }
+    if(!ok || r[0]<=0 || r[1]>200) continue;
+    return {q: vals.map((x,i) => x.s + (i<nops ? ` ${ops[i]} ` : "")).join(""), ...fAns(r[0], r[1])};
+  }
+}
+const rat = (a,b) => { const g = gcd(a,b); return `${a/g} : ${b/g}`; };
+const C624 = [
+  ["가장 작은 자연수의 비로 나타내기", h => { const t = ri(1,3); const [a,b] = until(() => [ri(1,9), ri(1,9)], ([a,b]) => a!==b && gcd(a,b)===1);
+    if(t===1){ const k=ri(2,15); return Q(`${a*k} : ${b*k}${jEul(b*k)} 가장 작은 자연수의 비로 나타내면?`, `${a} : ${b}`, "ratio"); }
+    if(t===2){ const k=pick([2,3,4,5,6]); return Q(`${fmtS(a*k,1)} : ${fmtS(b*k,1)}${jEul(String(b*k).slice(-1)==="0"&&(b*k)%10===0 ? b*k/10 : (b*k)%10)} 가장 작은 자연수의 비로 나타내면?`, `${a} : ${b}`, "ratio"); }
+    const [x,y] = until(() => [prop(2,9), prop(2,9)], ([x,y]) => x[0]*y[1]!==y[0]*x[1]); return Q(`${x[0]}/${x[1]} : ${y[0]}/${y[1]}${jEul(y[0])} 가장 작은 자연수의 비로 나타내면?`, rat(x[0]*y[1], y[0]*x[1]), "ratio"); }],
+  ["자연수로 된 비례식에서 ☐ 안의 수 구하기", p6a],
+  ["소수가 있는 비례식에서 ☐ 안의 수 구하기", h => { const [a,b] = until(() => [ri(1,9), ri(1,9)], ([a,b]) => a!==b && gcd(a,b)===1); const k=ri(2,9); return Q(`${fmtS(a,1)} : ${fmtS(b,1)} = □ : ${b*k}`, a*k); }],
+  ["분수가 있는 비례식에서 ☐ 안의 수 구하기", h => { const x = prop(2,6), y = prop(2,6); const [p,q] = rat(x[0]*y[1], y[0]*x[1]).split(" : ").map(Number); const k = ri(2,6); return Q(`${x[0]}/${x[1]} : ${y[0]}/${y[1]} = □ : ${q*k}`, p*k); }],
+  ["두 비의 관계를 연비로 나타내기", h => { const [a,b,c,d] = until(() => [ri(1,9),ri(1,9),ri(1,9),ri(1,9)], ([a,b,c,d]) => gcd(a,b)===1 && gcd(c,d)===1); const l = lcm(b,c); let x=[a*l/b, l, d*l/c]; const g = gcd(gcd(x[0],x[1]),x[2]); x = x.map(v => v/g); return Q(`가 : 나 = ${a} : ${b}, 나 : 다 = ${c} : ${d} 일 때 가 : 나 : 다를 가장 작은 자연수의 비로 나타내면?`, x.join(" : "), "ratio"); }],
+  ["두 비를 연비로 나타낸 것에서 ☐ 안의 수 구하기", h => { const x = [ri(1,9),ri(1,9),ri(1,9)], k = ri(2,6), i = ri(0,2); return Q(`${x.join(" : ")} = ${x.map((v,j) => j===i ? "□" : v*k).join(" : ")}`, x[i]*k); }],
+  ["가장 작은 수의 연비로 나타내기", h => { const x = until(() => [ri(1,9),ri(1,9),ri(1,9)], x => gcd(gcd(x[0],x[1]),x[2])===1), k = ri(2,9); return Q(`${x.map(v => v*k).join(" : ")}${jEul(x[2]*k)} 가장 작은 자연수의 비로 나타내면?`, x.join(" : "), "ratio"); }],
+  ["비례배분", p6b],
+  ["연비로 비례배분", h => { const x = until(() => [ri(1,9),ri(1,9),ri(1,9)], x => gcd(gcd(x[0],x[1]),x[2])===1), s = x[0]+x[1]+x[2], tot = s*ri(2,10), i = ri(0,2); return Q(`${tot}${jEul(tot)} ${x.join(" : ")}${jRo(x[2])} 비례배분하면 ${["첫째","둘째","셋째"][i]} 수는?`, tot/s*x[i]); }],
+];
+
+const CURR = [
+  [1,1,"3. 덧셈과 뺄셈",C11], [1,2,"2. 덧셈과 뺄셈(1)",C122], [1,2,"4. 덧셈과 뺄셈(2)",C124], [1,2,"6. 덧셈과 뺄셈(3)",C126],
+  [2,1,"3. 덧셈과 뺄셈",C213], [2,2,"2. 곱셈구구",C222],
+  [3,1,"1. 덧셈과 뺄셈",C311], [3,1,"3. 나눗셈",C313], [3,1,"4. 곱셈",C314], [3,2,"1. 곱셈",C321], [3,2,"2. 나눗셈",C322], [3,2,"4. 분수",C324],
+  [4,1,"3. 곱셈과 나눗셈",C413], [4,2,"1. 분수의 덧셈과 뺄셈",C421], [4,2,"3. 소수의 덧셈과 뺄셈",C423],
+  [5,1,"1. 자연수의 혼합계산",C511], [5,1,"2. 약수와 배수",C512], [5,1,"4. 약분과 통분",C514], [5,1,"5. 분수의 덧셈과 뺄셈",C515], [5,2,"2. 분수의 곱셈",C522], [5,2,"4. 소수의 곱셈",C524],
+  [6,1,"1. 분수의 나눗셈",C611], [6,1,"3. 소수의 나눗셈",C613], [6,1,"4. 비와 비율",C614], [6,2,"1. 분수의 나눗셈",C621], [6,2,"2. 소수의 나눗셈",C622], [6,2,"4. 비례식과 비례배분",C624],
+].map(([g,s,name,types], ui) => ({g, s, name, label:`${g}학년 ${s}학기 · ${name}`, stages: types.map(([tn, gen], ti) => ({id:`c${g}${s}_${name.split(".")[0]}_${ti+1}`, name:`${ti+1}) ${tn}`, gen}))}));
+
+// 예전 단원 (이미 낸 숙제·자동 숙제 설정에 남아 있을 수 있어서 보관만 해요)
+const LEGACY = [
+  {name:"1학년 · 덧셈과 뺄셈", stages:[
+    {id:"a1a", name:"한 자리 수 덧셈 (합이 9까지)", gen:lowQ(L.a1a)},
+    {id:"a1b", name:"한 자리 수 뺄셈", gen:lowQ(L.a1b)},
+    {id:"a1c", name:"10 만들기, 10에서 빼기", gen:lowQ(L.a1c)},
+    {id:"a1d", name:"받아올림이 있는 (몇) + (몇)", gen:lowQ(L.a1d)},
+    {id:"a1e", name:"받아내림이 있는 (십몇) − (몇)", gen:lowQ(L.a1e)},
+    {id:"a1m", name:"섞어서", mix:["a1a","a1b","a1c","a1d","a1e"]}]},
+  {name:"2학년 · 두 자리 수 덧셈과 뺄셈", stages:[
+    {id:"a2a", name:"(두 자리 수) + (한 자리 수)", gen:lowQ(L.a2a)},
+    {id:"a2b", name:"(두 자리 수) + (두 자리 수)", gen:lowQ(L.a2b)},
+    {id:"a2c", name:"(두 자리 수) − (한 자리 수)", gen:lowQ(L.a2c)},
+    {id:"a2d", name:"(두 자리 수) − (두 자리 수)", gen:lowQ(L.a2d)},
+    {id:"a2m", name:"섞어서", mix:["a2a","a2b","a2c","a2d"]}]},
+  {name:"2학년 · 곱셈구구", stages:[
+    {id:"gg25", name:"2단, 5단", gen:lowQ(L.gg([2,5]))},
+    {id:"gg36", name:"3단, 6단", gen:lowQ(L.gg([3,6]))},
+    {id:"gg48", name:"4단, 8단", gen:lowQ(L.gg([4,8]))},
+    {id:"gg79", name:"7단, 9단", gen:lowQ(L.gg([7,9]))},
+    {id:"ggm", name:"2단~9단 섞어서", gen:lowQ(L.gg([2,3,4,5,6,7,8,9]))}]},
+  {name:"3학년 · 세 자리 수 덧셈과 뺄셈", stages:[
+    {id:"a3a", name:"세 자리 수 덧셈", gen:lowQ(L.a3a)},
+    {id:"a3b", name:"세 자리 수 뺄셈", gen:lowQ(L.a3b)},
+    {id:"a3m", name:"섞어서", mix:["a3a","a3b"]}]},
+  {name:"3학년 · 곱셈", stages:[
+    {id:"m3a", name:"(몇십) × (몇)", gen:lowQ(L.m3a)},
+    {id:"m3b", name:"(두 자리 수) × (한 자리 수)", gen:lowQ(L.m3b)},
+    {id:"m3c", name:"(세 자리 수) × (한 자리 수)", gen:lowQ(L.m3c)},
+    {id:"m3d", name:"(두 자리 수) × (두 자리 수)", gen:lowQ(L.m3d)},
+    {id:"m3m", name:"섞어서", mix:["m3a","m3b","m3c","m3d"]}]},
+  {name:"3학년 · 나눗셈", stages:[
+    {id:"dv1", name:"곱셈구구로 나눗셈", gen:dv1},
+    {id:"dv2", name:"(두 자리 수) ÷ (한 자리 수) 나머지 없음", gen:dv2},
+    {id:"dv3", name:"(두 자리 수) ÷ (한 자리 수) 나머지 있음", gen:dv3},
+    {id:"dv4", name:"(세 자리 수) ÷ (한 자리 수) 나머지 없음", gen:dv4},
+    {id:"dv5", name:"(세 자리 수) ÷ (한 자리 수) 나머지 있음", gen:dv5},
+    {id:"dvm", name:"섞어서", mix:["dv1","dv2","dv3","dv4","dv5"]}]},
   {name:"4학년 · 곱셈과 나눗셈", stages:[
     {id:"mul1", name:"(세 자리 수) × (몇십)", gen:m1},
     {id:"mul2", name:"(세 자리 수) × (두 자리 수)", gen:m2},
@@ -525,8 +988,29 @@ const UNITS = [
     {id:"pr2", name:"비례배분", gen:p6b},
     {id:"g6pr", name:"섞어서", mix:["pr1","pr2"]}]},
 ];
-const STAGE = {}; UNITS.forEach(u => u.stages.forEach((s,i) => { s.unit = u.name; s.prev = null; STAGE[s.id] = s; }));
+const STAGE = {}; LEGACY.forEach(u => u.stages.forEach(s => { s.unit = u.name; s.prev = null; STAGE[s.id] = s; }));
+CURR.forEach(u => u.stages.forEach(s => { s.unit = u.label; s.prev = null; STAGE[s.id] = s; }));
+const UNITS = CURR.map(u => ({name:u.label, stages:u.stages}));
 const stageName = id => STAGE[id] ? `${STAGE[id].unit} · ${STAGE[id].name}` : "";
+// 학년 → 학기·단원 → 유형 고르기 (11math 순서)
+function stagePicker(el, initial){
+  let g = (STAGE[initial] && /^c(\d)/.exec(initial)) ? +/^c(\d)/.exec(initial)[1] : 4;
+  el.innerHTML = `<div class="row gtabs">${[1,2,3,4,5,6].map(n => `<button class="btn" data-g="${n}">${n}학년</button>`).join("")}</div>
+    <select class="inp" data-unit style="margin-top:8px"></select>
+    <select class="inp" data-type style="margin-top:8px"></select>`;
+  const us = el.querySelector("[data-unit]"), ts = el.querySelector("[data-type]");
+  const fillT = sel => { const u = CURR[+us.value]; ts.innerHTML = u.stages.map(s => `<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.name)}</option>`).join(""); };
+  const fillU = sel => {
+    el.querySelectorAll("[data-g]").forEach(b => b.classList.toggle("on", +b.dataset.g===g));
+    let pickU = -1;
+    us.innerHTML = CURR.map((u,i) => { if(u.g!==g) return ""; const has = u.stages.some(s => s.id===sel); if(has || pickU<0) pickU = has ? i : (pickU<0 ? i : pickU); return `<option value="${i}">${esc(u.s)}학기 · ${esc(u.name)}</option>`; }).join("");
+    const k = CURR.findIndex(u => u.stages.some(s => s.id===sel)); us.value = String(k>=0 && CURR[k].g===g ? k : pickU); fillT(sel);
+  };
+  el.querySelector(".gtabs").onclick = e => { const b = e.target.closest("[data-g]"); if(!b) return; e.stopPropagation(); g = +b.dataset.g; fillU(""); };
+  us.onchange = () => fillT("");
+  fillU(initial);
+  return () => ts.value;
+}
 const stageOptions = sel => UNITS.map(u => `<optgroup label="${u.name}">${u.stages.map(s => `<option value="${s.id}" ${s.id===sel?"selected":""}>${s.name}</option>`).join("")}</optgroup>`).join("");
 
 function makeProblems(id, n){
@@ -583,7 +1067,7 @@ class Board {
   pause(){ if(!this.paused){ this.base = this.now(); this.paused = true; } }
   resume(){ if(this.paused){ this.t0 = performance.now(); this.paused = false; } }
   load(rec){ this.ev = rec && rec.ev ? rec.ev : []; this.base = rec ? rec.dur||0 : 0; this.t0 = performance.now(); this.paused = false; this.dirty = false; this.cur = null; this.redraw(); }
-  snap(){ return {dur:this.now(), ev:this.ev}; }
+  snap(){ return {dur:this.now(), ev:this.ev, guide:!!this.guide}; }
   redraw(T=Infinity){ renderAt(this.ctx, this.ev, T); }
   pos(e){ const r = this.cv.getBoundingClientRect(); return [Math.round((e.clientX-r.left)/r.width*W), Math.round((e.clientY-r.top)/r.height*H)]; }
   bind(){
@@ -787,6 +1271,7 @@ function solve(id){
           <button class="tool" data-act="undo">↩ 되돌리기</button>
           <button class="tool" data-act="clear">🗑 전체 지우기</button>
           <button class="tool" data-act="finger">☝️ 손가락으로 쓰기</button>
+          <button class="tool hide" data-act="guide" id="gbtn">📐 자리 칸 꺼내기</button>
         </div>
         <div class="boardwrap" id="bw"></div>
         <div id="ansbox">
@@ -804,6 +1289,7 @@ function solve(id){
       const b = e.target.closest(".tool"); if(!b) return;
       if(b.dataset.act==="undo") return board.undo();
       if(b.dataset.act==="clear") return ask("전체 지울까요?", "지운 것도 녹화에는 남아요.", "지우기", "취소").then(y => y && board.clear());
+      if(b.dataset.act==="guide"){ board.guide = !board.guide; b.classList.toggle("on", board.guide); b.textContent = board.guide ? "📐 자리 칸 넣기" : "📐 자리 칸 꺼내기"; applyGuide(board.cv, board.guide ? hw.problems[cur].q : ""); board.changed(); return; }
       if(b.dataset.act==="finger"){ board.finger = !board.finger; b.classList.toggle("on", board.finger); return; }
       $("#tools").querySelectorAll("[data-c],[data-er]").forEach(x => x.classList.remove("on")); b.classList.add("on");
       board.tool = b.dataset.er ? {c:"#000", w:4, e:1} : {c:b.dataset.c, w:4, e:0};
@@ -875,19 +1361,22 @@ function solve(id){
     $("#ansbox").classList.toggle("hide", !ed);
     $("#lock").classList.toggle("hide", ed);
     if(!ed) $("#lock").textContent = s.ok1===true ? `⭕ 1번째에 맞았어요! (내 답: ${s.a1})` : `✔ 이 문제는 선생님이 채점해요. (내 답: ${s.a1})`;
-    ansUI(p.kind, s["a"+att] || "");
-    const tip = p.kind==="frac" ? (p.simp ? "답은 기약분수로 써요. " : "") + "대분수면 왼쪽 칸에 자연수를 써요. " : p.kind==="div" ? "나머지가 없으면 나머지 칸은 비워 둬요. " : "";
+    ansUI(p, s["a"+att] || "");
+    const tip = p.kind==="frac" ? (p.form==="improper" ? "가분수로 써요. " : p.form==="mixed" ? "대분수로 써요. 왼쪽 칸에 자연수를 써요. " : (p.simp ? "답은 기약분수로 써요. " : "") + "대분수면 왼쪽 칸에 자연수를 써요. ") : p.kind==="div" ? "나머지가 없으면 나머지 칸은 비워 둬요. " : p.kind==="set" ? "답이 여러 개면 쉼표(,)로 나눠 써요. " : p.kind==="cmp" ? "알맞은 기호를 눌러요. " : p.kind==="ratio" ? "가장 작은 자연수로 써요. " : "";
     $("#anote").textContent = att===2 && ed ? `1번째 답 ${s.a1} 은(는) 틀렸어요. 다시 천천히 풀어 봐요!` : (has(s["a"+att]) ? "답을 적었어요. 고치고 싶으면 다시 써서 답 확인을 눌러요." : tip);
     renderSide();
     const key = recKey(id, i, ed ? att : 1);
     curKey = null; board.readonly = true; board.load(null);
     const rec = await loadRec(key);
     if(tok!==loadTok) return;
-    board.load(rec); board.readonly = !ed; curKey = ed ? key : null;
+    board.load(rec); board.guide = p.kind==="div" && !!(rec && rec.guide);
+    applyGuide(board.cv, board.guide ? p.q : "");
+    $("#gbtn").classList.toggle("hide", !(p.kind==="div" && ed)); $("#gbtn").classList.toggle("on", board.guide); $("#gbtn").textContent = board.guide ? "📐 자리 칸 넣기" : "📐 자리 칸 꺼내기";
+    board.readonly = !ed; curKey = ed ? key : null;
   }
 
   async function checkCur(){
-    const r = readAns(hw.problems[cur].kind); if(r.err){ toast(r.err); return; }
+    const r = readAns(hw.problems[cur]); if(r.err){ toast(r.err); return; }
     const v = r.v, i = cur, att = curAtt(hw);
     await flush();
     try{ await DB.updateHW(id, {[`st.${i}.a${att}`]: v, lastAt: Date.now()}); }catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); return; }
@@ -904,7 +1393,7 @@ function solve(id){
     if(!await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
     await flush();
     const att = curAtt(hw), patch = {}; let wrong = 0;
-    hw.problems.forEach((p,i) => { if(!editable(hw,i)) return; const ok = has(p.ans) ? checkAns(stOf(hw,i)["a"+att], p.ans, p.kind, p.simp) : null; patch[`st.${i}.ok${att}`] = ok; if(ok===false) wrong++; });
+    hw.problems.forEach((p,i) => { if(!editable(hw,i)) return; const ok = has(p.ans) ? checkAns(stOf(hw,i)["a"+att], p.ans, p.kind, p.simp, p.form) : null; patch[`st.${i}.ok${att}`] = ok; if(ok===false) wrong++; });
     if(att===1 && wrong>0){ patch.status = "round2"; patch.round = 2; }
     else { patch.status = "submitted"; patch.submittedAt = Date.now(); }
     try{ await DB.updateHW(id, patch); }catch(e){ toast("제출 실패: 인터넷을 확인해 주세요"); return; }
@@ -929,31 +1418,62 @@ function solve(id){
 }
 
 // ───────── 답 칸 (단원마다 다르게) ─────────
-function ansUI(kind, val){
-  const box = $("#ansin");
+const inp = (id, v, cls="inp sm", mode="numeric", ph="") => `<input class="${cls}" id="${id}" inputmode="${mode}" autocomplete="off"${ph ? ` placeholder="${ph}"` : ""} value="${esc(v ?? "")}">`;
+const fracBox = (pre, w, n, d, whole=true) => `${whole ? inp(pre+"w", w) : ""}<span class="fin">${inp(pre+"n", n)}<span class="fl"></span>${inp(pre+"d", d)}</span>`;
+function ansUI(p, val){
+  const box = $("#ansin"), kind = p.kind; val = val || "";
   if(kind==="frac"){
     const m = /^(?:(\d+)(?:\s+|$))?(?:(\d+)\/(\d+))?$/.exec(val) || [];
-    box.innerHTML = `<input class="inp sm" id="aw" inputmode="numeric" autocomplete="off" value="${m[1]||""}"><span class="fin"><input class="inp sm" id="an" inputmode="numeric" autocomplete="off" value="${m[2]||""}"><span class="fl"></span><input class="inp sm" id="ad" inputmode="numeric" autocomplete="off" value="${m[3]||""}"></span>`;
-  } else if(kind==="div"){
-    const m = val.match(/\d+/g) || [];
-    box.innerHTML = `<span class="lab2">몫</span><input class="inp sm" id="aq" inputmode="numeric" autocomplete="off" value="${m[0]||""}"><span class="lab2">나머지</span><input class="inp sm" id="ar" inputmode="numeric" autocomplete="off" value="${m[1]||""}">`;
+    box.innerHTML = fracBox("a", m[1], m[2], m[3], p.form!=="improper");
+  } else if(kind==="div" || kind==="divd"){
+    const m = val.split("…");
+    const mode = kind==="divd" ? "decimal" : "numeric";
+    box.innerHTML = `<span class="lab2">몫</span>${inp("aq", m[0], "inp sm", mode)}<span class="lab2">나머지</span>${inp("ar", m[1], "inp sm", mode)}`;
+  } else if(kind==="cmp"){
+    box.innerHTML = [">","=","<"].map(c => `<button class="btn cmpb${val===c?" on":""}" data-cmp="${esc(c)}" style="font-size:26px;min-width:64px;font-family:Pretendard,sans-serif">${esc(c)}</button>`).join("");
+    box.querySelectorAll("[data-cmp]").forEach(b => b.onclick = () => box.querySelectorAll("[data-cmp]").forEach(x => x.classList.toggle("on", x===b)));
+  } else if(kind==="ratio"){
+    const k = String(p.ans).split(":").length, m = val.split(":").map(x => x.trim());
+    box.innerHTML = Array.from({length:k}, (_,i) => inp("ar"+i, m[i])).join(`<span class="lab2" style="font-size:24px">:</span>`);
+  } else if(kind==="frac2"){
+    const m = val.split(",").map(x => (/(\d+)\/(\d+)/.exec(x)||[]));
+    box.innerHTML = fracBox("f0", "", m[0]?.[1], m[0]?.[2], false) + `<span class="lab2" style="font-size:24px">,</span>` + fracBox("f1", "", m[1]?.[1], m[1]?.[2], false);
+  } else if(kind==="pct"){
+    box.innerHTML = inp("ans", val.replace("%",""), "inp", "decimal", "답을 써요") + `<span class="lab2" style="font-size:22px">%</span>`;
+  } else if(kind==="set"){
+    box.innerHTML = inp("ans", val, "inp", "text", "예: 1, 2, 3");
+  } else if(kind==="text"){
+    box.innerHTML = inp("ans", val, "inp", "text", "예: 3할 2푼 5리");
   } else {
-    box.innerHTML = `<input class="inp" id="ans" inputmode="${kind ? "decimal" : "text"}" autocomplete="off" placeholder="답을 써요" value="${esc(val)}">`;
+    box.innerHTML = inp("ans", val, "inp", kind ? "decimal" : "text", "답을 써요");
   }
 }
-function readAns(kind){
+function readAns(p){
+  const kind = p.kind, g = id => ($("#"+id)?.value || "").trim();
   if(kind==="frac"){
-    const w = $("#aw").value.trim(), n = $("#an").value.trim(), d = $("#ad").value.trim();
+    const w = g("aw"), n = g("an"), d = g("ad");
     if((n && !d) || (!n && d)) return {err:"분자와 분모를 둘 다 써 주세요"};
     if(!w && !n) return {err:"답을 먼저 써 주세요"};
     return {v:[w, n ? `${n}/${d}` : ""].filter(Boolean).join(" ")};
   }
-  if(kind==="div"){
-    const q = $("#aq").value.trim(), r = $("#ar").value.trim();
+  if(kind==="div" || kind==="divd"){
+    const q = g("aq"), r = g("ar");
     if(!q) return {err:"몫을 먼저 써 주세요"};
+    if(kind==="divd") return r ? {v:`${q}…${r}`} : {err:"나머지도 써 주세요"};
     return {v: r && +r ? `${q}…${r}` : q};
   }
-  const v = $("#ans").value.trim(); return v ? {v} : {err:"답을 먼저 써 주세요"};
+  if(kind==="cmp"){ const b = $("#ansin [data-cmp].on"); return b ? {v:b.dataset.cmp} : {err:">, =, < 중에서 골라 주세요"}; }
+  if(kind==="ratio"){
+    const k = String(p.ans).split(":").length, v = Array.from({length:k}, (_,i) => g("ar"+i));
+    return v.every(Boolean) ? {v:v.join(" : ")} : {err:"칸을 모두 채워 주세요"};
+  }
+  if(kind==="frac2"){
+    const v = [0,1].map(i => [g(`f${i}n`), g(`f${i}d`)]);
+    return v.every(([n,d]) => n && d) ? {v:v.map(([n,d]) => `${n}/${d}`).join(", ")} : {err:"두 분수의 분자, 분모를 모두 써 주세요"};
+  }
+  const v = g("ans"); if(!v) return {err:"답을 먼저 써 주세요"};
+  if(kind==="pct") return {v:v.replace(/%/g,"")+"%"};
+  return {v};
 }
 
 // ───────── 자동 숙제 ─────────
@@ -1001,6 +1521,7 @@ async function openPhoto(p){
 function photoList(el, who){
   let cur = [];
   const u = DB.watchPhotos(list => {
+    list = list || [];
     cur = list;
     const t = el.querySelector("[data-cnt]"); if(t) t.textContent = who==="teacher" ? (list.filter(p => !p.checked).length ? `확인 안 한 사진 ${list.filter(p => !p.checked).length}장` : "") : "";
     el.querySelector("[data-list]").innerHTML = list.length ? list.slice(0, who==="student" ? 8 : 60).map(p => `
@@ -1009,7 +1530,7 @@ function photoList(el, who){
         <div class="grow"><div style="font-size:20px">${PTYPE[p.type]||"사진"}${has(p.memo) ? ` <span class="muted" style="font-size:15px">· ${esc(p.memo.slice(0,20))}</span>` : ""}</div><div class="muted">${fmtFull(p.at)} 제출</div></div>
         ${who==="teacher" ? `<button class="btn ok ${p.checked?"on":""}" data-chk="${p.id}">${p.checked ? "확인 ✔" : "확인하기"}</button><button class="btn" data-del="${p.id}">✕</button>` : `<span class="chip ${p.checked ? "done" : "sub"}">${p.checked ? "선생님 확인 ✔" : "제출 완료"}</span>`}
       </div>`).join("") : `<div class="empty">아직 올린 사진이 없어요.</div>`;
-  });
+  }, who==="student" ? 8 : 30);
   el.addEventListener("click", async e => {
     const c = e.target.closest("[data-chk]"); if(c){ e.stopPropagation(); const p = cur.find(x => x.id===c.dataset.chk); DB.updatePhoto(p.id, {checked:!p.checked}).catch(() => toast("저장 실패")); return; }
     const d = e.target.closest("[data-del]"); if(d){ e.stopPropagation(); if(await ask("사진을 지울까요?", "지우면 되돌릴 수 없어요.", "지우기", "취소")) DB.deletePhoto(d.dataset.del); return; }
@@ -1077,7 +1598,7 @@ function openChatDrawer(id, me){
 }
 
 // ───────── 녹화 보기 ─────────
-async function openPlayer(title, key){
+async function openPlayer(title, key, guideQ=""){
   const rec = await loadRec(key);
   if(!rec || !rec.ev.length){ tell("녹화가 없어요", "이 풀이에는 쓴 내용이 없어요."); return; }
   const m = modal(`<div class="bar" style="margin-bottom:6px"><h3 style="margin:0">${title}</h3><button class="link" data-x>닫기 ✕</button></div>
@@ -1093,9 +1614,9 @@ async function openPlayer(title, key){
       <label class="muted" style="display:flex;align-items:center;gap:4px;margin-left:auto"><input type="checkbox" data-skip checked>멈춘 시간 건너뛰기</label>
     </div>
     <div class="muted" data-info style="margin-top:6px"></div>`, true);
-  const b = new Board(m.querySelector("[data-bw]"), true);
+  const b = new Board(m.querySelector("[data-bw]"), true); applyGuide(b.cv, rec.guide ? guideQ : "");
   let R = compress(rec), T = 0, speed = 2, playing = false, last = 0, raf = 0;
-  const info = () => { m.querySelector("[data-info]").textContent = `실제로 푼 시간 ${fmtSec(rec.dur)} · 획 ${rec.ev.filter(e=>e.k==="s").length}개`; };
+  const info = () => { m.querySelector("[data-info]").textContent = `실제로 푼 시간 ${fmtSec(rec.dur)} · 획 ${rec.ev.filter(e=>e.k==="s").length}개${rec.guide ? " · 📐 자리 칸 꺼내서 풀었어요" : ""}`; };
   const draw = () => { renderAt(b.ctx, R.ev, T); m.querySelector("[data-tm]").textContent = `${fmtSec(T)} / ${fmtSec(R.dur)}`; m.querySelector("[data-rg]").value = R.dur ? Math.round(T/R.dur*1000) : 0; };
   b.redraw = () => draw();
   const tick = now => { if(!playing) return; T += (now-last)*speed; last = now; if(T >= R.dur){ T = R.dur; playing = false; m.querySelector("[data-play]").textContent = "▶ 재생"; } draw(); if(playing) raf = requestAnimationFrame(tick); };
@@ -1131,13 +1652,13 @@ function studentResult(id, parent=false){
       <div class="card"><h2>문제별 결과</h2>${h.problems.map((p,i) => {
         const s = stOf(h,i), gr = h.grade && h.grade[i], fo = g ? gradeOk(h,i) : finalOk(h,i);
         return `<div class="gq"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span>${fo===true ? `<span class="okc">⭕</span>` : fo===false ? `<span class="badc">❌</span>` : ""}</div>
-          <div class="att"><span class="lb">1번째 답</span><b>${esc(s.a1 ?? "-")}</b> ${s.ok1===true ? `<span class="okc">맞음</span>` : s.ok1===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-k="${recKey(id,i,1)}" data-t="${i+1}번 · 1번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>
-          ${has(s.a2) ? `<div class="att"><span class="lb">2번째 답</span><b>${esc(s.a2)}</b> ${s.ok2===true ? `<span class="okc">맞음</span>` : s.ok2===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-k="${recKey(id,i,2)}" data-t="${i+1}번 · 2번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>` : ""}
+          <div class="att"><span class="lb">1번째 답</span><b>${esc(s.a1 ?? "-")}</b> ${s.ok1===true ? `<span class="okc">맞음</span>` : s.ok1===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,1)}" data-t="${i+1}번 · 1번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>
+          ${has(s.a2) ? `<div class="att"><span class="lb">2번째 답</span><b>${esc(s.a2)}</b> ${s.ok2===true ? `<span class="okc">맞음</span>` : s.ok2===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,2)}" data-t="${i+1}번 · 2번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>` : ""}
           ${g && fo===false && has(p.ans) ? `<div class="att"><span class="lb">정답</span><b style="color:var(--ok)">${esc(p.ans)}</b></div>` : ""}
           ${g && gr && has(gr.memo) ? `<div class="att"><span class="lb">선생님</span><span>${esc(gr.memo)}</span></div>` : ""}</div>`;
       }).join("")}</div>`;
   }));
-  app.onclick = e => { const b = e.target.closest("[data-k]"); if(b) openPlayer(b.dataset.t, b.dataset.k); };
+  app.onclick = e => { const b = e.target.closest("[data-k]"); if(b) openPlayer(b.dataset.t, b.dataset.k, b.dataset.q); };
 }
 
 // ───────── 어머님: 학습 리포트 ─────────
@@ -1201,7 +1722,8 @@ function teacherHome(){
     <div class="card" id="auto"><h2>🤖 자동 숙제</h2>
       <label class="row" style="font-size:17px;font-weight:700"><input type="checkbox" id="aon" style="width:22px;height:22px"> 자동으로 숙제 내기</label>
       <div class="muted" style="margin:6px 0 4px">고른 단원이 순서대로 돌아가며 하루에 한 숙제씩 나가요. ${esc(STUDENT)}가 앱을 여는 날 그날 숙제가 생겨요.</div>
-      ${UNITS.map(u => `<div class="ugrp"><div class="muted">${u.name}</div><div class="row">${u.stages.map(st => `<button class="btn" data-as="${st.id}">${st.name}</button>`).join("")}</div></div>`).join("")}
+      <div class="ugrp"><div class="muted">유형 고르기</div><div id="apick"></div><button class="btn" id="aadd" style="margin-top:8px">+ 이 유형 넣기</button></div>
+      <div class="ugrp"><div class="muted">돌아가는 순서</div><div id="aseq"></div></div>
       <div class="ugrp"><div class="muted">문제 수</div><div class="row">${[5,10,15,20].map(n => `<button class="btn" data-ac="${n}">${n}문제</button>`).join("")}</div></div>
       <div class="ugrp"><div class="muted">요일</div><div class="row">${[1,2,3,4,5,6,0].map(d => `<button class="btn" data-ad="${d}">${days[d]}</button>`).join("")}</div></div>
       <div class="muted" id="anext" style="margin:8px 0"></div>
@@ -1221,9 +1743,11 @@ function teacherHome(){
   bindOut();
   $("#new").onclick = () => go(teacherCreate);
   let cfg = {on:false, stages:[], count:10, days:[1,2,3,4,5]}, curList = [];
+  const pickAuto = stagePicker($("#apick"), "c41_1_1");
   const paint = () => {
     $("#aon").checked = !!cfg.on;
-    document.querySelectorAll("[data-as]").forEach(b => { const k = cfg.stages.indexOf(b.dataset.as); b.classList.toggle("on", k>=0); b.textContent = (k>=0 ? `${k+1}. ` : "") + STAGE[b.dataset.as].name; });
+    cfg.stages = cfg.stages.filter(id => STAGE[id]);
+    $("#aseq").innerHTML = cfg.stages.length ? cfg.stages.map((id,k) => `<div class="row seqi" style="margin:4px 0;align-items:center"><b style="min-width:24px">${k+1}.</b><span class="grow" style="flex:1">${esc(STAGE[id].unit)}<br><span class="muted">${esc(STAGE[id].name)}</span></span><button class="btn" data-up="${k}" ${k?"":"disabled"}>▲</button><button class="btn" data-rm="${k}">✕</button></div>`).join("") : `<div class="muted">아직 없어요. 위에서 골라 넣어 주세요.</div>`;
     document.querySelectorAll("[data-ac]").forEach(b => b.classList.toggle("on", +b.dataset.ac===cfg.count));
     document.querySelectorAll("[data-ad]").forEach(b => b.classList.toggle("on", cfg.days.includes(+b.dataset.ad)));
     let t = "";
@@ -1256,7 +1780,10 @@ function teacherHome(){
   };
   $("#auto").onclick = e => {
     const b = e.target.closest("button"); if(!b) return;
-    if(b.dataset.as){ const k = cfg.stages.indexOf(b.dataset.as); k>=0 ? cfg.stages.splice(k,1) : cfg.stages.push(b.dataset.as); }
+    if(b.dataset.g) return;
+    if(b.id==="aadd"){ const sid = pickAuto(); if(cfg.stages.includes(sid)) return toast("이미 들어 있어요"); cfg.stages.push(sid); toast("넣었어요. 저장을 눌러야 적용돼요"); }
+    else if(b.dataset.rm) cfg.stages.splice(+b.dataset.rm, 1);
+    else if(b.dataset.up){ const k = +b.dataset.up; [cfg.stages[k-1], cfg.stages[k]] = [cfg.stages[k], cfg.stages[k-1]]; }
     else if(b.dataset.ac) cfg.count = +b.dataset.ac;
     else if(b.dataset.ad){ const d = +b.dataset.ad, k = cfg.days.indexOf(d); k>=0 ? cfg.days.splice(k,1) : cfg.days.push(d); }
     else if(b.id==="asave"){
@@ -1288,8 +1815,8 @@ function teacherCreate(){
     <div class="card"><h2>숙제 제목</h2><input class="inp" id="title"></div>
     <div class="card"><h2>단원 골라서 문제 넣기</h2>
       <div class="row">
-        <select class="inp" id="stage" style="flex:2;min-width:200px">${stageOptions("dec0")}</select>
-        <select class="inp" id="cnt" style="flex:1;min-width:90px">${[5,10,15,20].map(n=>`<option ${n===10?"selected":""}>${n}</option>`).join("")}</select>
+        <div id="stage" style="flex:1 1 100%"></div>
+        <span class="muted">문제 수</span><select class="inp" id="cnt" style="max-width:110px">${[5,10,15,20].map(n=>`<option ${n===10?"selected":""}>${n}</option>`).join("")}</select>
       </div>
       <button class="big gray" id="gen" style="margin-top:10px">문제 넣기</button>
       <div class="muted" style="margin-top:8px">쉬운 문제 → 어려운 문제 순서로 들어가요.</div>
@@ -1301,11 +1828,12 @@ function teacherCreate(){
     </div>
     <button class="big" id="send">숙제 내기</button></div>`;
   $("#back").onclick = () => go(teacherHome);
+  const pickStage = stagePicker($("#stage"), "c41_1_1");
   const rows = $("#rows");
-  const addRow = (q="", a="", kind="", simp=false, stage="") => { const d = document.createElement("div"); d.className = "prow"; d.dataset.kind = kind; d.dataset.simp = simp ? "1" : ""; d.dataset.stage = stage; d.innerHTML = `<span class="n"></span><input class="inp" data-q placeholder="문제" value="${esc(q)}"><input class="inp" data-a placeholder="정답" value="${esc(a)}"><button class="btn" data-del>✕</button>`; rows.appendChild(d); renum(); };
+  const addRow = (q="", a="", ext={}) => { const d = document.createElement("div"); d.className = "prow"; d.dataset.ext = JSON.stringify(ext); d.innerHTML = `<span class="n"></span><input class="inp" data-q placeholder="문제" value="${esc(q)}"><input class="inp" data-a placeholder="정답" value="${esc(a)}"><button class="btn" data-del>✕</button>`; rows.appendChild(d); renum(); };
   const renum = () => { [...rows.children].forEach((r,i) => r.querySelector(".n").textContent = i+1); $("#pc").textContent = `(${rows.children.length}문제)`; };
   rows.onclick = e => { if(e.target.closest("[data-del]")){ e.target.closest(".prow").remove(); renum(); } };
-  $("#gen").onclick = () => { makeProblems($("#stage").value, +$("#cnt").value).forEach(p => addRow(p.q, p.ans, p.kind, p.simp, p.stage)); };
+  $("#gen").onclick = () => { makeProblems(pickStage(), +$("#cnt").value).forEach(({q, ans, ...ext}) => addRow(q, ans, ext)); };
   $("#add").onclick = () => { addRow(); rows.lastChild.querySelector("[data-q]").focus(); };
   $("#clr").onclick = async () => { if(rows.children.length && await ask("모두 지울까요?", "문제 목록이 비워져요.", "지우기", "취소")){ rows.innerHTML = ""; renum(); } };
   renum();
@@ -1317,7 +1845,7 @@ function teacherCreate(){
   });
   unsubs.push(u);
   $("#send").onclick = async () => {
-    const problems = [...rows.children].map(r => ({q:r.querySelector("[data-q]").value.trim(), ans:r.querySelector("[data-a]").value.trim(), kind:r.dataset.kind||"", simp:r.dataset.simp==="1", stage:r.dataset.stage||""})).filter(p => p.q);
+    const problems = [...rows.children].map(r => { const ext = JSON.parse(r.dataset.ext||"{}"), q = r.querySelector("[data-q]").value.trim(), ans = r.querySelector("[data-a]").value.trim(); return {kind:"", simp:false, stage:"", ...ext, ...(ext.kind ? {} : {kind:""}), q, ans}; }).filter(p => p.q);
     const title = $("#title").value.trim();
     if(!title) return toast("제목을 써 주세요");
     if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
@@ -1352,7 +1880,7 @@ function teacherGrade(id){
       </div>
       <div class="card"><h2>문제별 채점</h2>${h.problems.map((p,i) => {
         const s = stOf(h,i), gr = (h.grade && h.grade[i]) || {}, ok = gradeOk(h,i);
-        const line = (k) => { const a = s["a"+k], o = s["ok"+k]; if(!has(a) && k===2) return ""; return `<div class="att"><span class="lb">${k}번째 답</span><b>${esc(a ?? "-")}</b> ${o===true ? `<span class="okc">✔ 맞음</span>` : o===false ? `<span class="badc">✗ 틀림</span>` : ""} <button class="btn" data-k="${recKey(id,i,k)}" data-t="${i+1}번 ${esc(p.q)} · ${k}번째 풀이">▶ 풀이 보기</button></div>`; };
+        const line = (k) => { const a = s["a"+k], o = s["ok"+k]; if(!has(a) && k===2) return ""; return `<div class="att"><span class="lb">${k}번째 답</span><b>${esc(a ?? "-")}</b> ${o===true ? `<span class="okc">✔ 맞음</span>` : o===false ? `<span class="badc">✗ 틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,k)}" data-t="${i+1}번 ${esc(p.q)} · ${k}번째 풀이">▶ 풀이 보기</button></div>`; };
         return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span></div>
           ${line(1)}${line(2)}
           <div class="att"><span class="lb">채점</span><button class="btn ok ${ok===true?"on":""}" data-g="1" ${canGrade?"":"disabled"}>⭕ 맞음</button><button class="btn bad ${ok===false?"on":""}" data-g="0" ${canGrade?"":"disabled"}>❌ 틀림</button></div>
@@ -1364,7 +1892,7 @@ function teacherGrade(id){
     built = true;
   }
   app.onclick = async e => {
-    const pb = e.target.closest("[data-k]"); if(pb) return openPlayer(pb.dataset.t, pb.dataset.k);
+    const pb = e.target.closest("[data-k]"); if(pb) return openPlayer(pb.dataset.t, pb.dataset.k, pb.dataset.q);
     const gb = e.target.closest("[data-g]");
     if(gb && !gb.disabled){ const q = gb.closest(".gq"); q.querySelectorAll("[data-g]").forEach(b => b.classList.toggle("on", b===gb)); dirty = true; return; }
     if(e.target.id==="saveNote"){ await DB.setNote(id, $("#note").value); toast("메모를 저장했어요"); return; }
