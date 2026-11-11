@@ -189,7 +189,7 @@ textarea.inp{min-height:80px;resize:vertical}
 .emean{font-size:26px;color:var(--main-d);margin:2px 0 10px}
 .spk{font-size:17px}
 .eopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.eopts.four{grid-template-columns:repeat(4,1fr)}.eopts.five{grid-template-columns:repeat(5,1fr)}
+.eopts.one{grid-template-columns:1fr}.eopt.on2{border-color:var(--main)}.eopts.four{grid-template-columns:repeat(4,1fr)}.eopts.five{grid-template-columns:repeat(5,1fr)}
 .eopt{border:2px solid var(--line);background:#fff;border-radius:16px;padding:16px 8px;font-size:22px;cursor:pointer;font-family:var(--disp)}
 .eopt.big2{font-family:Pretendard,sans-serif;font-weight:800;font-size:30px}
 .eopt.ok{border-color:var(--ok);background:#e6f8f1}.eopt.bad{border-color:var(--bad);background:#ffe9ee}
@@ -1334,7 +1334,7 @@ const PH_ACTS = [
   {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
   {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
 ];
-const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : ENG.find(u => u.id===id);
+const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
 const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
 const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
 const pickN = (a, n, not) => shuffle(a.filter(x => x!==not)).slice(0, n);
@@ -1370,13 +1370,17 @@ function engClock(){
 
 // 수아 화면: 영어 탭 내용
 function engHomeHTML(){
-  return `<div class="card"><h2>🔤 오늘 뭐 공부할까?</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
+  return `<div class="card" style="display:flex;align-items:center;gap:12px;background:var(--lav)"><div style="font-size:44px">📝</div><div style="flex:1 1 auto;min-width:0"><h2 style="margin:0">영어 실력 알아보기</h2><div class="muted">내가 영어를 얼마나 아는지 알아봐요 (15분쯤)</div></div><button class="big" data-etest style="width:auto;flex:none;padding-left:22px;padding-right:22px">해 보기</button></div>
+    <div class="card"><h2>🔤 오늘 뭐 공부할까?</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
     <div class="egrid">${ENG.map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${u.name}</span></button>`).join("")}
     <button class="eunit ph" data-eu="phonics"><span class="eic">🔠</span><span>파닉스</span></button></div></div>
     <div class="card"><h2>내 영어 기록</h2><div class="hwlist" id="erec"></div></div>`;
 }
-function engRecRow(r){
+function engRecRow(r, who="student"){
   const u = engUnit(r.unit) || {name:r.unit, icon:"🔤"};
+  if(r.act==="test") return who==="student"
+    ? `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">📝 영어 실력 알아보기</div><div class="muted">${fmtFull(r.at)}</div></div><span class="chip ok">다 했어요 🏅</span></div>`
+    : `<div class="hw" style="cursor:default;display:block"><div class="ti">📝 영어 실력 알아보기 <span class="muted" style="font-size:14px">${fmtFull(r.at)} · ${fmtSec(r.dur||0)} · ${r.score}/${r.total} 맞힘</span></div>${etestResultHTML(r)}</div>`;
   const sc = r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
   const wrong = (r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "";
   return `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}</div>`;
@@ -1384,6 +1388,8 @@ function engRecRow(r){
 function bindEngHome(limitRef){
   unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.slice(0,10).map(engRecRow).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
   return e => {
+    const tb = e.target.closest("[data-etest]");
+    if(tb){ if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; } go(engTest); return true; }
     const b = e.target.closest("[data-eu]"); if(!b) return false;
     if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; }
     const u = engUnit(b.dataset.eu), acts = u.id==="phonics" ? PH_ACTS : ENG_ACTS;
@@ -1592,16 +1598,192 @@ function engPlay(unitId, act, only){
   show();
 }
 
+// ───────── 영어 실력 테스트 (수준 알아보기) ─────────
+// lv: 3 = 3학년, 4 = 4학년, 5 = 5학년, 6 = 6학년 수준 (직접 만든 문항)
+const ETEST = [
+  {id:"ph", name:"파닉스", icon:"🔠", items:[
+    {lv:3, t:"first", w:"bear", e:"🐻", a:"B", o:["B","D","P","R"]},
+    {lv:3, t:"first", w:"milk", e:"🥛", a:"M", o:["N","M","W","H"]},
+    {lv:4, t:"first", w:"van", e:"🚐", a:"V", o:["B","F","V","W"]},
+    {lv:4, t:"vowel", w:"bed", e:"🛏️", a:"e", o:["a","e","i","o","u"]},
+    {lv:5, t:"vowel", w:"cup", e:"🥤", a:"u", o:["a","e","i","o","u"]},
+    {lv:5, t:"vowel", w:"fish", e:"🐟", a:"i", o:["a","e","i","o","u"]},
+    {lv:6, t:"first", w:"ship", e:"🚢", a:"sh", o:["s","sh","ch","th"]},
+    {lv:6, t:"first", w:"three", e:"3️⃣", a:"th", o:["t","th","sh","f"]},
+  ]},
+  {id:"voc", name:"단어 뜻", icon:"📚", items:[
+    {lv:3, w:"cat", a:"고양이", o:["고양이","강아지","토끼","곰"]},
+    {lv:3, w:"apple", a:"사과", o:["바나나","사과","우유","빵"]},
+    {lv:3, w:"run", a:"달리다", o:["먹다","자다","달리다","읽다"]},
+    {lv:4, w:"kitchen", a:"부엌", o:["거실","부엌","욕실","침실"]},
+    {lv:4, w:"Wednesday", a:"수요일", o:["월요일","화요일","수요일","목요일"]},
+    {lv:4, w:"hungry", a:"배고픈", o:["졸린","배고픈","아픈","행복한"]},
+    {lv:5, w:"museum", a:"박물관", o:["도서관","박물관","병원","극장"]},
+    {lv:5, w:"weekend", a:"주말", o:["주말","방학","내일","아침"]},
+    {lv:5, w:"delicious", a:"맛있는", o:["예쁜","무서운","맛있는","시끄러운"]},
+    {lv:6, w:"future", a:"미래", o:["과거","미래","오늘","계절"]},
+    {lv:6, w:"borrow", a:"빌리다", o:["사다","팔다","빌리다","잃어버리다"]},
+    {lv:6, w:"environment", a:"환경", o:["환경","날씨","나라","건강"]},
+  ]},
+  {id:"lis", name:"듣기", icon:"🎧", items:[
+    {lv:3, s:"I like bananas.", a:"나는 바나나를 좋아해요.", o:["나는 바나나를 좋아해요.","나는 사과를 좋아해요.","나는 바나나가 싫어요.","바나나가 있어요."]},
+    {lv:3, s:"It is a big dog.", a:"큰 개예요.", o:["작은 개예요.","큰 개예요.","큰 고양이예요.","개가 없어요."]},
+    {lv:4, s:"It is rainy today.", a:"오늘은 비가 와요.", o:["오늘은 맑아요.","내일은 비가 와요.","오늘은 비가 와요.","오늘은 눈이 와요."]},
+    {lv:4, s:"What time is it? It's seven o'clock.", a:"지금 7시예요.", o:["지금 7시예요.","지금 11시예요.","7살이에요.","7개 있어요."]},
+    {lv:4, s:"Where is my bag? It's under the desk.", a:"가방은 책상 밑에 있어요.", o:["가방은 책상 위에 있어요.","가방은 책상 밑에 있어요.","가방은 의자 옆에 있어요.","가방이 없어요."]},
+    {lv:5, s:"I went to the zoo yesterday.", a:"나는 어제 동물원에 갔어요.", o:["나는 내일 동물원에 갈 거예요.","나는 어제 공원에 갔어요.","나는 어제 동물원에 갔어요.","나는 지금 동물원에 있어요."]},
+    {lv:5, s:"How much is this cap? It's five thousand won.", a:"모자는 5,000원이에요.", o:["모자는 500원이에요.","모자는 5,000원이에요.","가방은 5,000원이에요.","모자가 다섯 개예요."]},
+    {lv:6, s:"I'm going to visit my grandma this weekend.", a:"이번 주말에 할머니 댁에 갈 거예요.", o:["지난 주말에 할머니 댁에 갔어요.","이번 주말에 할머니 댁에 갈 거예요.","할머니가 이번 주말에 오세요.","오늘 할머니 댁에 있어요."]},
+    {lv:6, s:"You should wear a helmet when you ride a bike.", a:"자전거 탈 때 헬멧을 써야 해요.", o:["자전거를 타면 안 돼요.","헬멧을 사러 가요.","자전거 탈 때 헬멧을 써야 해요.","헬멧이 자전거 옆에 있어요."]},
+  ]},
+  {id:"sen", name:"문장 만들기", icon:"🧩", items:[
+    {lv:3, s:"I have a cat.", k:"나는 고양이가 있어요."},
+    {lv:3, s:"This is my book.", k:"이건 내 책이에요."},
+    {lv:4, s:"What time is it?", k:"몇 시예요?"},
+    {lv:4, s:"Can you swim?", k:"너는 수영할 수 있니?"},
+    {lv:5, s:"I want to go to the park.", k:"나는 공원에 가고 싶어요."},
+    {lv:5, s:"What did you do yesterday?", k:"너는 어제 뭐 했니?"},
+    {lv:6, s:"I will visit my uncle next week.", k:"나는 다음 주에 삼촌 댁에 갈 거예요."},
+  ]},
+  {id:"dic", name:"받아쓰기", icon:"✍️", items:[
+    {lv:3, w:"cat", e:"🐱"}, {lv:3, w:"red", e:"🔴"},
+    {lv:4, w:"school", e:"🏫"}, {lv:4, w:"Friday", e:"📅"},
+    {lv:5, w:"weekend", e:"🗓️"}, {lv:5, w:"favorite", e:"💖"},
+    {lv:6, w:"beautiful", e:"🌸"}, {lv:6, w:"tomorrow", e:"➡️"},
+  ]},
+];
+// 영역별 수준: 그 학년 문항을 절반 넘게 맞힌 가장 높은 학년 (아래 학년이 무너지면 거기서 멈춤)
+function etestLevel(res){
+  const by = {}; res.forEach(r => { const b = by[r.lv] = by[r.lv] || {ok:0, n:0}; b.n++; if(r.ok) b.ok++; });
+  let lv = 2;
+  for(const g of [3,4,5,6]){ const b = by[g]; if(!b || b.ok*2 <= b.n) break; lv = g; }
+  return lv;
+}
+const etestLabel = lv => lv<=2 ? "기초부터" : lv===6 ? "6학년 이상" : `${lv}학년 수준`;
+function etestAdvice(L){
+  const tips = [];
+  if(L.ph <= 3) tips.push("파닉스(글자 소리)부터 다지면 좋아요");
+  if(L.voc <= 3) tips.push("3~4학년 기본 단어 단원부터 시작해요");
+  else if(L.voc === 4) tips.push("4학년 단어는 잘 알아요. 4~5학년 표현으로 넘어가도 돼요");
+  else tips.push("단어 실력이 학년보다 높아요. 5~6학년 표현도 괜찮아요");
+  if(L.lis < L.voc) tips.push("단어보다 듣기가 약해요. 듣기·따라 읽기를 많이 해요");
+  if(L.dic < L.voc) tips.push("뜻은 알지만 철자가 약해요. 철자 맞추기·받아쓰기를 늘려요");
+  if(L.sen < L.voc) tips.push("문장 순서 연습(문장 만들기)이 필요해요");
+  return tips;
+}
+
+function engTest(){
+  const t0 = Date.now(); engClock(); app.onclick = null;
+  app.innerHTML = `<div class="page"><div class="bar"><h1 style="font-size:26px">📝 영어 실력 알아보기</h1><div class="row"><span class="muted" id="eprog"></span><button class="link" id="eback">그만하기</button></div></div>
+    <div class="card eplay" id="ebox"></div></div>`;
+  $("#eback").onclick = async () => { if(await ask("그만할까요?", "지금까지 한 건 저장되지 않아요.", "그만하기", "계속하기")) go(studentHome); };
+  const box = $("#ebox"), prog = $("#eprog");
+  box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
+  const spk = (t, slow) => `<button class="btn spk" data-say="${esc(t)}" ${slow?'data-slow="1"':""}>${slow ? "🐢 천천히" : "🔊 듣기"}</button>`;
+  const dunno = `<button class="big gray" id="edk" style="margin-top:12px">잘 모르겠어요 🤔</button>`;
+  let si = 0, ii = 0, miss = 0; const results = {}; ETEST.forEach(s => results[s.id] = []);
+  const totalItems = ETEST.reduce((a,s) => a+s.items.length, 0);
+  let doneCount = 0;
+
+  box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+    <div style="font-size:64px">📝</div><div class="jua" style="font-size:28px">영어 실력 알아보기</div>
+    <div style="font-size:18px;line-height:1.7">파닉스 · 단어 · 듣기 · 문장 · 받아쓰기<br>쉬운 문제부터 점점 어려워져요.<br>모르면 <b>"잘 모르겠어요"</b>를 눌러도 괜찮아요!<br>시험이 아니니까 편하게 해요 😊</div>
+    <button class="big" id="estart" style="margin-top:10px">시작하기</button></div>`;
+  $("#estart").onclick = () => show();
+
+  const answer = ok => {
+    const sec = ETEST[si], it = sec.items[ii];
+    results[sec.id].push({lv:it.lv, ok, q:it.w || it.s});
+    doneCount++;
+    miss = ok ? 0 : miss + 1;
+    const f = document.createElement("div"); f.className = "efb ok"; f.innerHTML = ok ? "좋아요! 👍" : "다음 문제! 💪"; f.style.color = ok ? "var(--ok)" : "var(--blue-d)"; box.appendChild(f);
+    setTimeout(() => {
+      ii++;
+      if(miss >= 2 || ii >= sec.items.length){ si++; ii = 0; miss = 0; if(si < ETEST.length) return interlude(); return finish(); }
+      show();
+    }, 650);
+  };
+  const lock = () => { if(box.dataset.lock==="1") return false; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 700); return true; };
+  const interlude = () => {
+    const sec = ETEST[si];
+    box.innerHTML = `<div class="center" style="min-height:0;padding:30px 0"><div style="font-size:64px">${sec.icon}</div><div class="jua" style="font-size:28px">다음은 ${esc(sec.name)}!</div><button class="big" id="ego">계속하기</button></div>`;
+    $("#ego").onclick = () => show();
+  };
+  const show = () => {
+    const sec = ETEST[si], it = sec.items[ii];
+    prog.textContent = `${sec.icon} ${sec.name}`;
+    const bar = `<div style="height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin-bottom:10px"><i style="display:block;height:100%;width:${Math.round(doneCount/totalItems*100)}%;background:var(--main)"></i></div>`;
+    if(sec.id==="ph"){
+      const five = it.o.length===5;
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">${it.e}</div><div class="emean">${it.t==="vowel" ? "가운데 들어갈 소리는?" : "어떤 소리로 시작할까?"}</div>${it.t==="vowel" ? `<div class="eword" style="letter-spacing:6px">${it.w.replace(it.a,"_")}</div>` : ""}<div class="row" style="justify-content:center">${spk(it.w)}${spk(it.w,true)}</div></div>
+        <div class="eopts ${five?"five":"four"}">${it.o.map(o => `<button class="eopt big2" data-o="${o}">${o}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      say(it.w);
+    } else if(sec.id==="voc"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eword">${esc(it.w)}</div><div class="row" style="justify-content:center">${spk(it.w)}</div><div class="emean" style="margin-top:8px">무슨 뜻일까?</div></div>
+        <div class="eopts">${shuffle(it.o).map(o => `<button class="eopt" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      say(it.w);
+    } else if(sec.id==="lis"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">🎧</div><div class="emean">잘 듣고 알맞은 뜻을 골라요</div><div class="row" style="justify-content:center">${spk(it.s)}${spk(it.s,true)}</div></div>
+        <div class="eopts one">${shuffle(it.o).map(o => `<button class="eopt" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      setTimeout(() => say(it.s), 300);
+    } else if(sec.id==="sen"){
+      const toks = it.s.split(" "), chips = shuffle(toks.map((t,k) => ({t,k}))); let built = [];
+      box.innerHTML = `${bar}<div class="ecard"><div class="emean">${esc(it.k)}</div><div class="eline"></div></div>
+        <div class="etiles">${chips.map(c => `<button class="echip" data-c="${c.k}">${esc(c.t)}</button>`).join("")}</div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="eclr">다시 놓기</button><button class="big" id="eok">확인 ✔</button></div><div style="text-align:center">${dunno}</div>`;
+      const paint = () => {
+        box.querySelector(".eline").innerHTML = built.length ? built.map((c,n) => `<button class="echip on" data-b="${n}">${esc(c.t)}</button>`).join("") : `<span class="muted">아래 단어를 순서대로 눌러요</span>`;
+        box.querySelectorAll("[data-c]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.c));
+        box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { built.splice(+b.dataset.b, 1); paint(); });
+      };
+      paint();
+      box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { built.push(chips.find(c => c.k===+b.dataset.c)); paint(); });
+      $("#eclr").onclick = () => { built = []; paint(); };
+      $("#eok").onclick = () => { if(built.length < toks.length) return toast("단어를 다 놓아 주세요"); if(lock()) answer(built.map(c => c.t).join(" ")===it.s); };
+    } else if(sec.id==="dic"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">🎧</div><div class="emean">잘 듣고 영어로 써요</div><div class="row" style="justify-content:center">${spk(it.w)}${spk(it.w,true)}</div></div>
+        <input class="inp einput" id="ein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 영어로 써요">
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big" id="eok">확인 ✔</button></div><div style="text-align:center">${dunno}</div>`;
+      setTimeout(() => say(it.w), 300);
+      const check = () => { const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요"); if(lock()) answer(v.toLowerCase()===it.w.toLowerCase()); };
+      $("#eok").onclick = check; $("#ein").onkeydown = e => { if(e.key==="Enter") check(); };
+    }
+    box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { if(lock()){ b.classList.add("on2"); answer(b.dataset.o===it.a); } });
+    $("#edk").onclick = () => { if(lock()) answer(false); };
+  };
+  const finish = async () => {
+    const L = {}; ETEST.forEach(s => L[s.id] = etestLevel(results[s.id]));
+    const all = Object.values(results).flat(), ok = all.filter(r => r.ok).length;
+    const rec = {at:Date.now(), unit:"test", act:"test", score:ok, total:all.length, wrong:all.filter(r => !r.ok).map(r => r.q), levels:L, dur:Date.now()-t0};
+    try{ await DB.addEng(rec); }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
+    confetti(); prog.textContent = "";
+    box.innerHTML = `<div class="center" style="min-height:0;padding:24px 0"><div style="font-size:70px">🏅</div>
+      <div class="jua" style="font-size:32px">끝까지 했어요! 정말 잘했어요!</div>
+      <div style="font-size:18px">결과는 선생님이 보고, 수아한테 딱 맞는 공부를 준비해 줄 거예요 😊</div>
+      <button class="big" id="ehome" style="margin-top:12px">처음으로</button></div>`;
+    $("#ehome").onclick = () => go(studentHome);
+  };
+}
+function etestResultHTML(r){
+  const L = r.levels || {};
+  const tips = etestAdvice(L);
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0">${ETEST.map(s => `<div class="card" style="margin:0;padding:10px;text-align:center"><div class="muted">${s.icon} ${s.name}</div><div style="font-size:19px;font-weight:800;color:var(--main-d)">${etestLabel(L[s.id]||2)}</div></div>`).join("")}</div>
+    <div style="font-size:15px;line-height:1.7">${tips.map(t => `· ${esc(t)}`).join("<br>")}</div>`;
+}
+
 // 선생님·어머님 화면: 영어 기록 카드
 function engReportCard(el){
-  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="estat"></div><div class="hwlist" id="elist"></div>`;
+  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="etest"></div><div id="estat"></div><div class="hwlist" id="elist"></div>`;
   return DB.watchEng(list => {
-    const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total);
+    const lt = list.find(r => r.act==="test");
+    $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
+    list = list.filter(r => r.act!=="test");
+    const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total && r.act!=="test");
     const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
     const wc = {}; list.slice(0, 40).forEach(r => (r.wrong||[]).forEach(w => wc[w] = (wc[w]||0)+1));
     const often = Object.entries(wc).sort((a,b) => b[1]-a[1]).slice(0, 8);
     $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 ${wl.length}번 공부 · 전체 정답률 ${tot ? Math.round(ok/tot*100) : 0}%${often.length ? `<br>자주 틀린 것: <b>${often.map(([w,n]) => `${esc(w)}(${n})`).join(", ")}</b>` : ""}</div>`;
-    $("#elist", el).innerHTML = list.length ? list.slice(0, 20).map(engRecRow).join("") : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
+    $("#elist", el).innerHTML = list.length ? list.filter(r => r.act!=="test").slice(0, 20).map(r => engRecRow(r, "teacher")).join("") : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
   });
 }
 
