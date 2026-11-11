@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="수아 숙제방">
+<meta name="theme-color" content="#ff7eb6">
+<title>수아 공부방 미리보기</title>
+
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" rel="stylesheet">
+<link rel="preload" href="ownglyph-pdh.ttf" as="font" type="font/ttf" crossorigin>
+<style>
+/* 온글잎 박다현체 — (주)보이저엑스 & 박다현. 웹사이트 사용·임베딩 허용, 파일 수정 금지라 원본 그대로 씀 */
+@font-face{font-family:"OwnglyphPDH";src:url("ownglyph-pdh.ttf") format("truetype");font-display:swap;size-adjust:125%}
+:root{
+  --bg:#fff5f9; --card:#fff; --ink:#4a3f55; --sub:#9a8aa8; --main:#ff7eb6; --main-d:#e8609c;
+  --ok:#22b38a; --bad:#ff5c7a; --soft:#ffe6f1; --line:#f7dbe8; --blue:#9b8cff; --blue-d:#7d6cf0;
+  --lav:#f1edff; --yel:#fff6cc;
+  --disp:"OwnglyphPDH",Pretendard,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background-color:var(--bg);background-image:radial-gradient(#ffd3e6 1.3px,transparent 1.4px);background-size:24px 24px;color:var(--ink);font-family:var(--disp);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+.jua,h1,h2,h3{font-family:var(--disp);font-weight:400;letter-spacing:0}
+.hide{display:none!important}
+.page{max-width:760px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.bar h1{font-size:36px;margin:0;color:var(--main-d)}
+.link{border:0;background:none;color:var(--sub);cursor:pointer;padding:8px;font-size:15px}
+.card{background:var(--card);border-radius:24px;padding:18px;box-shadow:0 6px 20px rgba(255,126,182,.12);border:2px solid var(--line);margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:27px}
+.big{display:block;width:100%;border:0;border-radius:20px;padding:14px;font-family:inherit;font-weight:800;font-size:20px;background:var(--main);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--main-d)}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 var(--main-d)}
+.big.gray{background:var(--lav);color:var(--blue-d);box-shadow:0 4px 0 #dcd3ff}
+.big.blue{background:var(--blue);box-shadow:0 4px 0 var(--blue-d)}
+.big:disabled{opacity:.45;cursor:default}
+.btn{border:2px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;font-size:15px}
+.btn.on{border-color:var(--main);background:var(--main);color:#fff}
+.btn.ok.on{border-color:var(--ok);background:var(--ok)}
+.btn.bad.on{border-color:var(--bad);background:var(--bad)}
+.btn:disabled{opacity:.4;cursor:default}
+.inp{width:100%;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;font-size:16px}
+.inp:focus{outline:none;border-color:var(--main)}
+textarea.inp{min-height:80px;resize:vertical}
+.chip{display:inline-block;border-radius:99px;padding:3px 10px;font-size:13px;font-weight:700;background:var(--soft);color:var(--main-d);white-space:nowrap}
+.chip.new{background:#ffe1ea;color:#e23d63}
+.chip.ing{background:var(--yel);color:#a07400}
+.chip.r2{background:#ffe1ea;color:#e23d63}
+.chip.sub{background:var(--lav);color:var(--blue-d)}
+.chip.done{background:#ddf7ee;color:#15936f}
+.muted{color:var(--sub);font-size:14px}
+.empty{color:var(--sub);font-size:14px;padding:6px 0}
+.demo{background:var(--yel);border-radius:12px;padding:10px 14px;font-size:14px;margin:0 auto 12px;max-width:760px}
+.center{max-width:420px;margin:8vh auto 0;display:grid;gap:14px;text-align:center;padding:0 16px}
+.center h1{font-size:62px;margin:0;color:var(--main-d);line-height:1}
+.deco{font-size:28px;letter-spacing:10px}
+.confetti{position:fixed;top:-40px;font-size:26px;pointer-events:none;z-index:100;animation:fall 1.8s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+.hwlist{display:grid;gap:10px}
+.hw{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 3px 0 var(--line);cursor:pointer}
+.hw .ti{font-family:var(--disp);font-weight:400;font-size:27px;line-height:1.1}
+.hw .grow{flex:1;min-width:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--blue-d);font-weight:700;color:#fff;padding:10px 18px;border-radius:99px;font-size:15px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+
+/* 문제 풀기 화면 */
+.solve{position:fixed;inset:0;display:grid;grid-template-columns:260px 1fr;background:var(--bg)}
+.plist{display:flex;flex-direction:column;border-right:2px solid var(--line);background:#fffafd;padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));min-height:0}
+.plist .ph{display:flex;align-items:center;justify-content:space-between}
+.plist .ph .jua{font-size:24px}
+.rinfo{font-size:13px;border-radius:10px;padding:6px 10px;margin:6px 0 8px;background:var(--soft)}
+.rinfo.r2{background:#ffe1ea;color:var(--bad);font-weight:700}
+.items{flex:1;overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-content:start;padding:2px}
+.it{width:100%;min-width:0;display:flex;align-items:center;gap:8px;border:2px solid transparent;background:#fff;border-radius:16px;padding:10px;cursor:pointer;text-align:left;box-shadow:0 1px 0 var(--line)}
+.it.cur{border-color:var(--main);background:var(--soft)}
+.it .n{font-family:inherit;font-weight:800;width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--main-d);display:flex;align-items:center;justify-content:center;flex:none}
+.it.cur .n{background:var(--main);color:#fff}
+.it .q{flex:1;min-width:0;font-family:inherit;font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .s{font-size:12px;text-align:right;white-space:nowrap}
+.it .s b{display:block;font-size:18px}
+.it.locked{opacity:.6}
+.plist .big{margin-top:8px;font-size:18px;padding:12px 8px}
+.pmain{display:flex;flex-direction:column;min-height:0;min-width:0;padding:calc(10px + env(safe-area-inset-top)) 14px calc(10px + env(safe-area-inset-bottom))}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.phead .no{font-family:inherit;font-weight:800;font-size:22px}
+.pq{font-family:inherit;font-weight:800;font-size:34px;margin:6px 0 8px;word-break:keep-all}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tool{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer;font-size:15px;display:flex;align-items:center;gap:6px}
+.tool.on{border-color:var(--main);background:var(--soft)}
+.dot{width:16px;height:16px;border-radius:50%;display:inline-block}
+.boardwrap{flex:1;min-height:200px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
+.boardwrap canvas{background-color:#fff;background-image:linear-gradient(#f0ebff 1px,transparent 1px),linear-gradient(90deg,#f0ebff 1px,transparent 1px);background-size:28px 28px;border-radius:20px;box-shadow:0 0 0 3px var(--line);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:block}
+.ansrow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.ansrow .lab{font-family:inherit;font-weight:800;font-size:22px}
+.ansrow .inp{font-family:inherit;font-weight:800;font-size:24px;max-width:220px}
+.ansrow .big{width:auto;padding:10px 18px;font-size:20px}
+.anote{font-size:14px;margin-top:6px;min-height:20px}
+.lockmsg{font-family:inherit;font-weight:800;font-size:20px;color:var(--ok);margin-bottom:6px}
+.fab{position:fixed;right:calc(16px + env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;background:var(--blue);color:#fff;font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;z-index:20}
+.fab .nd{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;background:var(--bad);border:2px solid #fff}
+@media (max-width:700px){
+  .solve{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .plist{border-right:0;border-bottom:2px solid var(--line);min-width:0;padding-bottom:8px}
+  .items{display:flex;overflow-x:auto;overflow-y:hidden;flex:none;padding-bottom:4px}
+  .it{flex:none;width:auto;padding:8px}
+  .it .s{font-size:0}
+  .it .s b{font-size:16px}
+  .plist .big{padding:10px 8px;font-size:17px}
+  .rinfo{margin:4px 0 6px}
+  .pmain{padding-top:8px}
+  .tools{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+  .tool{flex:none}
+  .ansrow{flex-wrap:wrap}
+  .fab{width:48px;height:48px;font-size:22px;bottom:calc(140px + env(safe-area-inset-bottom))}
+  .it .q{display:none}
+  .pq{font-size:26px}
+}
+
+/* 채팅 */
+.chat{display:flex;flex-direction:column;gap:8px}
+.msgs{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px}
+.msg{max-width:80%;align-self:flex-start}
+.msg.me{align-self:flex-end;text-align:right}
+.msg .who{font-size:12px;color:var(--sub)}
+.msg .bub{display:inline-block;background:var(--soft);border-radius:14px;padding:8px 12px;white-space:pre-wrap;word-break:break-word;text-align:left}
+.msg.me .bub{background:var(--blue);color:#fff}
+.msg .when{font-size:11px;color:var(--sub)}
+.cin{display:flex;gap:8px}
+.cin .big{width:auto;padding:10px 16px;font-size:18px;white-space:nowrap;flex:none}
+
+/* 창 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.mbox{background:#fff;border-radius:26px;border:3px solid var(--line);padding:18px;width:100%;max-width:420px;max-height:92vh;overflow:auto}
+.mbox.wide{max-width:900px;display:flex;flex-direction:column;height:88vh}
+.mbox h3{margin:0 0 8px;font-size:22px}
+.mbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.mbtns.one{grid-template-columns:1fr}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:#fff;box-shadow:-4px 0 16px rgba(0,0,0,.15);z-index:40;padding:calc(14px + env(safe-area-inset-top)) 14px 14px;display:flex;flex-direction:column}
+.drawer .msgs{max-height:none;flex:1}
+.drawer .chat{flex:1;min-height:0}
+.pctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pctl input[type=range]{flex:1;min-width:140px}
+.pctl .tm{font-family:inherit;font-weight:800;min-width:90px;text-align:center}
+
+/* 채점 */
+.gq{border-top:1px dashed var(--line);padding:12px 0}
+.gq:first-of-type{border-top:0}
+.gq .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.gq .no{font-family:inherit;font-weight:800;font-size:20px}
+.gq .qq{font-family:inherit;font-weight:800;font-size:22px}
+.att{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:15px}
+.att .lb{color:var(--sub);width:72px}
+.okc{color:var(--ok);font-weight:700}
+.badc{color:var(--bad);font-weight:700}
+.prow{display:grid;grid-template-columns:28px 1fr 120px 36px;gap:6px;align-items:center;margin-bottom:6px}
+.prow .n{font-family:inherit;font-weight:800;text-align:center}
+.sum{font-family:inherit;font-weight:800;font-size:20px}
+.mix{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.fr{display:inline-flex;flex-direction:column;align-items:center;font-size:.62em;line-height:1.08;margin:0 3px}
+.fr span:first-child{border-bottom:2px solid currentColor;padding:0 3px}
+.inp.sm{width:72px;text-align:center;font-family:inherit;font-weight:800;font-size:24px;padding:6px}
+.fin{display:inline-flex;flex-direction:column;gap:3px}
+.fin .fl{height:3px;background:var(--ink);border-radius:2px}
+.lab2{font-family:inherit;font-weight:800;font-size:18px}
+.ugrp{margin:8px 0}
+.ugrp .row{margin-top:4px}
+.pq,.it .q,.ansrow .inp,.inp.sm,.gq .qq,.prow .inp,.att b,.fr{font-family:Pretendard,"Noto Sans KR",sans-serif}
+.banner{background:var(--lav);color:var(--blue-d);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* 영어공부 */
+.stabs{display:flex;gap:8px;margin:0 0 14px}
+.stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
+.stab.on{border-color:var(--main);background:var(--soft);color:var(--main-d)}
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.eunit{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;border:2px solid var(--line);border-radius:18px;background:#fff;font-size:19px;cursor:pointer;font-family:var(--disp)}
+.eunit:active{transform:scale(.97)}
+.eunit.ph{background:var(--lav);border-color:#d9d0ff}
+.eic{font-size:36px;line-height:1.1}
+.eplay{position:relative;min-height:420px}
+.ecard{text-align:center;padding:10px 6px}
+.eemo{font-size:78px;line-height:1.15}
+.eword{font-family:Pretendard,sans-serif;font-weight:800;font-size:46px;color:var(--ink);margin:4px 0}
+.emean{font-size:26px;color:var(--main-d);margin:2px 0 10px}
+.spk{font-size:17px}
+.eopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.eopts.four{grid-template-columns:repeat(4,1fr)}.eopts.five{grid-template-columns:repeat(5,1fr)}
+.eopt{border:2px solid var(--line);background:#fff;border-radius:16px;padding:16px 8px;font-size:22px;cursor:pointer;font-family:var(--disp)}
+.eopt.big2{font-family:Pretendard,sans-serif;font-weight:800;font-size:30px}
+.eopt.ok{border-color:var(--ok);background:#e6f8f1}.eopt.bad{border-color:var(--bad);background:#ffe9ee}
+.efb{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);background:#fff;border-radius:22px;padding:16px 26px;font-size:30px;text-align:center;box-shadow:0 8px 30px #0002;pointer-events:none;animation:pop .25s ease-out}
+.efb.ok{color:var(--ok)}.efb.bad{color:var(--bad)}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.6);opacity:0}}
+.eslots{display:flex;justify-content:center;gap:6px;margin:10px 0;flex-wrap:wrap}
+.eslot{width:44px;height:54px;border-bottom:4px solid var(--line);font-family:Pretendard,sans-serif;font-weight:800;font-size:34px;display:flex;align-items:center;justify-content:center}
+.eslot.on{border-color:var(--main)}
+.etiles{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.etile{width:52px;height:56px;border:2px solid var(--line);border-radius:14px;background:var(--yel);font-family:Pretendard,sans-serif;font-weight:800;font-size:28px;cursor:pointer}
+.etile:disabled,.echip:disabled{opacity:.25}
+.echip{border:2px solid var(--line);border-radius:14px;background:var(--yel);padding:10px 14px;font-family:Pretendard,sans-serif;font-weight:700;font-size:24px;cursor:pointer}
+.echip.on{background:#fff;border-color:var(--main)}
+.eline{min-height:60px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;border:2px dashed var(--line);border-radius:16px;padding:8px;margin-top:10px}
+.einput{display:block;margin:8px auto 0;max-width:420px;text-align:center;font-family:Pretendard,sans-serif;font-weight:700;font-size:30px}
+@media (max-width:520px){.eword{font-size:36px}.eopts.four,.eopts.five{grid-template-columns:repeat(3,1fr)}.stab{font-size:17px}}
+</style>
+</head>
+<body>
+<div id="demo" class="demo hide"></div>
+<div id="app"></div>
+<div id="layer"></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+// ══════════════════════════════════════════════
+//  ▼ 설정: 안내서대로 여기만 바꾸면 돼요 ▼
+// ══════════════════════════════════════════════
+const FIREBASE_CONFIG = null && {
+  apiKey: "AIzaSyD7-TkPSv5HUtgslq_j6GJjSb_JWQNBqDY",
+  authDomain: "sua-homework.firebaseapp.com",
+  projectId: "sua-homework",
+  storageBucket: "sua-homework.firebasestorage.app",
+  messagingSenderId: "1025059237296",
+  appId: "1:1025059237296:web:6f927fbda4bcbd7b117a75",
+  measurementId: "G-34G86QKZ2C"
+};          // 파이어베이스에서 복사한 설정을 여기에 붙여 넣기
+const TEACHER_EMAIL = "zico1756@naver.com";              // 선생님 로그인 이메일
+const STUDENT = "수아";                 // 학생 이름
+// ══════════════════════════════════════════════
+
+const $ = (s, r=document) => r.querySelector(s);
+const app = $("#app"), layer = $("#layer");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const days = "일월화수목금토";
+const fmtD = ms => { const d=new Date(ms); return `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`; };
+const fmtFull = ms => { const d=new Date(ms), h=d.getHours(); return `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]}) ${h<12?"오전":"오후"} ${h%12||12}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const fmtDT = ms => { const d=new Date(ms); return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const fmtSec = ms => { const s=Math.round(ms/1000), m=Math.floor(s/60); return m ? `${m}분 ${s%60}초` : `${s%60}초`; };
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2200); }
+
+// ───────── 저장소 (파이어베이스 / 체험 모드) ─────────
+const viewAs = () => { try{ return localStorage.getItem("sua-view-as") || ""; }catch(e){ return ""; } };
+const setViewAs = v => { try{ v ? localStorage.setItem("sua-view-as", v) : localStorage.removeItem("sua-view-as"); }catch(e){} };
+let DB;
+async function makeFirebase(){
+  const B = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const [{initializeApp}, A, F] = await Promise.all([import(B+"firebase-app.js"), import(B+"firebase-auth.js"), import(B+"firebase-firestore.js")]);
+  const fb = initializeApp(FIREBASE_CONFIG), auth = A.getAuth(fb), fs = F.getFirestore(fb);
+  const T = TEACHER_EMAIL.trim().toLowerCase();
+  return {
+    mode:"firebase",
+    onAuth(cb){ return A.onAuthStateChanged(auth, u => cb(!u ? null : u.isAnonymous ? (viewAs()==="parent" ? "parent" : "student") : (u.email||"").toLowerCase()===T ? "teacher" : null)); },
+    loginTeacher:(e,p) => A.signInWithEmailAndPassword(auth, e, p),
+    enterStudent:() => { setViewAs(""); return A.signInAnonymously(auth); },
+    enterParent:() => { setViewAs("parent"); return A.signInAnonymously(auth); },
+    logout:() => { setViewAs(""); return A.signOut(auth); },
+    watchHWList(cb){ return F.onSnapshot(F.query(F.collection(fs,"hw"), F.orderBy("createdAt","desc")), s => cb(s.docs.map(d => ({id:d.id, ...d.data()}))), e => toast("불러오기 실패: 인터넷을 확인해 주세요")); },
+    watchHW(id, cb){ return F.onSnapshot(F.doc(fs,"hw",id), d => cb(d.exists() ? {id:d.id, ...d.data()} : null)); },
+    async createHW(o){ return (await F.addDoc(F.collection(fs,"hw"), o)).id; },
+    updateHW:(id,p) => F.updateDoc(F.doc(fs,"hw",id), p),
+    deleteHW:id => F.deleteDoc(F.doc(fs,"hw",id)),
+    saveRec:(k,o) => F.setDoc(F.doc(fs,"rec",k), o),
+    async loadRec(k){ const d = await F.getDoc(F.doc(fs,"rec",k)); return d.exists() ? d.data() : null; },
+    watchMsgs(id, cb){ return F.onSnapshot(F.query(F.collection(fs,"hw",id,"msgs"), F.orderBy("at")), s => cb(s.docs.map(d => d.data()))); },
+    addMsg:(id,m) => F.addDoc(F.collection(fs,"hw",id,"msgs"), m),
+    async getNote(id){ const d = await F.getDoc(F.doc(fs,"notes",id)); return d.exists() ? d.data().text : ""; },
+    setNote:(id,t) => F.setDoc(F.doc(fs,"notes",id), {text:t}),
+    async getConfig(){ const d = await F.getDoc(F.doc(fs,"config","auto")); return d.exists() ? d.data() : null; },
+    watchPhotos(cb, n=30){ return F.onSnapshot(F.query(F.collection(fs,"photos"), F.orderBy("at","desc"), F.limit(n)), s => cb(s.docs.map(d => ({id:d.id, ...d.data()})))); },
+    async addPhoto(meta, full){ const r = await F.addDoc(F.collection(fs,"photos"), meta); await F.setDoc(F.doc(fs,"photoFull",r.id), {data:full}); },
+    async getPhotoFull(id){ const d = await F.getDoc(F.doc(fs,"photoFull",id)); return d.exists() ? d.data().data : null; },
+    updatePhoto:(id,p) => F.updateDoc(F.doc(fs,"photos",id), p),
+    async deletePhoto(id){ await F.deleteDoc(F.doc(fs,"photos",id)); try{ await F.deleteDoc(F.doc(fs,"photoFull",id)); }catch(e){} },
+    setConfig:o => F.setDoc(F.doc(fs,"config","auto"), o),
+    createHWId:(id,o) => F.setDoc(F.doc(fs,"hw",id), o),
+    // 영어 기록은 rec 모음에 type:"eng"로 저장 (규칙 안 바꿔도 됨)
+    addEng:o => F.setDoc(F.doc(fs,"rec","eng-"+o.at.toString(36)+Math.random().toString(36).slice(2,6)), {type:"eng", ...o}),
+    watchEng(cb){ return F.onSnapshot(F.query(F.collection(fs,"rec"), F.where("type","==","eng")), s => cb(s.docs.map(d => d.data()).sort((a,b) => b.at-a.at)), () => cb([])); },
+  };
+}
+function makeLocal(){
+  const K = "sua-hw-demo", blank = () => ({hw:{}, rec:{}, msgs:{}, notes:{}, photos:{}, pfull:{}});
+  const load = () => { try{ return JSON.parse(localStorage.getItem(K)) || blank(); }catch(e){ return blank(); } };
+  let D = load(); const subs = new Set();
+  const emit = () => subs.forEach(f => f());
+  const save = (quiet) => { try{ localStorage.setItem(K, JSON.stringify(D)); }catch(e){ toast("저장 공간이 부족해요"); } if(!quiet) emit(); };
+  window.addEventListener("storage", e => { if(e.key===K){ D = load(); emit(); } });
+  const sub = f => { subs.add(f); Promise.resolve().then(() => subs.has(f) && f()); return () => subs.delete(f); };
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const setPath = (o, path, v) => { const ks = path.split("."); let c = o; for(let i=0;i<ks.length-1;i++){ if(!c[ks[i]] || typeof c[ks[i]]!=="object") c[ks[i]] = {}; c = c[ks[i]]; } c[ks[ks.length-1]] = v; };
+  let roleCb = null;
+  const getRole = () => { try{ return sessionStorage.getItem(K+"-role"); }catch(e){ return null; } };
+  const setRole = r => { try{ r ? sessionStorage.setItem(K+"-role", r) : sessionStorage.removeItem(K+"-role"); }catch(e){} roleCb && roleCb(r); };
+  return {
+    mode:"local",
+    onAuth(cb){ roleCb = cb; cb(getRole()); },
+    async loginTeacher(){ setRole("teacher"); },
+    async enterStudent(){ setRole("student"); },
+    async enterParent(){ setRole("parent"); },
+    async logout(){ setRole(null); },
+    watchHWList(cb){ return sub(() => cb(Object.entries(D.hw).map(([id,h]) => ({id, ...clone(h)})).sort((a,b) => b.createdAt-a.createdAt))); },
+    watchHW(id, cb){ return sub(() => cb(D.hw[id] ? {id, ...clone(D.hw[id])} : null)); },
+    async createHW(o){ const id = "h"+Date.now().toString(36); D.hw[id] = clone(o); save(); return id; },
+    async updateHW(id, p){ for(const [k,v] of Object.entries(p)) setPath(D.hw[id], k, v); save(); },
+    async deleteHW(id){ delete D.hw[id]; delete D.msgs[id]; save(); },
+    async saveRec(k, o){ D.rec[k] = o; save(true); },
+    async loadRec(k){ return D.rec[k] ? clone(D.rec[k]) : null; },
+    watchMsgs(id, cb){ return sub(() => cb(clone(D.msgs[id] || []))); },
+    async addMsg(id, m){ (D.msgs[id] = D.msgs[id] || []).push(m); save(); },
+    async getNote(id){ return D.notes[id] || ""; },
+    async setNote(id, t){ D.notes[id] = t; save(true); },
+    async getConfig(){ return D.config ? clone(D.config) : null; },
+    watchPhotos(cb, n=30){ return sub(() => cb(Object.entries(D.photos||{}).map(([id,p]) => ({id, ...p})).sort((a,b) => b.at-a.at).slice(0,n))); },
+    async addPhoto(meta, full){ const id = "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); (D.photos = D.photos||{})[id] = meta; (D.pfull = D.pfull||{})[id] = full; save(); },
+    async getPhotoFull(id){ return (D.pfull||{})[id] || null; },
+    async updatePhoto(id, p){ Object.assign(D.photos[id], p); save(); },
+    async deletePhoto(id){ delete D.photos[id]; delete (D.pfull||{})[id]; save(); },
+    async setConfig(o){ D.config = clone(o); save(true); },
+    async createHWId(id, o){ D.hw[id] = clone(o); save(); },
+    async addEng(o){ (D.eng = D.eng||[]).push(clone(o)); save(); },
+    watchEng(cb){ return sub(() => cb(clone(D.eng||[]).sort((a,b) => b.at-a.at))); },
+  };
+}
+const recKey = (id,i,att) => `${id}_${i}_${att}`;
+async function loadRec(k){ const r = await DB.loadRec(k); if(!r) return null; try{ return {dur:r.dur||0, ev:JSON.parse(r.data||"[]"), guide:!!r.guide}; }catch(e){ return null; } }
+async function saveRec(k, snap){ const data = JSON.stringify(snap.ev); if(data.length > 900000) toast("풀이가 너무 길어요. 전체 지우기를 하고 이어서 써 주세요"); return DB.saveRec(k, {dur:snap.dur, data, guide:!!snap.guide}); }
+
+// ───────── 정답 확인 ─────────
+function parseFrac(s){ // "2 3/5", "3/5", "2" → [분자, 분모] (가분수 값)
+  const m = /^(?:(\d+)(?:\s+|$))?(?:(\d+)\s*\/\s*(\d+))?$/.exec(String(s ?? "").trim());
+  if(!m || (!m[1] && !m[2])) return null;
+  const w = +(m[1]||0), n = +(m[2]||0), d = +(m[3]||1);
+  if(!d) return null;
+  return [w*d+n, d];
+}
+function checkAns(a, key, kind, simp, form){
+  const nums = s => (String(s ?? "").match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+  const same = (p,q) => p.length===q.length && p.every((v,i) => Math.abs(v-q[i])<1e-9);
+  if(kind==="set"){ const p = nums(a).sort((u,v)=>u-v), q = nums(key).sort((u,v)=>u-v); return p.length>0 && same(p,q) && new Set(p).size===p.length; }
+  if(kind==="ratio" || kind==="divd") return same(nums(a), nums(key));
+  if(kind==="frac2"){ const p = String(a ?? "").split(","), q = String(key).split(","); return p.length===q.length && p.every((v,i) => same(nums(v), nums(q[i]))); }
+  if(kind==="cmp") return String(a ?? "").trim()===String(key).trim();
+  if(kind==="text") return String(a ?? "").replace(/\s+/g,"")===String(key).replace(/\s+/g,"") && !!String(a ?? "").trim();
+  if(kind==="pct"){ a = String(a ?? "").replace(/%/g,""); kind = "num"; }
+  const n = s => String(s ?? "").trim().replace(/\s+/g," ").replace(/,/g,"");
+  const x = n(a), y = n(key); if(!x) return false;
+  if(kind==="frac"){
+    const p = parseFrac(x), q = parseFrac(y); if(!(p && q) || p[0]*q[1]!==q[0]*p[1]) return false;
+    if(simp){ const m = /(\d+)\s*\/\s*(\d+)$/.exec(x); if(m && gcd(+m[1], +m[2])!==1) return false; }  // 5·6학년: 기약분수로 써야 정답
+    const m = /^(?:(\d+)\s+)?(\d+)\/(\d+)$/.exec(x);
+    if(form==="improper" && !(m && !m[1])) return false;                       // 가분수로: 자연수 칸 없이
+    if(form==="mixed" && !(m && m[1] && +m[2] < +m[3])) return false;          // 대분수로: 자연수 + 진분수
+    return true;
+  }
+  if(kind==="div"){ const p = (x.match(/\d+/g)||[]).map(Number), q = (y.match(/\d+/g)||[]).map(Number); return p.length>0 && p[0]===q[0] && (p[1]||0)===(q[1]||0); }
+  const num = /^-?\d*\.?\d+$|^-?\d+\.$/;
+  if(num.test(x) && num.test(y)) return Math.abs(parseFloat(x) - parseFloat(y)) < 1e-9;
+  return x.replace(/ /g,"") === y.replace(/ /g,"");
+}
+
+// ───────── 단원별 문제 만들기 ─────────
+const ri = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+// 소수 (0.01 단위 정수로 계산 → 오차 없음)
+const v1 = () => ri(0,9)*100 + ri(1,9)*10;
+const f2 = () => { let f; do{ f = ri(1,99); }while(f%10===0); return f; };
+const v2 = () => ri(0,9)*100 + f2();
+function toStr(h,d){ const i=Math.floor(h/100), f=h%100; if(d===0) return String(i); if(d===1) return i+"."+Math.floor(f/10); return i+"."+String(f).padStart(2,"0"); }
+const ansStr = h => toStr(h,2).replace(/0+$/,"").replace(/\.$/,"");
+const decQ = p => ({q:`${toStr(p.a,p.da)} ${p.op} ${toStr(p.b,p.db)}`, ans:ansStr(p.op==="+" ? p.a+p.b : p.a-p.b), kind:"dec"});
+function d1(h){ let ai,at,bi,bt; do{ ai=ri(0,9); at=ri(1,9); bi=ri(0,9); bt=ri(1,9); }while(h ? at+bt<10 : at+bt>9); return decQ({a:ai*100+at*10,da:1,b:bi*100+bt*10,db:1,op:"+"}); }
+function d2(h){ let ai,at,bi,bt,a,b; do{ ai=ri(1,9); at=ri(1,9); bi=ri(0,ai); bt=ri(1,9); a=ai*100+at*10; b=bi*100+bt*10; }while(a<=b || (h ? at>=bt : at<bt)); return decQ({a,da:1,b,db:1,op:"−"}); }
+function d3(h){ let a,b,c1,c2; do{ a=v2(); b=v2(); const ah=a%10,bh=b%10,at=Math.floor(a/10)%10,bt=Math.floor(b/10)%10; c1=ah+bh>=10; c2=at+bt+(c1?1:0)>=10; }while(h ? !(c1||c2) : (c1||c2)); return decQ({a,da:2,b,db:2,op:"+"}); }
+function d4(h){ let a,b,br; do{ a=ri(1,9)*100+f2(); b=v2(); const ah=a%10,bh=b%10,at=Math.floor(a/10)%10,bt=Math.floor(b/10)%10; br=ah<bh||at<bt; }while(a<=b || (h ? !br : br)); return decQ({a,da:2,b,db:2,op:"−"}); }
+function d5(h){
+  if(!h){ const x={v:v1(),d:1}, y={v:v2(),d:2}; const [p,q] = Math.random()<.5 ? [x,y] : [y,x]; return decQ({a:p.v,da:p.d,b:q.v,db:q.d,op:"+"}); }
+  const t = ri(1,3); let a,b,da,db;
+  do{
+    if(t===1){ a=ri(1,9)*100+ri(1,9)*10; da=1; b=v2(); db=2; }
+    else if(t===2){ a=ri(1,9)*100+f2(); da=2; b=v1(); db=1; }
+    else { a=ri(1,9)*100; da=0; if(Math.random()<.5){ b=v2(); db=2; } else { b=v1(); db=1; } }
+  }while(a<=b);
+  return decQ({a,da,b,db,op:"−"});
+}
+// 소수 사이의 관계 (0.001 단위 정수로 계산)
+const th = n => { const i = Math.floor(n/1000), f = String(n%1000).padStart(3,"0").replace(/0+$/,""); return f ? `${i}.${f}` : String(i); };
+function d0(h){
+  const op = h ? (Math.random()<.5 ? "100배" : "1/100") : (Math.random()<.5 ? "10배" : "1/10");
+  let a; do{ a = (op==="1/100" || Math.random()<.5) ? ri(1,99)*100 : ri(1,999)*10; }while(a%1000===0);
+  const r = op==="10배" ? a*10 : op==="100배" ? a*100 : op==="1/10" ? a/10 : a/100;
+  return {q:`${th(a)}의 ${op}${op.includes("/") ? "은" : "는"}?`, ans:th(r), kind:"dec"};
+}
+// 분모가 같은 분수 (값은 분자 정수로 계산)
+const fr = (num,d) => { const w = Math.floor(num/d), n = num%d; return w && n ? `${w} ${n}/${d}` : w ? String(w) : `${n}/${d}`; };
+const fracQ = (a,b,d,op) => ({q:`${fr(a,d)} ${op} ${fr(b,d)}`, ans:fr(op==="+" ? a+b : a-b, d), kind:"frac"});
+function q1(h){ let d,a,b; do{ d=ri(3,12); a=ri(1,d-1); b=ri(1,d-1); }while(h ? a+b<=d : a+b>=d); return fracQ(a,b,d,"+"); }
+function q2(h){ const d=ri(3,12); let a,b; do{ a=ri(2,d-1); b=ri(1,a-1); }while(false); return fracQ(a,b,d,"−"); }
+function q3(h){ let d,n1,n2; do{ d=ri(3,10); n1=ri(1,d-1); n2=ri(1,d-1); }while(h ? n1+n2<=d : n1+n2>=d); const w1=ri(1,5), w2=ri(1,5); return fracQ(w1*d+n1, w2*d+n2, d, "+"); }
+function q4(h){ let d,w1,w2,n1,n2; do{ d=ri(3,10); w1=ri(2,7); w2=ri(1,w1-1); n1=ri(1,d-1); n2=ri(1,d-1); }while(h ? n1>=n2 : n1<=n2); return fracQ(w1*d+n1, w2*d+n2, d, "−"); }
+function q5(h){ const d=ri(3,10), a=ri(2,8), w=h ? ri(1,a-1) : 0, n=ri(1,d-1); return {q:`${a} − ${fr(w*d+n,d)}`, ans:fr(a*d-(w*d+n),d), kind:"frac"}; }
+// 곱셈·나눗셈
+function m1(h){ const a=ri(100,999), b=ri(1,9)*10; return {q:`${a} × ${b}`, ans:String(a*b), kind:"num"}; }
+function m2(h){ const a=ri(100,999), b=ri(11,99); return {q:`${a} × ${b}`, ans:String(a*b), kind:"num"}; }
+function n1(h){ let d,q,r,a; do{ d=ri(2,9)*10; q=ri(2,9); r=h ? ri(1,d-1) : 0; a=d*q+r; }while(a>=1000); return {q:`${a} ÷ ${d}`, ans:r ? `${q}…${r}` : String(q), kind:"div"}; }
+function n2(h){ let d,q,r,a; do{ d=ri(11,99); q=ri(2,40); r=h ? ri(1,d-1) : 0; a=d*q+r; }while(a<100 || a>=1000); return {q:`${a} ÷ ${d}`, ans:r ? `${q}…${r}` : String(q), kind:"div"}; }
+
+// ───────── 5·6학년 연산 ─────────
+const gcd = (a,b) => { a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a; };
+const lcm = (a,b) => a/gcd(a,b)*b;
+const FR = (n,d) => { const g = gcd(n,d); return fr(n/g, d/g); };           // 기약분수(대분수)로
+const fAns = (n,d) => ({ans:FR(n,d), kind:"frac", simp:true});
+const prop = (lo=2, hi=9) => { let d,n; do{ d=ri(lo,hi); n=ri(1,d-1); }while(gcd(n,d)!==1); return [n,d]; };   // 기약 진분수
+const mixd = (lo=2, hi=9) => { const [n,d] = prop(lo,hi); return [ri(1,4)*d+n, d]; };                          // 대분수 (가분수 값)
+const pw = k => 10**k;
+const fmtS = (n,k) => { if(!k) return String(n); const s = String(n).padStart(k+1,"0"); const f = s.slice(-k).replace(/0+$/,""); return s.slice(0,-k) + (f ? "."+f : ""); };
+const rDec = (k, maxInt=9) => { let n; do{ n = ri(1, maxInt*pw(k)+pw(k)-1); }while(n%10===0); return n; };   // 소수 k자리 (정수 값)
+
+// 숫자 읽기에 맞는 조사 (예: 36과, 12와, 40을, 5를, 7로, 3으로)
+const lastSound = n => { n = String(n); const d = +n[n.length-1]; return d===0 ? "ㅂ" : ({1:"ㄹ",2:"",3:"ㅁ",4:"",5:"",6:"ㄱ",7:"ㄹ",8:"ㄹ",9:""})[d]; };
+const jGwa = n => lastSound(n) ? "과" : "와";
+const jEul = n => lastSound(n) ? "을" : "를";
+const jRo = n => { const l = lastSound(n); return !l || l==="ㄹ" ? "로" : "으로"; };
+// 자연수의 혼합 계산 (나눗셈은 한 번만 → 결과가 자연수면 나눗셈도 나누어떨어짐)
+const MIX = {
+  as: [ // 덧셈과 뺄셈
+    () => { const a=ri(20,90), b=ri(5,40), c=ri(1,a+b-1); return [`${a} + ${b} − ${c}`, a+b-c]; },
+    () => { const b=ri(5,40), c=ri(5,40), a=ri(b+1,b+60); return [`${a} − ${b} + ${c}`, a-b+c]; },
+    () => { const b=ri(5,30), c=ri(5,30), a=ri(b+c,b+c+50); return [`${a} − (${b} + ${c})`, a-b-c]; },
+    () => { const c=ri(3,20), b=ri(c+1,c+30), a=ri(b-c,b-c+50); return [`${a} − (${b} − ${c})`, a-(b-c)]; }],
+  md: [ // 곱셈과 나눗셈
+    () => { const c=ri(2,9); let a,b; do{ a=ri(2,15); b=ri(2,15); }while((a*b)%c); return [`${a} × ${b} ÷ ${c}`, a*b/c]; },
+    () => { const b=ri(2,9), a=b*ri(2,12), c=ri(2,9); return [`${a} ÷ ${b} × ${c}`, a/b*c]; },
+    () => { const b=ri(2,6), c=ri(2,6), a=b*c*ri(2,9); return [`${a} ÷ (${b} × ${c})`, a/(b*c)]; }],
+  asm: [ // 덧셈, 뺄셈, 곱셈
+    () => { const a=ri(10,60), b=ri(2,9), c=ri(2,9), d=ri(1,30); return [`${a} + ${b} × ${c} − ${d}`, a+b*c-d]; },
+    () => { const b=ri(2,9), c=ri(2,9), a=ri(b*c+1,b*c+40), d=ri(1,30); return [`${a} − ${b} × ${c} + ${d}`, a-b*c+d]; },
+    () => { const a=ri(2,20), b=ri(2,20), c=ri(2,9), d=ri(1,30); return [`(${a} + ${b}) × ${c} − ${d}`, (a+b)*c-d]; },
+    () => { const b=ri(1,20), a=ri(b+1,40), c=ri(2,9), d=ri(1,30); return [`(${a} − ${b}) × ${c} + ${d}`, (a-b)*c+d]; }],
+  asd: [ // 덧셈, 뺄셈, 나눗셈
+    () => { const b=ri(2,9), a=b*ri(2,12), c=ri(2,40), d=ri(1,20); return [`${a} ÷ ${b} + ${c} − ${d}`, a/b+c-d]; },
+    () => { const c=ri(2,9), b=c*ri(2,9), a=ri(b/c+1,b/c+50), d=ri(1,20); return [`${a} − ${b} ÷ ${c} + ${d}`, a-b/c+d]; },
+    () => { const c=ri(2,9), k=ri(2,9), a=ri(1,c*k-1), b=c*k-a, d=ri(0,k-1); return [`(${a} + ${b}) ÷ ${c} − ${d}`, k-d]; },
+    () => { const d=ri(2,9), k=ri(2,9), b=ri(3,20), c=d*k-b, a=ri(k+1,60), e=ri(2,20); return c>0 ? [`${a} − (${b} + ${c}) ÷ ${d} + ${e}`, a-k+e] : null; }],
+  all: [ // 덧셈, 뺄셈, 곱셈, 나눗셈
+    () => { const e=ri(2,9), d=e*ri(2,9), a=ri(20,90), b=ri(2,9), c=ri(2,9); return [`${a} + ${b} × ${c} − ${d} ÷ ${e}`, a+b*c-d/e]; },
+    () => { const d=ri(2,9); let a,b,c; do{ a=ri(2,12); b=ri(5,20); c=ri(1,b-1); }while((a*(b-c))%d); const e=ri(1,30); return [`${a} × (${b} − ${c}) ÷ ${d} + ${e}`, a*(b-c)/d+e]; },
+    () => { const c=ri(2,9), b=c*ri(2,9), a=ri(10,50), d=ri(2,9), e=ri(1,a); return [`${a} − ${e} + ${b} ÷ ${c} × ${d}`, a-e+b/c*d]; },
+    () => { const c=ri(2,9), k=ri(2,9), a=ri(1,c*k-1), b=c*k-a, d=ri(2,9), e=ri(1,k*d); return [`(${a} + ${b}) ÷ ${c} × ${d} − ${e}`, k*d-e]; }],
+};
+const mixGen = key => h => { let r; do{ r = MIX[key][ri(0,MIX[key].length-1)](); }while(!r || r[1]<0 || !Number.isInteger(r[1])); return {q:r[0], ans:String(r[1]), kind:"num"}; };
+// 약수와 배수
+const pair = h => { let a,b; do{ const g=ri(2, h?12:6); a=g*ri(1, h?8:5); b=g*ri(1, h?8:5); }while(a===b || a>99 || b>99); return [a,b]; };
+function x2a(h){ const [a,b] = pair(h); return {q:`${a}${jGwa(a)} ${b}의 최대공약수는?`, ans:String(gcd(a,b)), kind:"num"}; }
+function x2b(h){ const [a,b] = pair(h); return {q:`${a}${jGwa(a)} ${b}의 최소공배수는?`, ans:String(lcm(a,b)), kind:"num"}; }
+function x3(h){ const [n,d] = prop(2, h?15:9), k = h ? ri(3,9) : ri(2,5); return {q:`${n*k}/${d*k}${jEul(n*k)} 기약분수로 나타내면?`, ...fAns(n,d)}; }
+// 분모가 다른 분수의 덧셈과 뺄셈
+const diff = (f) => { let a,b; do{ [a,b] = f(); }while(a[1]===b[1]); return [a,b]; };
+function a1(h){ let a,b; do{ [a,b] = diff(() => [prop(), prop()]); }while(a[0]*b[1]+b[0]*a[1] >= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }
+function a2(h){ let a,b; do{ [a,b] = diff(() => [prop(), prop()]); }while(a[0]*b[1]+b[0]*a[1] <= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }
+function a3(h){ const [a,b] = diff(() => [mixd(), mixd()]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }
+function s1(h){ let a,b; do{ [a,b] = diff(() => [prop(), prop()]); }while(a[0]*b[1] <= b[0]*a[1]); return {q:`${fr(...a)} − ${fr(...b)}`, ...fAns(a[0]*b[1]-b[0]*a[1], a[1]*b[1])}; }
+function s23(borrow){ return h => { let a,b,fa,fb; do{ [a,b] = diff(() => [mixd(), mixd()]); fa=(a[0]%a[1])*b[1]; fb=(b[0]%b[1])*a[1]; }while(Math.floor(a[0]/a[1]) <= Math.floor(b[0]/b[1]) || (borrow ? fa>=fb : fa<=fb)); return {q:`${fr(...a)} − ${fr(...b)}`, ...fAns(a[0]*b[1]-b[0]*a[1], a[1]*b[1])}; }; }
+// 분수의 곱셈
+function m5a(h){ const a = h ? mixd() : prop(2,12), k = ri(2,9); return {q:`${fr(...a)} × ${k}`, ...fAns(a[0]*k, a[1])}; }
+function m5b(h){ const a = h ? mixd() : prop(2,12), k = ri(2,9); return {q:`${k} × ${fr(...a)}`, ...fAns(a[0]*k, a[1])}; }
+function m5c(h){ const a = prop(), b = prop(); return {q:`${fr(...a)} × ${fr(...b)}`, ...fAns(a[0]*b[0], a[1]*b[1])}; }
+function m5d(h){ const a = mixd(), b = h ? mixd() : prop(); return {q:`${fr(...a)} × ${fr(...b)}`, ...fAns(a[0]*b[0], a[1]*b[1])}; }
+// 소수의 곱셈
+function m6a(h){ const k = h?2:1, a = rDec(k, k===1?9:5), b = ri(2,9); return {q:`${fmtS(a,k)} × ${b}`, ans:fmtS(a*b,k), kind:"dec"}; }
+function m6b(h){ const k = h?2:1, a = rDec(k, k===1?9:5), b = ri(2,9); return {q:`${b} × ${fmtS(a,k)}`, ans:fmtS(a*b,k), kind:"dec"}; }
+function m6c(h){ const k = h?2:1, a = rDec(k, k===1?9:3), b = rDec(1,5); return {q:`${fmtS(a,k)} × ${fmtS(b,1)}`, ans:fmtS(a*b, k+1), kind:"dec"}; }
+// 분수의 나눗셈
+function f6a(h){ let a,b; do{ a=ri(1, h?20:8); b=ri(2,9); }while(a%b===0 || (h ? a<b : a>b)); return {q:`${a} ÷ ${b}`, ...fAns(a,b)}; }
+function f6b(h){ const a = h ? mixd() : prop(2,12), k = ri(2,9); return {q:`${fr(...a)} ÷ ${k}`, ...fAns(a[0], a[1]*k)}; }
+function f6c(h){ let a,b; if(h){ [a,b] = diff(() => [prop(), prop()]); } else { const d=ri(3,12); let x,y; do{ x=ri(1,d-1); y=ri(1,d-1); }while(x===y || gcd(x,d)!==1 || gcd(y,d)!==1); a=[x,d]; b=[y,d]; } return {q:`${fr(...a)} ÷ ${fr(...b)}`, ...fAns(a[0]*b[1], a[1]*b[0])}; }
+function f6d(h){ const k = ri(2,9), b = prop(); return {q:`${k} ÷ ${fr(...b)}`, ...fAns(k*b[1], b[0])}; }
+function f6e(h){ const a = mixd(), b = h ? prop() : [1, ri(2,9)]; return {q:`${fr(...a)} ÷ ${fr(...b)}`, ...fAns(a[0]*b[1], a[1]*b[0])}; }
+// 소수의 나눗셈
+function d6a(h){ let q,d; const k = h?2:1; do{ q=rDec(k, k===1?9:4); d=ri(2,9); }while((q*d)%10===0); return {q:`${fmtS(q*d,k)} ÷ ${d}`, ans:fmtS(q,k), kind:"dec"}; }
+function d6b(h){ const k = h?2:1, b = rDec(k, k===1?4:2), q = ri(2, h?12:30); return {q:`${fmtS(b*q,k)} ÷ ${fmtS(b,k)}`, ans:String(q), kind:"dec"}; }
+function d6c(h){ let a,b; do{ a=ri(1, h?60:30); b=rDec(1,4); }while((a*10)%b); return {q:`${a} ÷ ${fmtS(b,1)}`, ans:String(a*10/b), kind:"dec"}; }
+// 비례식과 비례배분
+function p6a(h){
+  let a,b; do{ a=ri(1,9); b=ri(1,9); }while(a===b || gcd(a,b)!==1); const k=ri(2,9), t=ri(1,3);
+  if(t===1) return {q:`${a} : ${b} = □ : ${b*k}`, ans:String(a*k), kind:"num"};
+  if(t===2) return {q:`${a} : ${b} = ${a*k} : □`, ans:String(b*k), kind:"num"};
+  return {q:`${a*k} : ${b*k} = □ : ${b}`, ans:String(a), kind:"num"};
+}
+function p6b(h){
+  let a,b; do{ a=ri(1,9); b=ri(1,9); }while(a===b || gcd(a,b)!==1); const tot=(a+b)*ri(2,12), front=Math.random()<.5;
+  return {q:`${tot}${jEul(tot)} ${a} : ${b}${jRo(b)} 비례배분하면 ${front?"앞의":"뒤의"} 수는?`, ans:String(tot/(a+b)*(front?a:b)), kind:"num"};
+}
+// 소수 사이의 관계 (한 가지씩)
+const rel = op => h => {
+  let a; do{ a = (op==="1/100" || !h) ? ri(1,99)*100 : ri(1,999)*10; }while(a%1000===0);
+  const r = op==="10배" ? a*10 : op==="100배" ? a*100 : op==="1/10" ? a/10 : a/100;
+  return {q:`${th(a)}의 ${op}${op.includes("/") ? "은" : "는"}?`, ans:th(r), kind:"dec"};
+};
+
+// ───────── 1~3학년 연산 ─────────
+const L = {
+  // 1학년
+  a1a: h => { let a,b; do{ a=ri(1,8); b=ri(1,8); }while(a+b>9); return [a,"+",b,a+b]; },
+  a1b: h => { const a=ri(2,9), b=ri(1,a-1); return [a,"−",b,a-b]; },
+  a1c: h => { const a=ri(1,9); return Math.random()<.5 ? [a,"+",10-a,10] : [10,"−",a,10-a]; },
+  a1d: h => { let a,b; do{ a=ri(2,9); b=ri(2,9); }while(a+b<=10); return [a,"+",b,a+b]; },
+  a1e: h => { const a=ri(11,18); let b; do{ b=ri(2,9); }while(b<=a%10 || a-b<1); return [a,"−",b,a-b]; },
+  // 2학년
+  a2a: h => { let a,b; do{ a=ri(11,89); b=ri(2,9); }while(a%10+b<10 || a+b>99); return [a,"+",b,a+b]; },
+  a2b: h => { let a,b; do{ a=ri(11,89); b=ri(11,89); }while(a%10+b%10<10 || (h ? a+b<100 : a+b>99)); return [a,"+",b,a+b]; },
+  a2c: h => { let a,b; do{ a=ri(20,99); b=ri(2,9); }while(a%10>=b); return [a,"−",b,a-b]; },
+  a2d: h => { let a,b; do{ a=ri(30,99); b=ri(11,a-10); }while(a%10>=b%10); return [a,"−",b,a-b]; },
+  // 곱셈구구
+  gg: dans => h => { const a = dans[ri(0,dans.length-1)], b = ri(1,9); return [a,"×",b,a*b]; },
+  // 3학년 세 자리 덧셈·뺄셈
+  a3a: h => { let a,b,c; do{ a=ri(100,899); b=ri(100,899); c=(a%10+b%10>=10)+(Math.floor(a/10)%10+Math.floor(b/10)%10+((a%10+b%10>=10)?1:0)>=10); }while(a+b>999 || (h ? c<2 : c>1)); return [a,"+",b,a+b]; },
+  a3b: h => { let a,b,c; do{ a=ri(200,999); b=ri(100,a-1); c=(a%10<b%10)+(Math.floor(a/10)%10-((a%10<b%10)?1:0)<Math.floor(b/10)%10); }while(h ? c<2 : c>1); return [a,"−",b,a-b]; },
+  // 3학년 곱셈
+  m3a: h => { const a=ri(1,9)*10, b=ri(2,9); return [a,"×",b,a*b]; },
+  m3b: h => { let a,b; do{ a=ri(11,99); b=ri(2,9); }while(h ? a*b<100 : (a%10)*b>=10); return [a,"×",b,a*b]; },
+  m3c: h => { const a=ri(101,999), b=ri(2,9); return [a,"×",b,a*b]; },
+  m3d: h => { const a=ri(11,99), b=ri(11,99); return [a,"×",b,a*b]; },
+};
+const lowQ = f => h => { const [a,op,b,v] = f(h); return {q:`${a} ${op} ${b}`, ans:String(v), kind:"num"}; };
+// 3학년 나눗셈 (몫과 나머지 칸에 써요)
+const divQ = (a,d) => ({q:`${a} ÷ ${d}`, ans: a%d ? `${Math.floor(a/d)}…${a%d}` : String(a/d), kind:"div"});
+const dv1 = h => { const d=ri(2,9), q=ri(2,9); return divQ(d*q, d); };
+const dv2 = h => { let d,q; do{ d=ri(2,9); q=ri(10,49); }while(d*q>99 || (h ? (d*q)%10===0 : false)); return divQ(d*q, d); };
+const dv3 = h => { let d,a; do{ d=ri(2,9); a=ri(20,99); }while(a%d===0 || Math.floor(a/d)<10 && h); return divQ(a, d); };
+const dv4 = h => { let d,q; do{ d=ri(2,9); q=ri(12,199); }while(d*q<100 || d*q>999); return divQ(d*q, d); };
+const dv5 = h => { let d,a; do{ d=ri(2,9); a=ri(100,999); }while(a%d===0); return divQ(a, d); };
+
+// 나눗셈 자리 맞추기 칸 (풀이판 배경)
+function divGuide(q){
+  const m = /^(\d+) ÷ (\d+)$/.exec(q||""); if(!m) return "";
+  const a = m[1], d = m[2], n = a.length, cell = 80, x0 = 300, top = 40;
+  const names = ["천","백","십","일"].slice(4-n);
+  let g = "";
+  for(let i=0;i<n;i++) g += `<rect x="${x0+i*cell}" y="${top}" width="${cell}" height="${700-top}" fill="${i%2 ? "#fff1f7" : "#f3efff"}"/>`;
+  for(let y=top; y<=700; y+=cell) g += `<line x1="${x0-20}" y1="${y}" x2="${x0+n*cell+20}" y2="${y}" stroke="#e9dff0" stroke-width="2"/>`;
+  for(let i=0;i<=n;i++) g += `<line x1="${x0+i*cell}" y1="${top}" x2="${x0+i*cell}" y2="700" stroke="#e9dff0" stroke-width="2"/>`;
+  names.forEach((t,i) => g += `<text x="${x0+i*cell+cell/2}" y="30" font-size="24" text-anchor="middle" fill="#e8609c" font-family="sans-serif">${t}</text>`);
+  g += `<text x="${x0-30}" y="${top+52}" font-size="24" text-anchor="end" fill="#9a8aa8" font-family="sans-serif">몫 →</text>`;
+  const by = top+cell;
+  g += `<path d="M ${x0-14} ${by} L ${x0+n*cell+14} ${by}" stroke="#e8609c" stroke-width="5" fill="none"/>`;
+  g += `<path d="M ${x0-14} ${by} Q ${x0-40} ${by+cell/2} ${x0-14} ${by+cell}" stroke="#e8609c" stroke-width="5" fill="none"/>`;
+  g += `<text x="${x0-48}" y="${by+58}" font-size="56" text-anchor="end" fill="#4a3f55" font-family="sans-serif">${d}</text>`;
+  [...a].forEach((c,i) => g += `<text x="${x0+i*cell+cell/2}" y="${by+58}" font-size="56" text-anchor="middle" fill="#4a3f55" font-family="sans-serif">${c}</text>`);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" preserveAspectRatio="none"><rect width="1000" height="700" fill="#fff"/>${g}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function applyGuide(cv, q){
+  const bg = divGuide(q);
+  cv.style.backgroundImage = bg; cv.style.backgroundSize = bg ? "100% 100%" : "";
+}
+
+// ═════════ 11math 순서대로: 1~6학년 단원별 유형 ═════════
+const Q = (q, ans, kind="num", ext={}) => ({q, ans:String(ans), kind, ...ext});
+const until = (f, ok) => { let r, k=0; do{ r = f(); k++; }while(!ok(r) && k<5000); return r; };
+const digs = n => String(n).split("").reverse().map(Number);
+const carryCnt = (a,b) => { const x=digs(a), y=digs(b); let c=0, n=0; for(let i=0;i<Math.max(x.length,y.length);i++){ const s=(x[i]||0)+(y[i]||0)+c; c = s>=10?1:0; n+=c; } return n; };
+const borrowCnt = (a,b) => { const x=digs(a), y=digs(b); let br=0, n=0; for(let i=0;i<x.length;i++){ const d=(x[i]||0)-(y[i]||0)-br; br = d<0?1:0; n+=br; } return n; };
+const ADD = (a,b) => Q(`${a} + ${b}`, a+b), SUB = (a,b) => Q(`${a} − ${b}`, a-b), MUL = (a,b) => Q(`${a} × ${b}`, a*b);
+const pick = arr => arr[ri(0, arr.length-1)];
+const nd = k => { let n; do{ n = ri(1, 10**k-1); }while(n%10===0); return n; };   // 소수 아래 k자리 (끝자리 0 아님)
+
+// 정수 식 계산 (곱셈·나눗셈 먼저, 괄호 { } ( ) 지원) — 나누어떨어지지 않거나 음수가 나오면 null
+function evalInt(expr){
+  const t = expr.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").replace(/[{]/g,"(").replace(/[}]/g,")").match(/\d+|[-+*/()]/g); let i = 0, bad = false;
+  const prim = () => { const x = t[i++]; if(x==="("){ const v = sum(); i++; return v; } return +x; };
+  const prod = () => { let v = prim(); while(t[i]==="*" || t[i]==="/"){ const o = t[i++], w = prim(); if(o==="*") v *= w; else { if(!w || v%w) bad = true; v = w ? Math.floor(v/w) : 0; } } return v; };
+  const sum = () => { let v = prod(); while(t[i]==="+" || t[i]==="-"){ const o = t[i++], w = prod(); v = o==="+" ? v+w : v-w; if(v<0) bad = true; } return v; };
+  const v = sum(); return bad || i!==t.length ? null : v;
+}
+const exprQ = f => h => { let e, v; do{ e = f(h); v = evalInt(e); }while(v===null); return Q(e, v); };
+
+// 유리수 (분수·소수 섞인 계산)
+const rq = (n,d=1) => { const g = gcd(n,d)||1; return [n/g, d/g]; };
+const rAdd = (a,b) => rq(a[0]*b[1]+b[0]*a[1], a[1]*b[1]), rSub = (a,b) => rq(a[0]*b[1]-b[0]*a[1], a[1]*b[1]);
+const rMul = (a,b) => rq(a[0]*b[0], a[1]*b[1]), rDiv = (a,b) => rq(a[0]*b[1], a[1]*b[0]);
+const decOf = () => { const k = ri(1,2), n = k===1 ? ri(1,49) : pick([25,75,125,5,15,35,45,55,65,85,95]); return {v:rq(n, 10**k), s:fmtS(n,k)}; };
+const fracOf = () => { const [n,d] = Math.random()<.7 ? prop(2,9) : mixd(2,6); return {v:rq(n,d), s:fr(n,d)}; };
+
+// ── 1학년 ──
+const C11 = [
+  ["두 수로 가르기(한 자리 수)", h => { const n=ri(2,9), a=ri(1,n-1); return Q(`${n}${jEul(n)} 가르면 ${a}${jGwa(a)} □`, n-a); }],
+  ["두 수를 모으기(한 자리 수)", h => { const a=ri(1,8), b=ri(1,9-a); return Q(`${a}${jGwa(a)} ${b}${jEul(b)} 모으면 □`, a+b); }],
+  ["몇 + 몇 (합이 9이하)", h => { const a=ri(1,8), b=ri(1,9-a); return ADD(a,b); }],
+  ["몇 - 몇 (차가 9이하)", h => { const a=ri(1,9), b=ri(0,a); return SUB(a,b); }],
+  ["한 자리 수 덧셈과 뺄셈의 관계", h => { const a=ri(1,8), b=ri(1,9-a); return Q(`${a} + ${b} = ${a+b} 이면 ${a+b} − ${a} = □`, b); }],
+  ["한 자리 수 뺄셈과 덧셈의 관계", h => { const c=ri(2,9), a=ri(1,c-1); return Q(`${c} − ${a} = ${c-a} 이면 ${c-a} + ${a} = □`, c); }],
+  ["한 자리 수 덧셈/뺄셈에서 ☐안의 수 찾기", h => { const c=ri(2,9), a=ri(1,c-1), b=c-a, t=ri(1,4);
+    return t===1 ? Q(`□ + ${b} = ${c}`, a) : t===2 ? Q(`${a} + □ = ${c}`, b) : t===3 ? Q(`${c} − □ = ${b}`, a) : Q(`□ − ${a} = ${b}`, c); }],
+];
+const nc2 = () => { const a = until(() => [ri(11,98), ri(11,98)], ([x,y]) => x%10 && y%10 && carryCnt(x,y)===0 && x+y<100); return a; };
+const C122 = [
+  ...["A","B"].map(v => [`몇십 + 몇 (받아올림 없음) ${v}`, h => ADD(ri(1,9)*10, ri(1,9))]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇 (받아올림 없음) ${v}`, h => { const [a,b] = until(() => [ri(11,98), ri(1,8)], ([a,b]) => a%10 && a%10+b<10); return ADD(a,b); }]),
+  ...["A","B"].map(v => [`몇십 + 몇십 (받아올림 없음) ${v}`, h => { const a=ri(1,8), b=ri(1,9-a); return ADD(a*10, b*10); }]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 없음) ${v}`, h => ADD(...nc2())]),
+  ...["A","B"].map(v => [`몇십 - 몇십 (받아내림 없음) ${v}`, h => { const a=ri(2,9), b=ri(1,a-1); return SUB(a*10, b*10); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇 (받아내림 없음) ${v}`, h => { const [a,b] = until(() => [ri(11,99), ri(1,9)], ([a,b]) => a%10 && b<=a%10); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇십 몇 (받아내림 없음) ${v}`, h => { const [a,b] = until(() => [ri(21,99), ri(11,89)], ([a,b]) => a%10 && b%10 && a>b && borrowCnt(a,b)===0); return SUB(a,b); }]),
+  ["두 자리 수 덧셈과 뺄셈의 관계", h => { const [a,b] = nc2(); return Q(`${a} + ${b} = ${a+b} 이면 ${a+b} − ${a} = □`, b); }],
+  ["두 자리 수 뺄셈과 덧셈의 관계", h => { const [a,b] = nc2(); const c=a+b; return Q(`${c} − ${a} = ${b} 이면 ${b} + ${a} = □`, c); }],
+];
+const C124 = [
+  ["몇 + 몇 + 몇 (합이 9이하)", h => { const [a,b,c] = until(() => [ri(1,7), ri(1,7), ri(1,7)], ([a,b,c]) => a+b+c<=9); return Q(`${a} + ${b} + ${c}`, a+b+c); }],
+  ["몇 - 몇 - 몇 (차가 9이하)", h => { const [a,b,c] = until(() => [ri(3,9), ri(1,8), ri(1,8)], ([a,b,c]) => a-b-c>=0); return Q(`${a} − ${b} − ${c}`, a-b-c); }],
+  ["몇 + 몇 - 몇 / 몇 - 몇 + 몇 (한 자리 수)", h => Math.random()<.5
+    ? (() => { const [a,b,c] = until(() => [ri(1,8), ri(1,8), ri(1,9)], ([a,b,c]) => a+b<=9 && a+b-c>=0); return Q(`${a} + ${b} − ${c}`, a+b-c); })()
+    : (() => { const [a,b,c] = until(() => [ri(2,9), ri(1,8), ri(1,8)], ([a,b,c]) => a-b>=0 && a-b+c<=9); return Q(`${a} − ${b} + ${c}`, a-b+c); })()],
+  ["10을 두 수로 가르기", h => { const a=ri(1,9); return Q(`10을 가르면 ${a}${jGwa(a)} □`, 10-a); }],
+  ["10이 되도록 두 수를 모으기", h => { const a=ri(1,9); return Q(`${a}${jGwa(a)} □를 모으면 10`, 10-a); }],
+  ["10이 되는 더하기", h => { const a=ri(1,9); return Q(`${a} + □ = 10`, 10-a); }],
+  ["10에서 빼기", h => { const a=ri(1,9); return SUB(10,a); }],
+  ["두 수의 합이 10이 되는 세 수의 덧셈 A", h => { const a=ri(1,9), c=ri(1,9); return Q(`${a} + ${10-a} + ${c}`, 10+c); }],
+  ["두 수의 합이 10이 되는 세 수의 덧셈 B", h => { const a=ri(1,9), c=ri(1,9); return Q(`${c} + ${a} + ${10-a}`, 10+c); }],
+];
+const c1 = () => until(() => [ri(2,9), ri(2,9)], ([a,b]) => a+b>10);
+const b1 = () => until(() => [ri(11,18), ri(2,9)], ([a,b]) => b>a%10 && a-b>=1);
+const C126 = [
+  ...["A","B"].map(v => [`몇 + 몇 (받아올림 있음) ${v}`, h => ADD(...c1())]),
+  ["몇 + 몇 + 몇 (받아올림 있음)", h => { const [a,b,c] = until(() => [ri(1,9), ri(1,9), ri(1,9)], ([a,b,c]) => a+b+c>10 && a+b+c<=19); return Q(`${a} + ${b} + ${c}`, a+b+c); }],
+  ...["A","B"].map(v => [`십몇 - 몇 (받아내림 있음) ${v}`, h => SUB(...b1())]),
+  ["십몇 - 몇 - 몇 (받아내림 있음)", h => { const [a,b,c] = until(() => [ri(11,18), ri(1,9), ri(1,9)], ([a,b,c]) => b>a%10 && a-b-c>=0); return Q(`${a} − ${b} − ${c}`, a-b-c); }],
+  ...["A","B"].map(v => [`몇 + 몇 / 십몇 - 몇 ${v}`, h => Math.random()<.5 ? ADD(...c1()) : SUB(...b1())]),
+];
+
+// ── 2학년 ──
+const ca = n => until(() => [ri(11,89), ri(11,89)], ([a,b]) => carryCnt(a,b)===n && (n<2 || a+b>=100));
+const tri = (r1, r2, r3, o1, o2, ok=()=>true) => { let a,b,c,v1,v; do{ a=ri(...r1); b=ri(...r2); c=ri(...r3); const op1 = o1==="±" ? pick(["+","−"]) : o1, op2 = o2==="±" ? pick(["+","−"]) : o2;
+  v1 = op1==="+" ? a+b : a-b; v = op2==="+" ? v1+c : v1-c; if(v1>=0 && v>=0 && ok(a,b,c,op1,op2)) return Q(`${a} ${op1} ${b} ${op2} ${c}`, v); }while(true); };
+const C213 = [
+  ...["A","B"].map(v => [`몇십 몇 + 몇 (받아올림 있음) ${v}`, h => { const [a,b] = until(() => [ri(11,89), ri(2,9)], ([a,b]) => a%10+b>=10 && a+b<100); return ADD(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 1번) ${v}`, h => ADD(...ca(1))]),
+  ...["A","B"].map(v => [`몇십 몇 + 몇십 몇 (받아올림 2번) ${v}`, h => ADD(...ca(2))]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇 (받아내림 있음) ${v}`, h => { const [a,b] = until(() => [ri(20,99), ri(2,9)], ([a,b]) => b>a%10); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 - 몇십 몇 (받아내림 1번) ${v}`, h => { const [a,b] = until(() => [ri(30,99), ri(11,89)], ([a,b]) => a>b && borrowCnt(a,b)===1); return SUB(a,b); }]),
+  ...["A","B"].map(v => [`몇십 몇 ± 몇 (받아올림/내림 있음) ${v}`, h => Math.random()<.5
+    ? ADD(...until(() => [ri(11,89), ri(2,9)], ([a,b]) => a%10+b>=10 && a+b<100))
+    : SUB(...until(() => [ri(20,99), ri(2,9)], ([a,b]) => b>a%10))]),
+  ...["A","B"].map(v => [`몇십 몇 ± 몇십 몇 ${v}`, h => Math.random()<.5 ? ADD(...ca(ri(0,1))) : SUB(...until(() => [ri(30,99), ri(11,89)], ([a,b]) => a>b))]),
+  ["몇십 몇 + 몇 + 몇 (받아올림 있음)", h => tri([11,79],[2,9],[2,9],"+","+", (a,b,c) => a%10+b>=10 || (a+b)%10+c>=10)],
+  ["몇십 몇 - 몇 - 몇 (받아내림 있음)", h => tri([20,99],[2,9],[2,9],"−","−", (a,b,c) => b>a%10 || c>(a-b)%10)],
+  ["몇십 몇 + 몇 - 몇 / 몇십 몇 - 몇 + 몇", h => Math.random()<.5 ? tri([11,89],[2,9],[2,9],"+","−", (a,b,c) => a+b<100) : tri([11,99],[2,9],[2,9],"−","+", (a,b,c) => a-b+c<100)],
+  ["몇십 몇 ± 몇 ± 몇", h => tri([11,89],[2,9],[2,9],"±","±", (a,b,c,o1,o2) => true)],
+  ["몇십 몇 ± 몇십 몇 ± 몇십 몇", h => tri([11,99],[11,89],[11,89],"±","±", (a,b,c) => true)],
+];
+const gg = dans => h => { const a = pick(dans), b = ri(1,9); return Math.random()<.5 ? MUL(a,b) : MUL(a,b); };
+const C222 = [
+  ["2, 5, 3, 4의 단 곱셈구구", gg([2,5,3,4])],
+  ["6, 7, 8, 9의 단 곱셈구구", gg([6,7,8,9])],
+  ["1의 단, 0의 단을 포함한 곱셈구구", h => { const a = pick([0,1,ri(2,9)]), b = ri(0,9); return Math.random()<.5 ? MUL(a,b) : MUL(b,a); }],
+  ["곱셈구구에서 ☐안의 수 찾기 A", h => { const a=ri(2,9), b=ri(1,9); return Q(`${a} × □ = ${a*b}`, b); }],
+  ["곱셈구구에서 ☐안의 수 찾기 B", h => { const a=ri(2,9), b=ri(1,9); return Q(`□ × ${b} = ${a*b}`, a); }],
+  ["곱셈구구에서 ☐안의 수 찾기 C", h => { const a=ri(2,9), b=ri(1,9); return Math.random()<.5 ? Q(`${a} × □ = ${a*b}`, b) : Q(`□ × ${b} = ${a*b}`, a); }],
+];
+
+// ── 3학년 ──
+const tens3 = () => ri(1,8)*100 + (Math.random()<.5 ? ri(1,9)*10 : 0);
+const full3 = () => until(() => ri(111,999), n => n%10 && Math.floor(n/10)%10);
+const add3 = n => until(() => [full3(), full3()], ([a,b]) => carryCnt(a,b)===n && (n===3 ? a+b>=1000 : a+b<1000));
+const sub3 = n => until(() => [full3(), full3()], ([a,b]) => a>b && borrowCnt(a,b)===n);
+const AB = (name, f) => ["A","B"].map(v => [`${name} ${v}`, f]);
+const C311 = [
+  ...AB("몇백 / 몇백 몇십의 덧셈 (받아올림 없음)", h => ADD(...until(() => [tens3(), tens3()], ([a,b]) => carryCnt(a,b)===0 && a+b<1000))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 없음)", h => ADD(...add3(0))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 1번)", h => ADD(...add3(1))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 2번)", h => ADD(...add3(2))),
+  ...AB("몇백 몇십 몇의 덧셈 (받아올림 3번)", h => ADD(...add3(3))),
+  ...AB("네 자리 수 + 세 자리 수", h => ADD(...until(() => [ri(1000,8999), ri(100,999)], ([a,b]) => a+b<10000))),
+  ...AB("네 자리 수 + 네 자리 수", h => ADD(...until(() => [ri(1000,8999), ri(1000,8999)], ([a,b]) => a+b<10000))),
+  ...AB("몇백 / 몇백 몇십의 뺄셈 (받아내림 없음)", h => SUB(...until(() => [tens3(), tens3()], ([a,b]) => a>b && borrowCnt(a,b)===0))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 없음)", h => SUB(...sub3(0))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 1번)", h => SUB(...sub3(1))),
+  ...AB("몇백 몇십 몇의 뺄셈 (받아내림 2번)", h => SUB(...sub3(2))),
+  ...AB("네 자리 수 - 세 자리 수", h => SUB(ri(1000,9999), ri(100,999))),
+  ...AB("네 자리 수 - 네 자리 수", h => SUB(...until(() => [ri(1000,9999), ri(1000,9999)], ([a,b]) => a>b))),
+  ...AB("몇백 몇십 몇 ± 몇백 몇십 몇", h => Math.random()<.5 ? ADD(...add3(ri(0,2))) : SUB(...sub3(ri(0,2)))),
+  ...AB("네 자리 수 ± 네 자리 수", h => Math.random()<.5 ? ADD(...until(() => [ri(1000,8999), ri(1000,8999)], ([a,b]) => a+b<10000)) : SUB(...until(() => [ri(1000,9999), ri(1000,9999)], ([a,b]) => a>b))),
+  ["세 수의 덧셈/뺄셈 (세 자리 수)", h => tri([100,999],[100,999],[100,999],"±","±", (a,b,c,o1,o2) => (o1==="+" ? a+b : a-b) < 1000)],
+  ["세 수의 덧셈/뺄셈 (네 자리 수)", h => tri([1000,9999],[1000,9999],[1000,9999],"±","±", (a,b,c,o1,o2) => (o1==="+" ? a+b : a-b) < 10000)],
+];
+const C313 = [
+  ["나눗셈의 기초", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${a}${jEul(a)} ${b}씩 묶으면 □묶음`, q); }],
+  ["곱셈과 나눗셈의 관계", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${b} × ${q} = ${a} 이면 ${a} ÷ ${b} = □`, q); }],
+  ["나눗셈과 곱셈의 관계", h => { const b=ri(2,9), q=ri(2,9), a=b*q; return Q(`${a} ÷ ${b} = ${q} 이면 ${b} × ${q} = □`, a); }],
+  ...AB("곱셈구구 내에서의 나눗셈", h => { const b=ri(2,9), q=ri(1,9); return Q(`${b*q} ÷ ${b}`, q); }),
+];
+const tm = (lo,hi,ok) => until(() => [ri(lo,hi), ri(2,9)], ([a,b]) => ok(a%10, Math.floor(a/10)%10, b, a));
+const C314 = [
+  ...AB("몇십 X 몇", h => MUL(ri(1,9)*10, ri(2,9))),
+  ...AB("몇십 몇 X 몇 (올림 없음)", h => MUL(...tm(11,49,(o,t,b) => o && o*b<10 && t*b<10))),
+  ["몇십 몇 X 몇 (십의 자리 올림 있음) A", h => MUL(...tm(11,99,(o,t,b) => o && o*b<10 && t*b>=10))],
+  ["몇십 몇 X 몇 (십의 자리 올림 없음) B", h => MUL(...tm(11,99,(o,t,b) => o && o*b<10 && t*b>=10))],
+  ...AB("몇십 몇 X 몇 (일의 자리에서 올림)", h => MUL(...tm(11,49,(o,t,b) => o*b>=10 && t*b+Math.floor(o*b/10)<10))),
+  ...AB("몇십 몇 X 몇 (십, 일의 자리 올림 있음)", h => MUL(...tm(11,99,(o,t,b) => o*b>=10 && t*b+Math.floor(o*b/10)>=10))),
+  ...AB("몇십 몇 X 몇 (종합)", h => MUL(ri(11,99), ri(2,9))),
+];
+const nc3 = () => until(() => [ri(111,999), ri(2,9)], ([a,b]) => digs(a).every(d => d*b<10));
+const C321 = [
+  ...["A","B","C"].map(v => [`세 자리 수 X 한 자리 수 (올림 없음) ${v}`, h => MUL(...nc3())]),
+  ...["A","B","C"].map(v => [`세 자리 수 X 한 자리 수 (올림 있음) ${v}`, h => MUL(...until(() => [ri(111,999), ri(2,9)], ([a,b]) => !digs(a).every(d => d*b<10)))]),
+  ...AB("몇십 X 몇십", h => MUL(ri(1,9)*10, ri(1,9)*10)),
+  ...AB("두 자리 수 X 몇십", h => MUL(ri(11,99), ri(1,9)*10)),
+  ...AB("두 자리 수 X 두 자리 수", h => MUL(ri(11,99), ri(11,99))),
+];
+const C322 = [
+  ...AB("몇십 ÷ 몇 (내림이 없고 나머지도 없음)", h => { const [t,d] = until(() => [ri(2,9), ri(2,9)], ([t,d]) => t%d===0); return divQ(t*10, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 없고 나머지도 없음)", h => { const [t,o,d] = until(() => [ri(1,9), ri(1,9), ri(2,4)], ([t,o,d]) => t%d===0 && o%d===0); return divQ(t*10+o, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 있으나 나머지가 없음)", h => { const [a,d] = until(() => [ri(20,99), ri(2,9)], ([a,d]) => a%d===0 && Math.floor(a/10)%d!==0 && a/d>=10); return divQ(a, d); }),
+  ...AB("몇십 몇 ÷ 몇 (내림이 있고 나머지도 있음)", h => { const [a,d] = until(() => [ri(20,99), ri(2,9)], ([a,d]) => a%d!==0 && Math.floor(a/10)%d!==0 && a/d>=10); return divQ(a, d); }),
+  ...AB("몇백 몇십 몇 ÷ 몇 (내림/나머지 있음)", h => { const [a,d] = until(() => [ri(100,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }),
+  ["나눗셈의 몫과 나머지 A", h => { const [a,d] = until(() => [ri(10,99), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 몫과 나머지 B", h => { const [a,d] = until(() => [ri(100,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 몫과 나머지 C", h => { const [a,d] = until(() => [ri(10,999), ri(2,9)], ([a,d]) => a%d!==0); return divQ(a, d); }],
+  ["나눗셈의 검산", h => { const d=ri(2,9), q=ri(5,99), r=ri(1,d-1), a=d*q+r; return Q(`${a} ÷ ${d} = ${q}…${r} → 검산: ${d} × ${q} + ${r} = □`, a); }],
+];
+const imp = () => { const d=ri(2,9), n=ri(d+1, d*5); return n%d ? [n,d] : [n+1,d]; };
+const cmpQ = (a,b) => a>b ? ">" : a<b ? "<" : "=";
+const C324 = [
+  ["대분수를 가분수로 나타내기", h => { const [n,d] = imp(); return Q(`${fr(n,d)}${jEul(n%d)} 가분수로 나타내면?`, `${n}/${d}`, "frac", {form:"improper"}); }],
+  ["가분수를 대분수로 나타내기", h => { const [n,d] = imp(); return Q(`${n}/${d}${jEul(n)} 대분수로 나타내면?`, fr(n,d), "frac", {form:"mixed"}); }],
+  ["분모가 같은 가분수/대분수끼리의 크기 비교", h => { const d=ri(2,9); const [x,y] = until(() => [ri(d+1,d*5), ri(d+1,d*5)], ([x,y]) => x%d && y%d); const m = Math.random()<.5; const s = n => m ? fr(n,d) : `${n}/${d}`; return Q(`${s(x)} ○ ${s(y)}`, cmpQ(x,y), "cmp"); }],
+  ["분모가 같은 가분수와 대분수의 크기 비교", h => { const d=ri(2,9); const [x,y] = until(() => [ri(d+1,d*5), ri(d+1,d*5)], ([x,y]) => x%d && y%d); return Math.random()<.5 ? Q(`${x}/${d} ○ ${fr(y,d)}`, cmpQ(x,y), "cmp") : Q(`${fr(x,d)} ○ ${y}/${d}`, cmpQ(x,y), "cmp"); }],
+  ["어떤 수의 분수만큼 구하기 (단위분수)", h => { const d=ri(2,9), k=ri(2,9), n=d*k; return Q(`${n}의 1/${d}은 □`, k); }],
+];
+
+// ── 4학년 ──
+const C413 = [
+  ["두 자리 수 X 몇백/몇천", h => MUL(ri(11,99), ri(1,9)*pick([100,1000]))],
+  ["몇백, 몇천의 곱", h => MUL(ri(1,9)*pick([100,1000]), ri(1,9)*pick([10,100]))],
+  ...AB("세 자리 수 X 두 자리 수", h => MUL(ri(100,999), ri(11,99))),
+  ...AB("네 자리 수 X 두 자리 수", h => MUL(ri(1000,9999), ri(11,99))),
+  ["세 수의 곱셈", h => { const a=ri(11,99), b=ri(2,9), c=pick([ri(2,9), 10, 20]); return Q(`${a} × ${b} × ${c}`, a*b*c); }],
+  ["곱셈 종합", h => pick([() => MUL(ri(100,999), ri(11,99)), () => MUL(ri(1000,9999), ri(11,99)), () => MUL(ri(11,99), ri(1,9)*100)])()],
+  ...AB("몇십으로 나누기 (나머지 없음)", h => { const d=ri(2,9)*10, q=ri(2,9); return divQ(d*q, d); }),
+  ...AB("몇십으로 나누기 (나머지 있음)", h => { const d=ri(2,9)*10, q=ri(2,9), r=ri(1,d-1); return divQ(d*q+r, d); }),
+  ...AB("두 자리 수 ÷ 두 자리 수 (나머지 없음)", h => { const [d,q] = until(() => [ri(11,49), ri(2,9)], ([d,q]) => d*q<100); return divQ(d*q, d); }),
+  ...AB("두 자리 수 ÷ 두 자리 수 (나머지 있음)", h => { const [a,d] = until(() => [ri(20,99), ri(11,49)], ([a,d]) => a>d && a%d); return divQ(a, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (나머지 없음)", h => { const [d,q] = until(() => [ri(11,99), ri(2,9)], ([d,q]) => d*q>=100); return divQ(d*q, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (나머지 있음)", h => { const [a,d] = until(() => [ri(100,999), ri(11,99)], ([a,d]) => a%d && a/d<10 && a/d>=1); return divQ(a, d); }),
+  ...AB("세 자리 수 ÷ 두 자리 수 (몫이 두 자리)", h => { const [a,d] = until(() => [ri(100,999), ri(11,60)], ([a,d]) => a/d>=10); return divQ(a, d); }),
+];
+const pd = () => ri(3,12);
+const C421 = [
+  ["분모가 같은 진분수의 덧셈 (합이 진분수)", h => { const d=pd(); const [a,b] = until(() => [ri(1,d-1), ri(1,d-1)], ([a,b]) => a+b<d); return fracQ(a,b,d,"+"); }],
+  ["분모가 같은 진분수의 덧셈 (합이 가분수)", h => { const d=pd(); const [a,b] = until(() => [ri(1,d-1), ri(1,d-1)], ([a,b]) => a+b>d); return fracQ(a,b,d,"+"); }],
+  ["분모가 같은 대분수의 덧셈 (분자의 합 < 분모)", h => { const d=pd(); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x+y<d); return fracQ(ri(1,5)*d+x, ri(1,5)*d+y, d, "+"); }],
+  ["분모가 같은 대분수의 덧셈 (분자의 합 > 분모)", h => { const d=pd(); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x+y>d); return fracQ(ri(1,5)*d+x, ri(1,5)*d+y, d, "+"); }],
+  ["분모가 같은 진분수의 뺄셈 (진분수 - 진분수)", h => { const d=pd(); const [a,b] = until(() => [ri(2,d-1), ri(1,d-2)], ([a,b]) => a>b); return fracQ(a,b,d,"−"); }],
+  ["분모가 같은 진분수의 뺄셈 (자연수 - 진분수)", h => { const d=pd(), a=ri(1,6), b=ri(1,d-1); return {q:`${a} − ${fr(b,d)}`, ans:fr(a*d-b,d), kind:"frac"}; }],
+  ["분모가 같은 대분수의 뺄셈 <1>", h => { const d=pd(); const [x,y,w1,w2] = until(() => [ri(1,d-1), ri(1,d-1), ri(2,7), ri(1,6)], ([x,y,w1,w2]) => x>=y && w1>w2); return fracQ(w1*d+x, w2*d+y, d, "−"); }],
+  ["분모가 같은 대분수의 뺄셈 <2>", h => { const d=pd(); const [x,y,w1,w2] = until(() => [ri(1,d-1), ri(1,d-1), ri(2,7), ri(1,6)], ([x,y,w1,w2]) => x<y && w1>w2); return fracQ(w1*d+x, w2*d+y, d, "−"); }],
+  ["분모가 같은 대분수와 진분수의 덧셈", h => { const d=pd(), x=ri(1,d-1), y=ri(1,d-1); return fracQ(ri(1,6)*d+x, y, d, "+"); }],
+  ["분모가 같은 대분수와 진분수의 뺄셈", h => { const d=pd(), x=ri(1,d-1), y=ri(1,d-1); return fracQ(ri(1,6)*d+x, y, d, "−"); }],
+];
+// 소수 (0.001 단위 정수)
+const dv_ = (k, intMax) => ri(0,intMax)*1000 + nd(k)*10**(3-k);   // 정수부 0~intMax, 소수 k자리
+const dq = (a,b,op) => Q(`${th(a)} ${op} ${th(b)}`, th(op==="+" ? a+b : a-b), "dec");
+const C423 = [
+  ...AB("자연수가 없는 소수 한 자리 수끼리의 덧셈", h => dq(dv_(1,0), dv_(1,0), "+")),
+  ...AB("자연수가 없는 소수 두 자리 수 범위의 덧셈", h => dq(dv_(2,0), dv_(ri(1,2),0), "+")),
+  ...AB("자연수가 있는 소수 두 자리 수끼리의 덧셈", h => dq(dv_(2,9)+1000, dv_(2,9)+1000, "+")),
+  ...AB("자연수가 있는 소수 세 자리 수 범위의 덧셈", h => dq(dv_(3,9)+1000, dv_(ri(1,3),9)+1000, "+")),
+  ...AB("소수 한 자리 수끼리의 뺄셈", h => { const [a,b] = until(() => [dv_(1,9), dv_(1,9)], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 없는 소수 두 자리 범위의 뺄셈", h => { const [a,b] = until(() => [dv_(2,0), dv_(ri(1,2),0)], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 있는 소수 두 자리 수끼리의 뺄셈", h => { const [a,b] = until(() => [dv_(2,9)+1000, dv_(2,9)+1000], ([a,b]) => a>b); return dq(a,b,"−"); }),
+  ...AB("자연수가 있는 소수 세 자리 수 범위의 뺄셈", h => { const [a,b] = until(() => [dv_(3,9)+1000, dv_(ri(1,3),9)+1000], ([a,b]) => a>b); return dq(a,b,"−"); }),
+];
+
+// ── 5학년 ──
+const N9 = () => ri(2,9), N2 = () => ri(10,60);
+const E = {
+  as:  [() => `${N2()} + ${N2()} − ${N2()}`, () => `${N2()} − ${ri(2,30)} + ${N2()}`, () => `${ri(50,99)} − ${ri(2,30)} − ${ri(2,30)}`, () => `${N2()} + ${N2()} − ${N2()} + ${N2()}`],
+  md:  [() => { const c=N9(); return `${c*ri(2,9)} × ${N9()} ÷ ${c}`; }, () => { const b=N9(); return `${b*ri(2,9)} ÷ ${b} × ${N9()}`; }, () => { const c=N9(), b=N9(); return `${b*c*ri(1,6)} ÷ ${b} ÷ ${c}`; }],
+  asm: [() => `${N2()} + ${N9()} × ${N9()} − ${ri(2,30)}`, () => `${ri(60,99)} − ${N9()} × ${N9()} + ${N2()}`, () => `${N9()} × ${N9()} − ${ri(2,30)} + ${N2()}`],
+  asd: [() => { const b=N9(); return `${b*ri(2,9)} ÷ ${b} + ${N2()} − ${ri(1,9)}`; }, () => { const c=N9(); return `${N2()} − ${c*ri(1,5)} ÷ ${c} + ${N2()}`; }, () => { const c=N9(); return `${N2()} + ${c*ri(2,9)} ÷ ${c} − ${ri(2,30)}`; }],
+  all: [() => { const e=N9(); return `${N2()} + ${N9()} × ${N9()} − ${e*ri(2,9)} ÷ ${e}`; }, () => { const c=N9(); return `${N2()} − ${ri(2,20)} + ${c*ri(2,9)} ÷ ${c} × ${N9()}`; }, () => { const d=N9(); return `${d*ri(2,9)} ÷ ${d} × ${N9()} + ${N2()} − ${ri(2,20)}`; }],
+  pas: [() => `${ri(50,99)} − (${ri(2,30)} + ${ri(2,30)})`, () => `${N2()} + (${ri(30,60)} − ${ri(2,29)})`, () => `${ri(50,99)} − (${ri(30,60)} − ${ri(2,29)})`],
+  pmd: [() => { const b=N9(), c=N9(); return `${b*c*ri(1,9)} ÷ (${b} × ${c})`; }, () => { const c=N9(); return `${N9()} × (${c*ri(2,9)} ÷ ${c})`; }, () => { const c=N9(); return `(${c*ri(2,9)} × ${N9()}) ÷ ${c}`; }],
+  pasm:[() => `(${N2()} + ${N9()}) × ${N9()} − ${N2()}`, () => `${N9()} × (${ri(20,40)} − ${ri(2,19)}) + ${N2()}`, () => `${ri(80,99)} − (${N9()} + ${N9()}) × ${ri(2,4)}`],
+  pasd:[() => { const c=N9(), k=ri(2,9), a=ri(1,c*k-1); return `(${a} + ${c*k-a}) ÷ ${c} − ${ri(0,k)}`; }, () => { const d=N9(), k=ri(2,9), b=ri(1,d*k-1); return `${ri(k,k+60)} − (${b} + ${d*k-b}) ÷ ${d}`; }, () => { const c=N9(), k=ri(2,9), b=ri(1,40); return `(${c*k+b} − ${b}) ÷ ${c} + ${N2()}`; }],
+  pall:[() => { const d=N9(); return `${N9()} × (${ri(20,40)} − ${ri(2,19)}) ÷ ${d} + ${N2()}`; }, () => { const c=N9(), k=ri(2,9), a=ri(1,c*k-1); return `(${a} + ${c*k-a}) ÷ ${c} × ${N9()} − ${ri(2,20)}`; }, () => { const e=N9(); return `${N2()} + (${ri(20,40)} − ${ri(2,19)}) × ${e} ÷ ${e}`; }],
+  brace:[() => { const e=N9(); return `{(${N9()} + ${N9()}) × ${N9()} − ${ri(1,30)}} ÷ ${e}`; }, () => `${ri(150,250)} − {${N2()} + (${ri(20,30)} − ${ri(2,19)}) × ${N9()}}`, () => { const e=N9(); return `{${N2()} + ${N9()} × (${ri(10,20)} − ${ri(2,9)})} ÷ ${e}`; }],
+};
+const ex = key => exprQ(() => pick(E[key])());
+const C511 = [
+  ["덧셈과 뺄셈의 혼합 계산", ex("as")], ["곱셈과 나눗셈의 혼합 계산", ex("md")],
+  ["덧셈, 뺄셈, 곱셈의 혼합 계산", ex("asm")], ["덧셈, 뺄셈, 나눗셈의 혼합 계산", ex("asd")],
+  ["덧셈, 뺄셈, 곱셈, 나눗셈의 혼합 계산", ex("all")],
+  ["( )가 있는 덧셈/뺄셈의 혼합 계산", ex("pas")], ["( )가 있는 곱셈/나눗셈의 혼합 계산", ex("pmd")],
+  ["( )가 있는 덧셈/뺄셈/곱셈의 혼합 계산", ex("pasm")], ["( )가 있는 덧셈/뺄셈/나눗셈의 혼합 계산", ex("pasd")],
+  ["( )가 있는 덧셈/뺄셈/곱셈/나눗셈의 혼합 계산", ex("pall")], ["{ }가 있는 덧셈/뺄셈/곱셈/나눗셈의 혼합 계산", ex("brace")],
+];
+const divisors = n => { const r = []; for(let i=1;i<=n;i++) if(n%i===0) r.push(i); return r; };
+const C512 = [
+  ["약수 구하기", h => { const n = pick([6,8,10,12,14,15,16,18,20,21,24,27,28,30,32,36,40,42,45,48]); return Q(`${n}의 약수를 모두 쓰면?`, divisors(n).join(", "), "set"); }],
+  ["배수 구하기", h => { const n=ri(2,15); return Q(`${n}의 배수를 작은 수부터 5개 쓰면?`, [1,2,3,4,5].map(i => n*i).join(", "), "set"); }],
+  ["공약수 구하기", h => { const [a,b] = pair(false); return Q(`${a}${jGwa(a)} ${b}의 공약수를 모두 쓰면?`, divisors(gcd(a,b)).join(", "), "set"); }],
+  ["최대 공약수 구하기 - 두 수를 곱으로 나타냄", x2a],
+  ["최대 공약수 구하기 - 공통 약수 이용", x2a],
+  ["공배수 구하기", h => { const [a,b] = until(() => [ri(2,12), ri(2,12)], ([a,b]) => a!==b && lcm(a,b)<=60); const l = lcm(a,b); return Q(`${a}${jGwa(a)} ${b}의 공배수를 작은 수부터 3개 쓰면?`, [l, 2*l, 3*l].join(", "), "set"); }],
+  ["최소 공배수 구하기 - 두 수를 곱으로 나타냄", x2b],
+  ["최소 공배수 구하기 - 최대공약수 이용", x2b],
+];
+const F2 = (a,b,D) => `${a[0]*D/a[1]}/${D}, ${b[0]*D/b[1]}/${D}`;
+const fin = [2,4,5,8,10,20,25,50];
+const C514 = [
+  ["크기가 같은 분수 만들기", h => { const [n,d] = prop(2,9), k=ri(2,6); return Math.random()<.5 ? Q(`${n}/${d} = □/${d*k}`, n*k) : Q(`${n*k}/${d*k} = ${n}/□`, d); }],
+  ["기약분수 구하기", x3],
+  ["분수의 통분 (곱을 공통분모로)", h => { const [a,b] = until(() => [prop(2,9), prop(2,9)], ([a,b]) => a[1]!==b[1]); return Q(`${a[0]}/${a[1]}, ${b[0]}/${b[1]}${jEul(b[0])} 두 분모의 곱으로 통분하면?`, F2(a,b,a[1]*b[1]), "frac2"); }],
+  ["분수의 통분 (최소공배수를 공통분모로)", h => { const [a,b] = until(() => [prop(2,12), prop(2,12)], ([a,b]) => a[1]!==b[1] && gcd(a[1],b[1])>1); return Q(`${a[0]}/${a[1]}, ${b[0]}/${b[1]}${jEul(b[0])} 최소공배수로 통분하면?`, F2(a,b,lcm(a[1],b[1])), "frac2"); }],
+  ["분수의 크기 비교", h => { const [a,b] = until(() => [prop(2,12), prop(2,12)], ([a,b]) => a[1]!==b[1]); return Q(`${a[0]}/${a[1]} ○ ${b[0]}/${b[1]}`, cmpQ(a[0]*b[1], b[0]*a[1]), "cmp"); }],
+  ["분수를 소수로 나타내기", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); return Q(`${n}/${d}${jEul(n)} 소수로 나타내면?`, th(n*1000/d), "dec"); }],
+  ["소수를 분수로 나타내기", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); return Q(`${th(n*1000/d)}${jEul(th(n*1000/d).slice(-1))} 기약분수로 나타내면?`, `${n}/${d}`, "frac", {simp:true}); }],
+  ["분수와 소수의 비교", h => { const d = pick(fin); const n = until(() => ri(1,d-1), n => gcd(n,d)===1); const v = dv_(ri(1,2),0); return Q(`${n}/${d} ○ ${th(v)}`, cmpQ(n*1000/d, v), "cmp"); }],
+];
+const C515 = [
+  ["진분수의 덧셈", h => Math.random()<.5 ? a1(h) : a2(h)],
+  ["대분수의 덧셈 (받아올림 없음)", h => { let a,b; do{ [a,b] = [mixd(), mixd()]; }while(a[1]===b[1] || (a[0]%a[1])*b[1]+(b[0]%b[1])*a[1] >= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }],
+  ["대분수의 덧셈 (받아올림 있음)", h => { let a,b; do{ [a,b] = [mixd(), mixd()]; }while(a[1]===b[1] || (a[0]%a[1])*b[1]+(b[0]%b[1])*a[1] <= a[1]*b[1]); return {q:`${fr(...a)} + ${fr(...b)}`, ...fAns(a[0]*b[1]+b[0]*a[1], a[1]*b[1])}; }],
+  ["진분수의 뺄셈", s1],
+  ["대분수의 뺄셈 (받아내림 없음)", s23(false)],
+  ["대분수의 뺄셈 (받아내림 있음)", s23(true)],
+];
+const C522 = [
+  ["분수 X 자연수", m5a], ["자연수 X 분수", m5b], ["진분수 X 진분수", m5c],
+  ["대분수 X 대분수", h => { const a = mixd(), b = mixd(); return {q:`${fr(...a)} × ${fr(...b)}`, ...fAns(a[0]*b[0], a[1]*b[1])}; }],
+  ["세 분수의 곱셈 (진분수)", h => { const a=prop(), b=prop(), c=prop(); return {q:`${fr(...a)} × ${fr(...b)} × ${fr(...c)}`, ...fAns(a[0]*b[0]*c[0], a[1]*b[1]*c[1])}; }],
+  ["세 분수의 곱셈 (대분수, 자연수 포함)", h => { const a=mixd(2,5), b=prop(), k=ri(2,6); return {q:`${fr(...a)} × ${fr(...b)} × ${k}`, ...fAns(a[0]*b[0]*k, a[1]*b[1])}; }],
+];
+const C524 = [
+  ["소수와 자연수의 곱", h => Math.random()<.5 ? m6a(h) : m6b(h)],
+  ["곱의 소수점의 위치", h => { const k=ri(1,2), a=rDec(k, 9); if(Math.random()<.5){ const p = pick([10,100,1000]); return Q(`${fmtS(a,k)} × ${p}`, fmtS(a*p,k), "dec"); } const n = ri(11,999), p = pick([1,2,3]); return Q(`${n} × ${fmtS(1,p)}`, fmtS(n,p), "dec"); }],
+  ["소수 X 소수", m6c],
+  ["세 소수의 곱셈", h => { const a=rDec(1,2), b=rDec(1,3), c=pick([2,4,5,6]); return Q(`${fmtS(a,1)} × ${fmtS(b,1)} × ${fmtS(c,1)}`, fmtS(a*b*c,3), "dec"); }],
+];
+
+// ── 6학년 ──
+const C611 = [
+  ["분수 ÷ 자연수", f6b],
+  ["분수와 자연수의 곱셈/나눗셈 혼합", h => { const a = Math.random()<.6 ? prop(2,9) : mixd(2,6), k=ri(2,9), m=ri(2,9); return Math.random()<.5 ? {q:`${fr(...a)} × ${k} ÷ ${m}`, ...fAns(a[0]*k, a[1]*m)} : {q:`${fr(...a)} ÷ ${m} × ${k}`, ...fAns(a[0]*k, a[1]*m)}; }],
+];
+const C613 = [
+  ["소수 ÷ 자연수", d6a],
+  ["소수 ÷ 자연수 (소수 끝자리 아래 0을 내려 계산)", h => { const [q,d] = until(() => [rDec(2,4), pick([2,4,5,6,8])], ([q,d]) => (q*d)%10===0 && (q*d)%100!==0); return Q(`${fmtS(q*d/10,1)} ÷ ${d}`, fmtS(q,2), "dec"); }],
+  ["자연수 ÷ 자연수", h => { const [a,b] = until(() => [ri(1,30), pick([2,4,5,8,20,25])], ([a,b]) => a%b!==0); return Q(`${a} ÷ ${b}`, th(a*1000/b), "dec"); }],
+  ["자연수 ÷ 자연수 (반올림하여 나타냄)", h => { const [a,b] = until(() => [ri(1,60), pick([3,6,7,9,11,12])], ([a,b]) => a%b!==0); let t = Math.floor(a*10/b); if(Math.floor(a*100/b)%10>=5) t++; return Q(`${a} ÷ ${b}의 몫을 반올림하여 소수 첫째 자리까지 나타내면?`, fmtS(t,1), "dec"); }],
+];
+const hpr = v => { const d = String(v).padStart(3,"0").split("").map(Number), u = ["할","푼","리"]; return d.map((x,i) => x ? `${x}${u[i]}` : "").filter(Boolean).join(" "); };
+const C614 = [
+  ["비와 비율", h => { const b = pick(fin.filter(x => x>2)); const a = until(() => ri(1,b-1), a => gcd(a,b)===1); return Math.random()<.5 ? Q(`${a} : ${b}의 비율을 소수로 나타내면?`, th(a*1000/b), "dec") : Q(`${a} : ${b}의 비율을 기약분수로 나타내면?`, `${a}/${b}`, "frac", {simp:true}); }],
+  ["백분율과 할푼리", h => { const v = until(() => ri(1,999), v => v%10 || Math.random()<.3); return Math.random()<.5 ? Q(`${th(v)}${jEul(th(v).slice(-1))} 백분율로 나타내면? (%)`, fmtS(v,1), "pct") : Q(`${th(v)}${jEul(th(v).slice(-1))} 할푼리로 나타내면?`, hpr(v), "text"); }],
+];
+const C621 = [
+  ["분수의 나눗셈 <1>", h => { if(Math.random()<.5){ const k=ri(1,9), d=ri(2,9); return {q:`${k} ÷ 1/${d}`, ...fAns(k*d,1)}; } const d=ri(5,30); const [x,y] = until(() => [ri(1,d-1), ri(1,d-1)], ([x,y]) => x>y && x%y===0); return {q:`${x}/${d} ÷ ${y}/${d}`, ...fAns(x,y)}; }],
+  ["분수의 나눗셈 <2>", h => f6c(true)],
+  ["분수의 나눗셈 <3>", h => { const a = mixd(2,9), b = Math.random()<.5 ? mixd(2,9) : prop(2,9); return Math.random()<.2 ? (() => { const k=ri(2,9); return {q:`${k} ÷ ${fr(...b)}`, ...fAns(k*b[1], b[0])}; })() : {q:`${fr(...a)} ÷ ${fr(...b)}`, ...fAns(a[0]*b[1], a[1]*b[0])}; }],
+];
+const rStr = r => r[1]===1 ? String(r[0]) : fr(r[0], r[1]);
+const C622 = [
+  ["소수 한 자리 수 ÷ 소수 한 자리 수", h => { const [b,q] = until(() => [rDec(1,4), ri(2,30)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,1)} ÷ ${fmtS(b,1)}`, q, "dec"); }],
+  ["소수 두 자리 수 ÷ 소수 두 자리 수", h => { const [b,q] = until(() => [rDec(2,1), ri(2,20)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,2)} ÷ ${fmtS(b,2)}`, q, "dec"); }],
+  ["자릿수가 다른 두 소수의 나눗셈", h => { const [b,q] = until(() => [rDec(1,4), rDec(1,9)], ([b,q]) => (b*q)%10!==0); return Q(`${fmtS(b*q,2)} ÷ ${fmtS(b,1)}`, fmtS(q,1), "dec"); }],
+  ["자연수 ÷ 소수", d6c],
+  ["소수의 나눗셈에서 나머지 구하기", h => { const [a,d] = until(() => [rDec(1,40), ri(2,9)], ([a,d]) => a>d*10 && a%(d*10)!==0); const q = Math.floor(a/(d*10)), r = a - q*d*10; return Q(`${fmtS(a,1)} ÷ ${d}의 몫을 자연수까지 구하면 몫과 나머지는?`, `${q}…${fmtS(r,1)}`, "divd"); }],
+  ["소수 ÷ 분수 (분수로 고쳐 계산)", h => { const [a,b] = until(() => [decOf(), fracOf()], ([a,b]) => rDiv(a.v,b.v)[1]<=40); return {q:`${a.s} ÷ ${b.s}`, ...fAns(...rDiv(a.v,b.v))}; }],
+  ["소수 ÷ 분수 (소수로 고쳐 계산)", h => { let a,b,r; do{ a = decOf(); const d = pick([2,4,5]); b = {v:rq(ri(1,d-1),d)}; b.s = `${b.v[0]}/${b.v[1]}`; r = rDiv(a.v,b.v); }while(![1,2,4,5,8,10,20,25,50,100].includes(r[1])); return Q(`${a.s} ÷ ${b.s}`, th(r[0]*1000/r[1]), "dec"); }],
+  ["분수 ÷ 소수 (분수로 고쳐 계산)", h => { const [a,b] = until(() => [fracOf(), decOf()], ([a,b]) => rDiv(a.v,b.v)[1]<=40); return {q:`${a.s} ÷ ${b.s}`, ...fAns(...rDiv(a.v,b.v))}; }],
+  ["분수 ÷ 소수 (소수로 고쳐 계산)", h => { let a,b,r; do{ const d = pick([2,4,5]); a = {v:rq(ri(1,d-1),d)}; a.s = `${a.v[0]}/${a.v[1]}`; b = decOf(); r = rDiv(a.v,b.v); }while(![1,2,4,5,8,10,20,25,50,100].includes(r[1])); return Q(`${a.s} ÷ ${b.s}`, th(r[0]*1000/r[1]), "dec"); }],
+  ["분수와 소수의 혼합 계산 (연산자가 2, 3개)", h => mixFD(ri(2,3))],
+  ["분수와 소수의 혼합 계산 (연산자가 4개 이상)", h => mixFD(4)],
+];
+function mixFD(nops){
+  while(true){
+    const vals = [], ops = [];
+    for(let i=0;i<=nops;i++){ vals.push(Math.random()<.5 ? decOf() : fracOf()); if(i<nops) ops.push(pick(["+","−","×","÷"])); }
+    // 곱셈·나눗셈 먼저
+    let terms = [vals[0].v], tops = [], ok = true;
+    for(let i=0;i<nops;i++){ const o = ops[i], v = vals[i+1].v;
+      if(o==="×") terms[terms.length-1] = rMul(terms[terms.length-1], v); else if(o==="÷") terms[terms.length-1] = rDiv(terms[terms.length-1], v); else { tops.push(o); terms.push(v); } }
+    let r = terms[0]; for(let i=0;i<tops.length;i++){ r = tops[i]==="+" ? rAdd(r, terms[i+1]) : rSub(r, terms[i+1]); if(r[0]<=0) ok = false; }
+    if(!ok || r[0]<=0 || r[1]>200) continue;
+    return {q: vals.map((x,i) => x.s + (i<nops ? ` ${ops[i]} ` : "")).join(""), ...fAns(r[0], r[1])};
+  }
+}
+const rat = (a,b) => { const g = gcd(a,b); return `${a/g} : ${b/g}`; };
+const C624 = [
+  ["가장 작은 자연수의 비로 나타내기", h => { const t = ri(1,3); const [a,b] = until(() => [ri(1,9), ri(1,9)], ([a,b]) => a!==b && gcd(a,b)===1);
+    if(t===1){ const k=ri(2,15); return Q(`${a*k} : ${b*k}${jEul(b*k)} 가장 작은 자연수의 비로 나타내면?`, `${a} : ${b}`, "ratio"); }
+    if(t===2){ const k=pick([2,3,4,5,6]); return Q(`${fmtS(a*k,1)} : ${fmtS(b*k,1)}${jEul(String(b*k).slice(-1)==="0"&&(b*k)%10===0 ? b*k/10 : (b*k)%10)} 가장 작은 자연수의 비로 나타내면?`, `${a} : ${b}`, "ratio"); }
+    const [x,y] = until(() => [prop(2,9), prop(2,9)], ([x,y]) => x[0]*y[1]!==y[0]*x[1]); return Q(`${x[0]}/${x[1]} : ${y[0]}/${y[1]}${jEul(y[0])} 가장 작은 자연수의 비로 나타내면?`, rat(x[0]*y[1], y[0]*x[1]), "ratio"); }],
+  ["자연수로 된 비례식에서 ☐ 안의 수 구하기", p6a],
+  ["소수가 있는 비례식에서 ☐ 안의 수 구하기", h => { const [a,b] = until(() => [ri(1,9), ri(1,9)], ([a,b]) => a!==b && gcd(a,b)===1); const k=ri(2,9); return Q(`${fmtS(a,1)} : ${fmtS(b,1)} = □ : ${b*k}`, a*k); }],
+  ["분수가 있는 비례식에서 ☐ 안의 수 구하기", h => { const x = prop(2,6), y = prop(2,6); const [p,q] = rat(x[0]*y[1], y[0]*x[1]).split(" : ").map(Number); const k = ri(2,6); return Q(`${x[0]}/${x[1]} : ${y[0]}/${y[1]} = □ : ${q*k}`, p*k); }],
+  ["두 비의 관계를 연비로 나타내기", h => { const [a,b,c,d] = until(() => [ri(1,9),ri(1,9),ri(1,9),ri(1,9)], ([a,b,c,d]) => gcd(a,b)===1 && gcd(c,d)===1); const l = lcm(b,c); let x=[a*l/b, l, d*l/c]; const g = gcd(gcd(x[0],x[1]),x[2]); x = x.map(v => v/g); return Q(`가 : 나 = ${a} : ${b}, 나 : 다 = ${c} : ${d} 일 때 가 : 나 : 다를 가장 작은 자연수의 비로 나타내면?`, x.join(" : "), "ratio"); }],
+  ["두 비를 연비로 나타낸 것에서 ☐ 안의 수 구하기", h => { const x = [ri(1,9),ri(1,9),ri(1,9)], k = ri(2,6), i = ri(0,2); return Q(`${x.join(" : ")} = ${x.map((v,j) => j===i ? "□" : v*k).join(" : ")}`, x[i]*k); }],
+  ["가장 작은 수의 연비로 나타내기", h => { const x = until(() => [ri(1,9),ri(1,9),ri(1,9)], x => gcd(gcd(x[0],x[1]),x[2])===1), k = ri(2,9); return Q(`${x.map(v => v*k).join(" : ")}${jEul(x[2]*k)} 가장 작은 자연수의 비로 나타내면?`, x.join(" : "), "ratio"); }],
+  ["비례배분", p6b],
+  ["연비로 비례배분", h => { const x = until(() => [ri(1,9),ri(1,9),ri(1,9)], x => gcd(gcd(x[0],x[1]),x[2])===1), s = x[0]+x[1]+x[2], tot = s*ri(2,10), i = ri(0,2); return Q(`${tot}${jEul(tot)} ${x.join(" : ")}${jRo(x[2])} 비례배분하면 ${["첫째","둘째","셋째"][i]} 수는?`, tot/s*x[i]); }],
+];
+
+const CURR = [
+  [1,1,"3. 덧셈과 뺄셈",C11], [1,2,"2. 덧셈과 뺄셈(1)",C122], [1,2,"4. 덧셈과 뺄셈(2)",C124], [1,2,"6. 덧셈과 뺄셈(3)",C126],
+  [2,1,"3. 덧셈과 뺄셈",C213], [2,2,"2. 곱셈구구",C222],
+  [3,1,"1. 덧셈과 뺄셈",C311], [3,1,"3. 나눗셈",C313], [3,1,"4. 곱셈",C314], [3,2,"1. 곱셈",C321], [3,2,"2. 나눗셈",C322], [3,2,"4. 분수",C324],
+  [4,1,"3. 곱셈과 나눗셈",C413], [4,2,"1. 분수의 덧셈과 뺄셈",C421], [4,2,"3. 소수의 덧셈과 뺄셈",C423],
+  [5,1,"1. 자연수의 혼합계산",C511], [5,1,"2. 약수와 배수",C512], [5,1,"4. 약분과 통분",C514], [5,1,"5. 분수의 덧셈과 뺄셈",C515], [5,2,"2. 분수의 곱셈",C522], [5,2,"4. 소수의 곱셈",C524],
+  [6,1,"1. 분수의 나눗셈",C611], [6,1,"3. 소수의 나눗셈",C613], [6,1,"4. 비와 비율",C614], [6,2,"1. 분수의 나눗셈",C621], [6,2,"2. 소수의 나눗셈",C622], [6,2,"4. 비례식과 비례배분",C624],
+].map(([g,s,name,types], ui) => ({g, s, name, label:`${g}학년 ${s}학기 · ${name}`, stages: types.map(([tn, gen], ti) => ({id:`c${g}${s}_${name.split(".")[0]}_${ti+1}`, name:`${ti+1}) ${tn}`, gen}))}));
+
+// 예전 단원 (이미 낸 숙제·자동 숙제 설정에 남아 있을 수 있어서 보관만 해요)
+const LEGACY = [
+  {name:"1학년 · 덧셈과 뺄셈", stages:[
+    {id:"a1a", name:"한 자리 수 덧셈 (합이 9까지)", gen:lowQ(L.a1a)},
+    {id:"a1b", name:"한 자리 수 뺄셈", gen:lowQ(L.a1b)},
+    {id:"a1c", name:"10 만들기, 10에서 빼기", gen:lowQ(L.a1c)},
+    {id:"a1d", name:"받아올림이 있는 (몇) + (몇)", gen:lowQ(L.a1d)},
+    {id:"a1e", name:"받아내림이 있는 (십몇) − (몇)", gen:lowQ(L.a1e)},
+    {id:"a1m", name:"섞어서", mix:["a1a","a1b","a1c","a1d","a1e"]}]},
+  {name:"2학년 · 두 자리 수 덧셈과 뺄셈", stages:[
+    {id:"a2a", name:"(두 자리 수) + (한 자리 수)", gen:lowQ(L.a2a)},
+    {id:"a2b", name:"(두 자리 수) + (두 자리 수)", gen:lowQ(L.a2b)},
+    {id:"a2c", name:"(두 자리 수) − (한 자리 수)", gen:lowQ(L.a2c)},
+    {id:"a2d", name:"(두 자리 수) − (두 자리 수)", gen:lowQ(L.a2d)},
+    {id:"a2m", name:"섞어서", mix:["a2a","a2b","a2c","a2d"]}]},
+  {name:"2학년 · 곱셈구구", stages:[
+    {id:"gg25", name:"2단, 5단", gen:lowQ(L.gg([2,5]))},
+    {id:"gg36", name:"3단, 6단", gen:lowQ(L.gg([3,6]))},
+    {id:"gg48", name:"4단, 8단", gen:lowQ(L.gg([4,8]))},
+    {id:"gg79", name:"7단, 9단", gen:lowQ(L.gg([7,9]))},
+    {id:"ggm", name:"2단~9단 섞어서", gen:lowQ(L.gg([2,3,4,5,6,7,8,9]))}]},
+  {name:"3학년 · 세 자리 수 덧셈과 뺄셈", stages:[
+    {id:"a3a", name:"세 자리 수 덧셈", gen:lowQ(L.a3a)},
+    {id:"a3b", name:"세 자리 수 뺄셈", gen:lowQ(L.a3b)},
+    {id:"a3m", name:"섞어서", mix:["a3a","a3b"]}]},
+  {name:"3학년 · 곱셈", stages:[
+    {id:"m3a", name:"(몇십) × (몇)", gen:lowQ(L.m3a)},
+    {id:"m3b", name:"(두 자리 수) × (한 자리 수)", gen:lowQ(L.m3b)},
+    {id:"m3c", name:"(세 자리 수) × (한 자리 수)", gen:lowQ(L.m3c)},
+    {id:"m3d", name:"(두 자리 수) × (두 자리 수)", gen:lowQ(L.m3d)},
+    {id:"m3m", name:"섞어서", mix:["m3a","m3b","m3c","m3d"]}]},
+  {name:"3학년 · 나눗셈", stages:[
+    {id:"dv1", name:"곱셈구구로 나눗셈", gen:dv1},
+    {id:"dv2", name:"(두 자리 수) ÷ (한 자리 수) 나머지 없음", gen:dv2},
+    {id:"dv3", name:"(두 자리 수) ÷ (한 자리 수) 나머지 있음", gen:dv3},
+    {id:"dv4", name:"(세 자리 수) ÷ (한 자리 수) 나머지 없음", gen:dv4},
+    {id:"dv5", name:"(세 자리 수) ÷ (한 자리 수) 나머지 있음", gen:dv5},
+    {id:"dvm", name:"섞어서", mix:["dv1","dv2","dv3","dv4","dv5"]}]},
+  {name:"4학년 · 곱셈과 나눗셈", stages:[
+    {id:"mul1", name:"(세 자리 수) × (몇십)", gen:m1},
+    {id:"mul2", name:"(세 자리 수) × (두 자리 수)", gen:m2},
+    {id:"div1", name:"(세 자리 수) ÷ (몇십)", gen:n1},
+    {id:"div2", name:"(세 자리 수) ÷ (두 자리 수)", gen:n2},
+    {id:"md", name:"섞어서", mix:["mul1","mul2","div1","div2"]}]},
+  {name:"4학년 · 분모가 같은 분수의 덧셈과 뺄셈", stages:[
+    {id:"frac1", name:"진분수의 덧셈", gen:q1},
+    {id:"frac2", name:"진분수의 뺄셈", gen:q2},
+    {id:"frac3", name:"대분수의 덧셈", gen:q3},
+    {id:"frac4", name:"대분수의 뺄셈", gen:q4},
+    {id:"frac5", name:"(자연수) − (분수)", gen:q5},
+    {id:"frac6", name:"섞어서", mix:["frac1","frac2","frac3","frac4","frac5"]}]},
+  {name:"4학년 · 소수 사이의 관계", stages:[
+    {id:"rel10", name:"10배", gen:rel("10배")},
+    {id:"rel100", name:"100배", gen:rel("100배")},
+    {id:"rel01", name:"1/10", gen:rel("1/10")},
+    {id:"rel001", name:"1/100", gen:rel("1/100")},
+    {id:"dec0", name:"섞어서", mix:["rel10","rel100","rel01","rel001"]}]},
+  {name:"4학년 · 소수의 덧셈과 뺄셈", stages:[
+    {id:"dec1", name:"소수 한 자리 수의 덧셈", gen:d1},
+    {id:"dec2", name:"소수 한 자리 수의 뺄셈", gen:d2},
+    {id:"dec3", name:"소수 두 자리 수의 덧셈", gen:d3},
+    {id:"dec4", name:"소수 두 자리 수의 뺄셈", gen:d4},
+    {id:"dec5", name:"자릿수가 다른 소수의 덧셈과 뺄셈", gen:d5},
+    {id:"dec6", name:"섞어서", mix:["dec1","dec2","dec3","dec4","dec5"]}]},
+  {name:"5학년 · 자연수의 혼합 계산", stages:[
+    {id:"mxas", name:"덧셈과 뺄셈이 섞인 식", gen:mixGen("as")},
+    {id:"mxmd", name:"곱셈과 나눗셈이 섞인 식", gen:mixGen("md")},
+    {id:"mxasm", name:"덧셈, 뺄셈, 곱셈이 섞인 식", gen:mixGen("asm")},
+    {id:"mxasd", name:"덧셈, 뺄셈, 나눗셈이 섞인 식", gen:mixGen("asd")},
+    {id:"mxall", name:"덧셈, 뺄셈, 곱셈, 나눗셈이 섞인 식", gen:mixGen("all")},
+    {id:"g5mix", name:"섞어서", mix:["mxas","mxmd","mxasm","mxasd","mxall"]}]},
+  {name:"5학년 · 약수와 배수, 약분", stages:[
+    {id:"gcd1", name:"최대공약수", gen:x2a},
+    {id:"lcm1", name:"최소공배수", gen:x2b},
+    {id:"g5gcd", name:"최대공약수·최소공배수 섞어서", mix:["gcd1","lcm1"]},
+    {id:"g5red", name:"약분 (기약분수로 나타내기)", gen:x3}]},
+  {name:"5학년 · 분모가 다른 분수의 덧셈과 뺄셈", stages:[
+    {id:"add1", name:"진분수의 덧셈 (합이 1보다 작을 때)", gen:a1},
+    {id:"add2", name:"진분수의 덧셈 (합이 1보다 클 때)", gen:a2},
+    {id:"add3", name:"대분수의 덧셈", gen:a3},
+    {id:"g5add", name:"덧셈 섞어서", mix:["add1","add2","add3"]},
+    {id:"sub1", name:"진분수의 뺄셈", gen:s1},
+    {id:"sub2", name:"대분수의 뺄셈 (분수 부분끼리 뺄 수 있을 때)", gen:s23(false)},
+    {id:"sub3", name:"대분수의 뺄셈 (분수 부분끼리 뺄 수 없을 때)", gen:s23(true)},
+    {id:"g5sub", name:"뺄셈 섞어서", mix:["sub1","sub2","sub3"]},
+    {id:"g5as", name:"덧셈·뺄셈 섞어서", mix:["add1","add2","add3","sub1","sub2","sub3"]}]},
+  {name:"5학년 · 분수의 곱셈", stages:[
+    {id:"fm1", name:"(분수) × (자연수)", gen:m5a},
+    {id:"fm2", name:"(자연수) × (분수)", gen:m5b},
+    {id:"fm3", name:"(진분수) × (진분수)", gen:m5c},
+    {id:"fm4", name:"(대분수) × (분수)", gen:m5d},
+    {id:"g5fm", name:"섞어서", mix:["fm1","fm2","fm3","fm4"]}]},
+  {name:"5학년 · 소수의 곱셈", stages:[
+    {id:"dm1", name:"(소수) × (자연수)", gen:m6a},
+    {id:"dm2", name:"(자연수) × (소수)", gen:m6b},
+    {id:"dm3", name:"(소수) × (소수)", gen:m6c},
+    {id:"g5dm", name:"섞어서", mix:["dm1","dm2","dm3"]}]},
+  {name:"6학년 · 분수의 나눗셈", stages:[
+    {id:"fd1", name:"(자연수) ÷ (자연수)를 분수로", gen:f6a},
+    {id:"fd2", name:"(분수) ÷ (자연수)", gen:f6b},
+    {id:"fd3", name:"(분수) ÷ (분수)", gen:f6c},
+    {id:"fd4", name:"(자연수) ÷ (분수)", gen:f6d},
+    {id:"fd5", name:"(대분수) ÷ (분수)", gen:f6e},
+    {id:"g6fd", name:"섞어서", mix:["fd1","fd2","fd3","fd4","fd5"]}]},
+  {name:"6학년 · 소수의 나눗셈", stages:[
+    {id:"dd1", name:"(소수) ÷ (자연수)", gen:d6a},
+    {id:"dd2", name:"(소수) ÷ (소수)", gen:d6b},
+    {id:"dd3", name:"(자연수) ÷ (소수)", gen:d6c},
+    {id:"g6dd", name:"섞어서", mix:["dd1","dd2","dd3"]}]},
+  {name:"6학년 · 비례식과 비례배분", stages:[
+    {id:"pr1", name:"비례식에서 □ 구하기", gen:p6a},
+    {id:"pr2", name:"비례배분", gen:p6b},
+    {id:"g6pr", name:"섞어서", mix:["pr1","pr2"]}]},
+];
+const STAGE = {}; LEGACY.forEach(u => u.stages.forEach(s => { s.unit = u.name; s.prev = null; STAGE[s.id] = s; }));
+CURR.forEach(u => u.stages.forEach(s => { s.unit = u.label; s.prev = null; STAGE[s.id] = s; }));
+const UNITS = CURR.map(u => ({name:u.label, stages:u.stages}));
+const stageName = id => STAGE[id] ? `${STAGE[id].unit} · ${STAGE[id].name}` : "";
+// 학년 → 학기·단원 → 유형 고르기 (11math 순서)
+function stagePicker(el, initial){
+  let g = (STAGE[initial] && /^c(\d)/.exec(initial)) ? +/^c(\d)/.exec(initial)[1] : 4;
+  el.innerHTML = `<div class="row gtabs">${[1,2,3,4,5,6].map(n => `<button class="btn" data-g="${n}">${n}학년</button>`).join("")}</div>
+    <select class="inp" data-unit style="margin-top:8px"></select>
+    <select class="inp" data-type style="margin-top:8px"></select>`;
+  const us = el.querySelector("[data-unit]"), ts = el.querySelector("[data-type]");
+  const fillT = sel => { const u = CURR[+us.value]; ts.innerHTML = u.stages.map(s => `<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.name)}</option>`).join(""); };
+  const fillU = sel => {
+    el.querySelectorAll("[data-g]").forEach(b => b.classList.toggle("on", +b.dataset.g===g));
+    let pickU = -1;
+    us.innerHTML = CURR.map((u,i) => { if(u.g!==g) return ""; const has = u.stages.some(s => s.id===sel); if(has || pickU<0) pickU = has ? i : (pickU<0 ? i : pickU); return `<option value="${i}">${esc(u.s)}학기 · ${esc(u.name)}</option>`; }).join("");
+    const k = CURR.findIndex(u => u.stages.some(s => s.id===sel)); us.value = String(k>=0 && CURR[k].g===g ? k : pickU); fillT(sel);
+  };
+  el.querySelector(".gtabs").onclick = e => { const b = e.target.closest("[data-g]"); if(!b) return; e.stopPropagation(); g = +b.dataset.g; fillU(""); };
+  us.onchange = () => fillT("");
+  fillU(initial);
+  return () => ts.value;
+}
+const stageOptions = sel => UNITS.map(u => `<optgroup label="${u.name}">${u.stages.map(s => `<option value="${s.id}" ${s.id===sel?"selected":""}>${s.name}</option>`).join("")}</optgroup>`).join("");
+
+function makeProblems(id, n){
+  const st = STAGE[id], out = [], seen = new Set();
+  const add = (gen, hard, sid=id) => { let p, k=0; do{ p = gen(hard); k++; }while(seen.has(p.q) && k<50); seen.add(p.q); out.push({...p, stage:sid}); };
+  if(st.mix){ for(let i=0;i<n;i++){ const sid = st.mix[ri(0,st.mix.length-1)]; add(STAGE[sid].gen, Math.random()<.7, sid); } return out; }
+  const review = st.prev ? Math.max(1, Math.round(n/10)) : 0, rest = n-review, easy = Math.floor(rest/2);
+  for(let i=0;i<easy;i++) add(st.gen, false);          // 쉬운 문제
+  for(let i=0;i<rest-easy;i++) add(st.gen, true);      // 받아올림·받아내림·나머지 있는 문제
+  for(let i=0;i<review;i++) add(STAGE[st.prev].gen, true, st.prev); // 바로 앞 단계 복습
+  return out;
+}
+// 분수를 위아래로 보여 주기
+function richQ(q){
+  return esc(q).replace(/(\d+) (\d+)\/(\d+)|(\d+)\/(\d+)/g, (m,w,n,d,n2,d2) =>
+    `<span class="mix">${w ? w : ""}<span class="fr"><span>${n||n2}</span><span>${d||d2}</span></span></span>`);
+}
+
+// ───────── 판서판 (펜 기록 + 녹화) ─────────
+const W = 1000, H = 700, ERASE_W = 36;
+function drawStroke(ctx, s, lim=Infinity){
+  const p = s.p; if(!p || !p.length) return;
+  ctx.save();
+  ctx.globalCompositeOperation = s.e ? "destination-out" : "source-over";
+  ctx.strokeStyle = s.c; ctx.lineWidth = s.e ? ERASE_W : s.w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+  let n = 0;
+  for(let i=3;i<p.length;i+=3){ if(p[i+2] > lim) break; ctx.lineTo(p[i], p[i+1]); n++; }
+  if(!n) ctx.lineTo(p[0]+0.1, p[1]);
+  ctx.stroke(); ctx.restore();
+}
+function visibleStrokes(ev, T){ let a = []; for(const e of ev){ if(e.t > T) break; if(e.k==="s") a.push(e); else if(e.k==="c") a = []; else if(e.k==="u") a.pop(); } return a; }
+function renderAt(ctx, ev, T){ ctx.clearRect(0,0,W,H); for(const s of visibleStrokes(ev,T)) drawStroke(ctx, s, T-s.t); }
+
+class Board {
+  constructor(wrap, readonly=false){
+    this.wrap = wrap; this.cv = document.createElement("canvas"); wrap.appendChild(this.cv);
+    this.ctx = this.cv.getContext("2d");
+    this.ev = []; this.base = 0; this.t0 = performance.now(); this.readonly = readonly;
+    this.tool = {c:"#222", w:4, e:0}; this.penSeen = false; this.finger = false; this.cur = null; this.dirty = false; this.onChange = null; this.paused = false;
+    this.ro = new ResizeObserver(() => this.fit()); this.ro.observe(wrap);
+    this.bind();
+  }
+  fit(){
+    const r = this.wrap.getBoundingClientRect(); if(!r.width || !r.height) return;
+    let w = r.width, h = w*H/W; if(h > r.height){ h = r.height; w = h*W/H; }
+    const d = window.devicePixelRatio || 1;
+    this.cv.style.width = w+"px"; this.cv.style.height = h+"px";
+    this.cv.width = Math.round(w*d); this.cv.height = Math.round(h*d);
+    this.ctx.setTransform(this.cv.width/W, 0, 0, this.cv.height/H, 0, 0);
+    this.redraw();
+  }
+  now(){ return Math.round(this.paused ? this.base : this.base + performance.now() - this.t0); }
+  pause(){ if(!this.paused){ this.base = this.now(); this.paused = true; } }
+  resume(){ if(this.paused){ this.t0 = performance.now(); this.paused = false; } }
+  load(rec){ this.ev = rec && rec.ev ? rec.ev : []; this.base = rec ? rec.dur||0 : 0; this.t0 = performance.now(); this.paused = false; this.dirty = false; this.cur = null; this.redraw(); }
+  snap(){ return {dur:this.now(), ev:this.ev, guide:!!this.guide}; }
+  redraw(T=Infinity){ renderAt(this.ctx, this.ev, T); }
+  pos(e){ const r = this.cv.getBoundingClientRect(); return [Math.round((e.clientX-r.left)/r.width*W), Math.round((e.clientY-r.top)/r.height*H)]; }
+  bind(){
+    const c = this.cv;
+    c.addEventListener("pointerdown", e => {
+      if(this.readonly) return;
+      if(e.pointerType==="pen") this.penSeen = true;
+      if(e.pointerType==="touch" && this.penSeen && !this.finger) return;   // 펜을 쓰면 손바닥은 무시
+      e.preventDefault(); try{ c.setPointerCapture(e.pointerId); }catch(_){}
+      this.resume();
+      const [x,y] = this.pos(e);
+      this.cur = {k:"s", t:this.now(), c:this.tool.c, w:this.tool.w, e:this.tool.e, p:[x,y,0]}; this.curId = e.pointerId;
+      this.ev.push(this.cur); drawStroke(this.ctx, this.cur);
+    });
+    c.addEventListener("pointermove", e => {
+      if(!this.cur || e.pointerId!==this.curId) return; e.preventDefault();
+      const list = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+      for(const ce of list){
+        const [x,y] = this.pos(ce), p = this.cur.p, lx = p[p.length-3], ly = p[p.length-2];
+        if(Math.abs(x-lx)+Math.abs(y-ly) < 2) continue;
+        p.push(x, y, this.now()-this.cur.t); this.seg(lx,ly,x,y);
+      }
+    });
+    const end = e => { if(!this.cur || e.pointerId!==this.curId) return; this.cur = null; this.changed(); };
+    c.addEventListener("pointerup", end); c.addEventListener("pointercancel", end);
+  }
+  seg(x1,y1,x2,y2){ const s=this.cur, ctx=this.ctx; ctx.save(); ctx.globalCompositeOperation = s.e ? "destination-out" : "source-over"; ctx.strokeStyle = s.c; ctx.lineWidth = s.e ? ERASE_W : s.w; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.restore(); }
+  undo(){ if(!visibleStrokes(this.ev, Infinity).length) return; this.ev.push({k:"u", t:this.now()}); this.redraw(); this.changed(); }
+  clear(){ if(!visibleStrokes(this.ev, Infinity).length) return; this.ev.push({k:"c", t:this.now()}); this.redraw(); this.changed(); }
+  changed(){ this.dirty = true; this.onChange && this.onChange(); }
+  destroy(){ this.ro.disconnect(); this.cv.remove(); }
+}
+
+// 녹화 재생: 오래 멈춘 시간(1.5초 넘게)은 0.5초로 줄여서 보여 줘요
+function compress(rec){
+  const times = [];
+  for(const e of rec.ev){ if(e.k==="s"){ for(let i=2;i<e.p.length;i+=3) times.push(e.t+e.p[i]); } else times.push(e.t); }
+  times.sort((a,b)=>a-b);
+  const Tm = [], Cm = []; let c = 0, prev = 0;
+  for(const t of times){ const g = t-prev; c += g > 1500 ? 500 : g; Tm.push(t); Cm.push(c); prev = t; }
+  const f = x => {
+    let lo = 0, hi = Tm.length-1, k = -1;
+    while(lo<=hi){ const m=(lo+hi)>>1; if(Tm[m]<=x){ k=m; lo=m+1; } else hi=m-1; }
+    if(k<0) return Math.min(x, 500);
+    const gapNext = k+1<Tm.length ? Cm[k+1]-Cm[k] : 500;
+    return Cm[k] + Math.min(x-Tm[k], gapNext);
+  };
+  const ev = rec.ev.map(e => {
+    if(e.k!=="s") return {...e, t:f(e.t)};
+    const t = f(e.t), p = e.p.slice();
+    for(let i=2;i<p.length;i+=3) p[i] = f(e.t+e.p[i]) - t;
+    return {...e, t, p};
+  });
+  return {ev, dur:(times.length ? f(times[times.length-1]) : 0) + 300};
+}
+
+// ───────── 화면 관리 ─────────
+let role = null, unsubs = [], cleanups = [];
+function cleanup(){ cleanups.forEach(f => { try{ f(); }catch(e){} }); cleanups = []; unsubs.forEach(u => { try{ u && u(); }catch(e){} }); unsubs = []; layer.innerHTML = ""; }
+function go(fn, ...a){ cleanup(); window.scrollTo(0,0); fn(...a); }
+
+function modal(html, wide=false){
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = `<div class="mbox ${wide?"wide":""}">${html}</div>`;
+  layer.appendChild(m); return m;
+}
+function ask(title, text, ok="네", no="아니요"){
+  return new Promise(res => {
+    const m = modal(`<h3>${title}</h3><div class="muted" style="font-size:16px">${text}</div><div class="mbtns"><button class="big gray" data-a="0">${no}</button><button class="big" data-a="1">${ok}</button></div>`);
+    m.addEventListener("click", e => { const b = e.target.closest("[data-a]"); if(!b) return; m.remove(); res(b.dataset.a==="1"); });
+  });
+}
+function tell(title, text, ok="확인"){
+  return new Promise(res => {
+    const m = modal(`<h3>${title}</h3><div style="font-size:16px">${text}</div><div class="mbtns one"><button class="big" data-a>${ok}</button></div>`);
+    m.querySelector("[data-a]").onclick = () => { m.remove(); res(); };
+  });
+}
+
+function statusOf(h){
+  if(h.status==="graded") return ["채점 완료","done"];
+  if(h.status==="submitted") return ["제출 완료","sub"];
+  if(h.status==="round2") return ["다시 풀기","r2"];
+  const any = h.st && Object.values(h.st).some(s => s && s.a1);
+  return any ? ["푸는 중","ing"] : ["새 숙제","new"];
+}
+const stOf = (h,i) => (h.st && h.st[i]) || {};
+const curAtt = h => h.round===2 ? 2 : 1;
+function editable(h,i){ if(h.status==="submitted" || h.status==="graded") return false; if(h.round===2) return stOf(h,i).ok1===false; return true; }
+const has = v => v!=null && String(v).trim()!=="";
+const attempts = (h,i) => has(stOf(h,i).a2) ? 2 : has(stOf(h,i).a1) ? 1 : 0;
+const finalOk = (h,i) => { const s = stOf(h,i); return s.ok2!=null ? s.ok2 : s.ok1; };
+const gradeOk = (h,i) => { const g = h.grade && h.grade[i]; return g && g.ok!=null ? g.ok : finalOk(h,i); };
+
+// ───────── 처음 화면 ─────────
+function startScreen(){
+  app.innerHTML = `<div class="center">
+    <div class="deco">🌷⭐🐰⭐🌷</div>
+    <h1>${esc(STUDENT)} 숙제방</h1>
+    <p class="muted" style="font-size:16px;margin:0">숙제를 풀고, 선생님과 이야기해요</p>
+    <button class="big" id="s">${esc(STUDENT)}로 들어가기</button>
+    <button class="big gray" id="t">선생님 로그인</button>
+    <button class="big gray" id="p" style="background:#fff;border:2px solid var(--line);box-shadow:0 4px 0 var(--line);color:var(--main-d)">어머님 보기</button>
+  </div>`;
+  $("#p").onclick = async () => { try{ await DB.enterParent(); }catch(e){ tell("들어갈 수 없어요", "인터넷 연결을 확인해 주세요."); } };
+  $("#s").onclick = async () => { try{ await DB.enterStudent(); }catch(e){ tell("들어갈 수 없어요", "인터넷 연결을 확인해 주세요."); } };
+  $("#t").onclick = () => DB.mode==="local" ? DB.loginTeacher() : go(loginScreen);
+}
+function loginScreen(){
+  app.innerHTML = `<div class="center">
+    <h1>선생님 로그인</h1>
+    <form id="f" style="display:grid;gap:10px">
+      <input class="inp" id="em" type="email" placeholder="이메일" autocomplete="username" value="${esc(TEACHER_EMAIL)}">
+      <input class="inp" id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <button class="big">로그인</button>
+    </form>
+    <div id="err" class="muted" style="color:var(--bad)"></div>
+    <button class="link" id="back">← 처음으로</button>
+  </div>`;
+  $("#back").onclick = () => go(startScreen);
+  $("#f").onsubmit = async e => {
+    e.preventDefault(); $("#err").textContent = "";
+    try{ await DB.loginTeacher($("#em").value.trim(), $("#pw").value); }
+    catch(err){
+      const c = (err && err.code) || "";
+      const why = {
+        "auth/invalid-credential":"이메일이나 비밀번호가 맞지 않아요.",
+        "auth/wrong-password":"비밀번호가 맞지 않아요.",
+        "auth/user-not-found":"이 이메일로 만든 선생님 계정이 없어요.",
+        "auth/invalid-email":"이메일 모양이 맞지 않아요.",
+        "auth/too-many-requests":"너무 많이 틀렸어요. 잠시 뒤에 다시 해 주세요.",
+        "auth/unauthorized-domain":"파이어베이스 '승인된 도메인'에 이 앱 주소가 아직 없어요.",
+        "auth/operation-not-allowed":"파이어베이스에서 '이메일/비밀번호' 로그인이 꺼져 있어요.",
+        "auth/network-request-failed":"인터넷 연결을 확인해 주세요."
+      }[c] || "로그인할 수 없어요.";
+      $("#err").textContent = why + (c ? ` (${c})` : "");
+    }
+  };
+}
+function topBar(title, who){
+  return `<div class="bar"><h1>${title}</h1><div class="row"><span class="muted">${who}</span><button class="link" id="out">나가기</button></div></div>`;
+}
+function bindOut(){ $("#out").onclick = async () => { if(await ask("나갈까요?", "다음에 다시 들어올 수 있어요.", "나가기", "취소")){ pinOK = false; DB.logout(); } }; }
+
+// ───────── 수아: 숙제 목록 ─────────
+function studentHome(){
+  const tab = (() => { try{ return localStorage.getItem("sua-tab") || "math"; }catch(e){ return "math"; } })();
+  app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 공부방`, "")}
+    <div class="banner hide" id="tleft"></div>
+    <div class="stabs"><button class="stab ${tab==="math"?"on":""}" data-tab="math">📐 ${esc(STUDENT)} 수학숙제</button><button class="stab ${tab==="eng"?"on":""}" data-tab="eng">🔤 ${esc(STUDENT)} 영어공부</button></div>
+    <div id="tab-eng" class="${tab==="eng"?"":"hide"}">${engHomeHTML()}</div>
+    <div id="tab-math" class="${tab==="math"?"":"hide"}">
+    <div class="card"><h2>해야 할 숙제</h2><div class="hwlist" id="todo"></div></div>
+    <div class="card"><h2>끝낸 숙제</h2><div class="hwlist" id="done"></div></div>
+    <div class="card" id="ph"><h2>📸 사진 제출</h2>
+      <div class="row" style="flex-wrap:nowrap"><button class="big" data-up="planner" style="flex:1">스터디플래너</button><button class="big gray" data-up="hw" style="flex:1">숙제 사진</button></div>
+      <input type="file" id="pf" accept="image/*" multiple hidden>
+      <div class="muted" style="margin:10px 0 4px">내가 올린 사진</div><div class="hwlist" data-list></div>
+    </div></div></div>`;
+  photoUpload($("#ph")); unsubs.push(photoList($("#ph"), "student"));
+  bindOut();
+  unsubs.push(DB.watchHWList(list => {
+    ensureAuto(list);
+    const card = h => { const [lab,cls] = statusOf(h); const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${h.problems.length}문제</div></div>${s}<span class="chip ${cls}">${lab}</span></button>`; };
+    const todo = list.filter(h => !["submitted","graded"].includes(h.status)), done = list.filter(h => ["submitted","graded"].includes(h.status));
+    $("#todo").innerHTML = todo.length ? todo.map(card).join("") : `<div class="empty">숙제가 없어요. 신난다! 🎈</div>`;
+    $("#done").innerHTML = done.length ? done.map(card).join("") : `<div class="empty">아직 없어요.</div>`;
+  }));
+  let limit = 0;
+  getLimit().then(l => { limit = l; if(l){ const left = l - getUsed(); const t = $("#tleft"); if(!t) return; t.classList.remove("hide"); t.textContent = left>0 ? `⏱ 오늘 남은 시간: ${fmtLeft(left)}` : "⏱ 오늘 숙제 시간이 끝났어요. 내일 또 만나요!"; } });
+  const engClick = bindEngHome(() => limit);
+  app.onclick = e => {
+    const tb = e.target.closest("[data-tab]");
+    if(tb){ const t = tb.dataset.tab; try{ localStorage.setItem("sua-tab", t); }catch(er){}
+      document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x===tb));
+      $("#tab-eng").classList.toggle("hide", t!=="eng"); $("#tab-math").classList.toggle("hide", t!=="math"); return; }
+    if(engClick(e)) return;
+    const b = e.target.closest(".hw[data-id]"); if(!b) return; const isDone = !!b.closest("#done");
+    if(!isDone && limit && getUsed() >= limit){ tell("오늘은 여기까지! ⏰", "오늘 숙제 시간을 다 썼어요. 내일 이어서 풀어요."); return; }
+    go(isDone ? studentResult : solve, b.dataset.id);
+  };
+}
+
+// ───────── 영어공부 ─────────
+// 초등 3·4학년 수준 기본 단어·문장 (직접 만든 목록)
+const ENG = [
+  {id:"animal", name:"동물", icon:"🐶", words:[["dog","개","🐶"],["cat","고양이","🐱"],["bird","새","🐦"],["fish","물고기","🐟"],["rabbit","토끼","🐰"],["bear","곰","🐻"],["lion","사자","🦁"],["tiger","호랑이","🐯"],["monkey","원숭이","🐵"],["elephant","코끼리","🐘"]],
+   sents:[["I have a dog.","나는 개가 있어요."],["The cat is cute.","고양이가 귀여워요."],["Look at the bird.","새를 보세요."],["The lion is big.","사자는 커요."],["I like rabbits.","나는 토끼를 좋아해요."],["Can you see the monkey?","원숭이가 보이니?"]]},
+  {id:"food", name:"음식", icon:"🍎", words:[["apple","사과","🍎"],["banana","바나나","🍌"],["bread","빵","🍞"],["milk","우유","🥛"],["egg","달걀","🥚"],["rice","밥","🍚"],["pizza","피자","🍕"],["juice","주스","🧃"],["cookie","쿠키","🍪"],["water","물","💧"]],
+   sents:[["I like apples.","나는 사과를 좋아해요."],["Do you like pizza?","너는 피자를 좋아하니?"],["I want some milk.","우유를 좀 마시고 싶어요."],["I am hungry.","나는 배고파요."],["The cookie is sweet.","쿠키가 달아요."],["Let's eat bread.","빵을 먹자."]]},
+  {id:"color", name:"색깔", icon:"🌈", words:[["red","빨간색","🔴"],["blue","파란색","🔵"],["yellow","노란색","🟡"],["green","초록색","🟢"],["pink","분홍색","🩷"],["purple","보라색","🟣"],["black","검은색","⚫"],["white","흰색","⚪"],["orange","주황색","🟠"],["brown","갈색","🟤"]],
+   sents:[["My bag is red.","내 가방은 빨간색이에요."],["I like pink.","나는 분홍색을 좋아해요."],["The sky is blue.","하늘은 파란색이에요."],["What color is it?","그건 무슨 색이니?"],["It is green.","그건 초록색이에요."],["The banana is yellow.","바나나는 노란색이에요."]]},
+  {id:"family", name:"가족·사람", icon:"👪", words:[["mother","엄마","👩"],["father","아빠","👨"],["sister","언니·누나·여동생","👧"],["brother","오빠·형·남동생","👦"],["grandma","할머니","👵"],["grandpa","할아버지","👴"],["baby","아기","👶"],["family","가족","👪"],["friend","친구","🤝"],["teacher","선생님","🧑‍🏫"]],
+   sents:[["This is my mother.","이분은 우리 엄마예요."],["He is my brother.","그는 내 남동생이에요."],["I love my family.","나는 우리 가족을 사랑해요."],["She is my friend.","그녀는 내 친구예요."],["Who is he?","그는 누구니?"],["My teacher is kind.","우리 선생님은 친절해요."]]},
+  {id:"school", name:"학교·학용품", icon:"🎒", words:[["book","책","📖"],["pencil","연필","✏️"],["bag","가방","🎒"],["chair","의자","🪑"],["ruler","자","📏"],["scissors","가위","✂️"],["clock","시계","🕰️"],["door","문","🚪"],["notebook","공책","📓"],["school","학교","🏫"]],
+   sents:[["This is my pencil.","이건 내 연필이에요."],["Open your book.","책을 펴세요."],["Close the door.","문을 닫으세요."],["I have a ruler.","나는 자가 있어요."],["Sit down, please.","앉으세요."],["Stand up, please.","일어나세요."]]},
+  {id:"body", name:"몸", icon:"🖐️", words:[["head","머리","🙆"],["eye","눈","👁️"],["ear","귀","👂"],["nose","코","👃"],["mouth","입","👄"],["hand","손","✋"],["foot","발","🦶"],["leg","다리","🦵"],["arm","팔","💪"],["hair","머리카락","💇"]],
+   sents:[["Touch your nose.","코를 만지세요."],["I have two eyes.","나는 눈이 두 개 있어요."],["Clap your hands.","손뼉을 치세요."],["My hair is long.","내 머리카락은 길어요."],["Raise your arm.","팔을 드세요."],["My leg hurts.","다리가 아파요."]]},
+  {id:"weather", name:"날씨", icon:"☀️", words:[["sunny","맑은","☀️"],["rainy","비 오는","🌧️"],["cloudy","흐린","☁️"],["snowy","눈 오는","🌨️"],["windy","바람 부는","🌬️"],["hot","더운","🥵"],["cold","추운","🥶"],["warm","따뜻한","🌤️"],["cool","시원한","🍃"],["rainbow","무지개","🌈"]],
+   sents:[["It is sunny today.","오늘은 맑아요."],["How is the weather?","날씨가 어때?"],["It is raining.","비가 오고 있어요."],["It is cold outside.","밖은 추워요."],["I see a rainbow.","무지개가 보여요."],["It is windy.","바람이 불어요."]]},
+  {id:"number", name:"숫자", icon:"🔢", words:[["one","하나, 1","1️⃣"],["two","둘, 2","2️⃣"],["three","셋, 3","3️⃣"],["four","넷, 4","4️⃣"],["five","다섯, 5","5️⃣"],["six","여섯, 6","6️⃣"],["seven","일곱, 7","7️⃣"],["eight","여덟, 8","8️⃣"],["nine","아홉, 9","9️⃣"],["ten","열, 10","🔟"]],
+   sents:[["I am ten years old.","나는 열 살이에요."],["How many apples?","사과가 몇 개니?"],["I have three pencils.","나는 연필이 세 자루 있어요."],["Count to ten.","열까지 세어 봐요."],["Two cats are sleeping.","고양이 두 마리가 자고 있어요."],["How old are you?","너는 몇 살이니?"]]},
+  {id:"action", name:"움직임", icon:"🏃", words:[["run","달리다","🏃"],["jump","뛰어오르다","🤸"],["swim","수영하다","🏊"],["dance","춤추다","💃"],["sing","노래하다","🎤"],["read","읽다","📚"],["write","쓰다","✍️"],["sleep","자다","😴"],["eat","먹다","🍽️"],["play","놀다","⚽"]],
+   sents:[["I can swim.","나는 수영할 수 있어요."],["Can you dance?","너는 춤출 수 있니?"],["Let's play soccer.","축구하자."],["She is singing.","그녀는 노래하고 있어요."],["I like to read.","나는 읽는 걸 좋아해요."],["He can run fast.","그는 빨리 달릴 수 있어요."]]},
+  {id:"day", name:"요일", icon:"📅", words:[["Monday","월요일","🌙"],["Tuesday","화요일","🔥"],["Wednesday","수요일","💧"],["Thursday","목요일","🌳"],["Friday","금요일","✨"],["Saturday","토요일","🎈"],["Sunday","일요일","☀️"],["today","오늘","📅"],["tomorrow","내일","➡️"],["week","주, 일주일","🗓️"]],
+   sents:[["Today is Monday.","오늘은 월요일이에요."],["What day is it?","오늘 무슨 요일이니?"],["See you tomorrow.","내일 봐."],["I like Sunday.","나는 일요일이 좋아요."],["It is Saturday.","토요일이에요."],["I go to school on Friday.","나는 금요일에 학교에 가요."]]},
+  {id:"clothes", name:"옷", icon:"👕", words:[["shirt","셔츠","👕"],["pants","바지","👖"],["dress","원피스","👗"],["hat","모자","🧢"],["shoes","신발","👟"],["socks","양말","🧦"],["coat","코트","🧥"],["gloves","장갑","🧤"],["glasses","안경","👓"],["scarf","목도리","🧣"]],
+   sents:[["Put on your coat.","코트를 입으세요."],["I like your hat.","네 모자가 마음에 들어."],["Where are my socks?","내 양말 어디 있지?"],["These are my shoes.","이건 내 신발이에요."],["Take off your gloves.","장갑을 벗으세요."],["Her dress is pretty.","그녀의 원피스는 예뻐요."]]},
+  {id:"place", name:"장소", icon:"🏞️", words:[["home","집","🏠"],["park","공원","🏞️"],["zoo","동물원","🦒"],["library","도서관","📚"],["hospital","병원","🏥"],["store","가게","🏪"],["bank","은행","🏦"],["beach","바닷가","🏖️"],["room","방","🛏️"],["kitchen","부엌","🍳"]],
+   sents:[["Let's go to the park.","공원에 가자."],["Where is the library?","도서관은 어디에 있니?"],["I am at home.","나는 집에 있어요."],["The zoo is fun.","동물원은 재미있어요."],["Go straight.","똑바로 가세요."],["It is next to the bank.","그건 은행 옆에 있어요."]]},
+];
+const PHONICS = [["A","apple","🍎"],["B","bear","🐻"],["C","cat","🐱"],["D","dog","🐶"],["E","egg","🥚"],["F","fish","🐟"],["G","gift","🎁"],["H","hat","🧢"],["I","ink","🖋️"],["J","jam","🍓"],["K","kite","🪁"],["L","lion","🦁"],["M","milk","🥛"],["N","nose","👃"],["O","octopus","🐙"],["P","pig","🐷"],["Q","queen","👸"],["R","red","🔴"],["S","sun","☀️"],["T","tiger","🐯"],["U","umbrella","☂️"],["V","violin","🎻"],["W","water","💧"],["X","box","📦"],["Y","yellow","🟡"],["Z","zoo","🦒"]];
+const CVC = [["cat","a","🐱"],["bag","a","🎒"],["hat","a","🧢"],["map","a","🗺️"],["bed","e","🛏️"],["pen","e","🖊️"],["red","e","🔴"],["ten","e","🔟"],["pig","i","🐷"],["six","i","6️⃣"],["fish","i","🐟"],["lip","i","👄"],["dog","o","🐶"],["box","o","📦"],["fox","o","🦊"],["sock","o","🧦"],["bus","u","🚌"],["sun","u","☀️"],["cup","u","🥤"],["duck","u","🦆"]];
+const ENG_ACTS = [
+  {id:"learn", name:"단어 외우기", icon:"🃏", desc:"그림 보고 듣고 외워요"},
+  {id:"mean", name:"뜻 고르기", icon:"🤔", desc:"영어 보고 뜻 고르기"},
+  {id:"spell", name:"철자 맞추기", icon:"🔤", desc:"뜻 보고 글자 골라 쓰기"},
+  {id:"dict", name:"듣고 받아쓰기", icon:"🎧", desc:"듣고 직접 써요"},
+  {id:"sent", name:"문장 만들기", icon:"🧩", desc:"단어 순서 맞추고 따라 읽기"},
+];
+const PH_ACTS = [
+  {id:"abc", name:"알파벳 소리", icon:"🔊", desc:"글자랑 단어 소리 듣기"},
+  {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
+  {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
+];
+const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : ENG.find(u => u.id===id);
+const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+const pickN = (a, n, not) => shuffle(a.filter(x => x!==not)).slice(0, n);
+
+// 발음: 기기에 들어 있는 영어 읽어 주기 (인터넷 필요 없음)
+let enVoice = null;
+function loadVoice(){
+  if(!("speechSynthesis" in window)) return;
+  const vs = speechSynthesis.getVoices().filter(v => /^en[-_]US/i.test(v.lang));
+  enVoice = vs.find(v => /Samantha|Google US|Aria|Jenny/i.test(v.name)) || vs[0] || speechSynthesis.getVoices().find(v => /^en/i.test(v.lang)) || null;
+}
+if("speechSynthesis" in window){ loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
+function say(text, slow=false){
+  if(!("speechSynthesis" in window)){ toast("이 기기는 소리 읽기를 못 해요"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; if(enVoice) u.voice = enVoice;
+  u.rate = slow ? 0.55 : 0.85; u.pitch = 1.05; speechSynthesis.speak(u);
+}
+
+// 영어 하는 동안에도 하루 사용 시간 재기
+function engClock(){
+  let last = Date.now(), done = false;
+  const t = setInterval(async () => {
+    const now = Date.now(); if(!document.hidden) addUsed(Math.min(now-last, 5000)); last = now;
+    const limit = await getLimit();
+    if(limit && getUsed() >= limit && !done){ done = true; clearInterval(t); speechSynthesis && speechSynthesis.cancel();
+      const m = modal(`<h3>오늘은 여기까지! ⏰</h3><div style="font-size:16px">오늘 공부 시간을 다 썼어요. 내일 또 해요!</div><div class="mbtns one"><button class="big" data-a>알겠어요</button></div>`);
+      m.querySelector("[data-a]").onclick = () => go(studentHome);
+    }
+  }, 1000);
+  cleanups.push(() => { clearInterval(t); try{ speechSynthesis.cancel(); }catch(e){} });
+}
+
+// 수아 화면: 영어 탭 내용
+function engHomeHTML(){
+  return `<div class="card"><h2>🔤 오늘 뭐 공부할까?</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
+    <div class="egrid">${ENG.map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${u.name}</span></button>`).join("")}
+    <button class="eunit ph" data-eu="phonics"><span class="eic">🔠</span><span>파닉스</span></button></div></div>
+    <div class="card"><h2>내 영어 기록</h2><div class="hwlist" id="erec"></div></div>`;
+}
+function engRecRow(r){
+  const u = engUnit(r.unit) || {name:r.unit, icon:"🔤"};
+  const sc = r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
+  const wrong = (r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "";
+  return `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}</div>`;
+}
+function bindEngHome(limitRef){
+  unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.slice(0,10).map(engRecRow).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
+  return e => {
+    const b = e.target.closest("[data-eu]"); if(!b) return false;
+    if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; }
+    const u = engUnit(b.dataset.eu), acts = u.id==="phonics" ? PH_ACTS : ENG_ACTS;
+    const m = modal(`<h3>${u.icon} ${esc(u.name)}</h3><div class="hwlist">${acts.map(a => `<button class="hw" data-act="${a.id}"><span style="font-size:28px">${a.icon}</span><div class="grow"><div class="ti">${a.name}</div><div class="muted">${a.desc}</div></div></button>`).join("")}</div><div class="mbtns one"><button class="big gray" data-x>닫기</button></div>`);
+    m.onclick = ev => { if(ev.target.closest("[data-x]")) return m.remove(); const a = ev.target.closest("[data-act]"); if(a){ m.remove(); go(engPlay, u.id, a.dataset.act); } };
+    return true;
+  };
+}
+
+// ───────── 영어: 공부 화면 ─────────
+function engPlay(unitId, act, only){
+  const u = engUnit(unitId), t0 = Date.now();
+  engClock();
+  app.onclick = null;
+  app.innerHTML = `<div class="page"><div class="bar"><h1 style="font-size:26px">${u.icon} ${esc(u.name)} · ${esc(engActName(act))}</h1><div class="row"><span class="muted" id="eprog"></span><button class="link" id="eback">그만하기</button></div></div>
+    <div class="card eplay" id="ebox"></div></div>`;
+  $("#eback").onclick = async () => { if(await ask("그만할까요?", "지금 한 건 저장되지 않아요.", "그만하기", "계속하기")) go(studentHome); };
+  const box = $("#ebox"), prog = $("#eprog");
+  const words = u.words ? u.words.map(([w,k,e]) => ({w,k,e})) : [];
+  let qs = [], i = 0, score = 0, wrong = [];
+  const spk = (t, slow) => `<button class="btn spk" data-say="${esc(t)}" ${slow?'data-slow="1"':""}>${slow ? "🐢 천천히" : "🔊 듣기"}</button>`;
+  box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
+
+  const finish = async (total) => {
+    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0};
+    try{ await DB.addEng(rec); }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
+    if(total && score===total) confetti();
+    const msg = !total ? "끝까지 다 봤어요! 👏" : score===total ? "다 맞았어요! 최고! 🎉" : score >= total*0.7 ? "잘했어요! 👍" : "괜찮아요, 한 번 더 해 볼까? 💪";
+    box.innerHTML = `<div class="center" style="min-height:0;padding:20px 0">
+      <div class="jua" style="font-size:30px">${msg}</div>
+      ${total ? `<div class="jua" style="font-size:54px;color:var(--main-d)">${score} / ${total}</div>` : ""}
+      ${rec.wrong.length ? `<div class="muted" style="font-size:17px">틀린 것: <b>${rec.wrong.map(esc).join(", ")}</b></div>` : ""}
+      <div class="row" style="justify-content:center;margin-top:10px">
+        ${rec.wrong.length && words.length ? `<button class="big" id="eagain">틀린 것만 다시</button>` : ""}
+        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">다른 공부 하기</button></div></div>`;
+    prog.textContent = "";
+    $("#ehome").onclick = () => go(studentHome);
+    $("#eredo").onclick = () => go(engPlay, unitId, act);
+    if($("#eagain")) $("#eagain").onclick = () => go(engPlay, unitId, act, rec.wrong);
+  };
+  const nextQ = (ok, label) => {
+    if(ok) score++; else wrong.push(label);
+    i++; setTimeout(() => i < qs.length ? show() : finish(qs.length), ok ? 700 : 1500);
+  };
+  const feedback = (ok, right) => {
+    const f = document.createElement("div"); f.className = "efb " + (ok ? "ok" : "bad");
+    f.innerHTML = ok ? "딩동댕! ⭕" : `아쉬워요 ❌<br><span style="font-size:20px">정답: ${esc(right)}</span>`;
+    box.appendChild(f);
+  };
+  let show = () => {};
+  const pool = only ? words.filter(x => only.includes(x.w)) : words;
+
+  if(act==="learn"){
+    qs = shuffle(words);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      box.innerHTML = `<div class="ecard"><div class="eemo">${q.e}</div><div class="eword">${esc(q.w)}</div><div class="emean">${esc(q.k)}</div>
+        <div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div></div>
+        <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "다 외웠어요!"}</button></div>`;
+      say(q.w);
+      $("#eprev").onclick = () => { i--; show(); };
+      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
+    };
+  }
+  else if(act==="mean"){
+    qs = shuffle(pool);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const opts = shuffle([q, ...pickN(words, 3, q)]);
+      box.innerHTML = `<div class="ecard"><div class="eword">${esc(q.w)}</div><div class="row" style="justify-content:center">${spk(q.w)}</div></div>
+        <div class="eopts">${opts.map(o => `<button class="eopt" data-o="${esc(o.w)}">${o.e} ${esc(o.k)}</button>`).join("")}</div>`;
+      say(q.w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===q.w; b.classList.add(ok ? "ok" : "bad");
+        if(!ok) box.querySelector(`[data-o="${CSS.escape(q.w)}"]`).classList.add("ok");
+        feedback(ok, q.k); nextQ(ok, q.w);
+      });
+    };
+  }
+  else if(act==="spell" || act==="dict"){
+    qs = shuffle(pool);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      let built = [];
+      const top = act==="spell"
+        ? `<div class="eemo">${q.e}</div><div class="emean">${esc(q.k)}</div>`
+        : `<div class="eemo">🎧</div><div class="emean">잘 듣고 써 봐요</div><div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div>`;
+      if(act==="spell"){
+        const extra = shuffle("abcdefghijklmnopqrstuvwxyz".split("").filter(c => !q.w.toLowerCase().includes(c))).slice(0, 3);
+        const tiles = shuffle(q.w.split("").concat(extra)).map((c,k) => ({c, k}));
+        const paint = () => {
+          box.querySelector(".eslots").innerHTML = q.w.split("").map((_,k) => `<span class="eslot ${built[k]?"on":""}">${built[k] ? esc(built[k].c) : ""}</span>`).join("");
+          box.querySelectorAll("[data-t]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.t));
+        };
+        box.innerHTML = `<div class="ecard">${top}<div class="eslots"></div></div>
+          <div class="etiles">${tiles.map(t => `<button class="etile" data-t="${t.k}">${esc(t.c)}</button>`).join("")}</div>
+          <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="edel">⌫ 지우기</button><button class="big gray" id="ehint">💡 힌트</button><button class="big" id="eok">확인 ✔</button></div>`;
+        paint();
+        box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { if(built.length >= q.w.length) return; built.push(tiles.find(t => t.k===+b.dataset.t)); paint(); if(built.length===q.w.length) say(built.map(x=>x.c).join("")); });
+        $("#edel").onclick = () => { built.pop(); paint(); };
+        $("#ehint").onclick = () => { say(q.w); toast(`첫 글자는 "${q.w[0]}" 예요`); };
+        $("#eok").onclick = () => {
+          if(built.length < q.w.length) return toast("칸을 다 채워 주세요");
+          if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 1600);
+          const ok = built.map(x => x.c).join("")===q.w; feedback(ok, q.w); say(q.w); nextQ(ok, q.w);
+        };
+      } else {
+        box.innerHTML = `<div class="ecard">${top}</div>
+          <input class="inp einput" id="ein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 영어로 써요">
+          <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="ehint">💡 힌트</button><button class="big" id="eok">확인 ✔</button></div>`;
+        setTimeout(() => say(q.w), 250);
+        $("#ehint").onclick = () => toast(`${q.e} ${q.k} · ${q.w.length}글자, "${q.w[0]}"로 시작해요`);
+        const check = () => {
+          const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요");
+          if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 1600);
+          const ok = v.toLowerCase()===q.w.toLowerCase(); $("#ein").disabled = true; feedback(ok, `${q.w} (${q.k})`); nextQ(ok, q.w);
+        };
+        $("#eok").onclick = check; $("#ein").onkeydown = e => { if(e.key==="Enter") check(); };
+      }
+    };
+  }
+  else if(act==="sent"){
+    qs = shuffle(u.sents.map(([s,k]) => ({s,k})));
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const toks = q.s.split(" "), chips = shuffle(toks.map((t,k) => ({t,k})));
+      let built = [];
+      const paint = () => {
+        box.querySelector(".eline").innerHTML = built.length ? built.map((c,n) => `<button class="echip on" data-b="${n}">${esc(c.t)}</button>`).join("") : `<span class="muted">아래 단어를 순서대로 눌러요</span>`;
+        box.querySelectorAll("[data-c]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.c));
+        box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { built.splice(+b.dataset.b, 1); paint(); });
+      };
+      box.innerHTML = `<div class="ecard"><div class="emean">${esc(q.k)}</div><div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="eline"></div></div>
+        <div class="etiles">${chips.map(c => `<button class="echip" data-c="${c.k}">${esc(c.t)}</button>`).join("")}</div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="eclr">다시 놓기</button><button class="big" id="eok">확인 ✔</button></div>`;
+      paint();
+      box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { built.push(chips.find(c => c.k===+b.dataset.c)); paint(); });
+      $("#eclr").onclick = () => { built = []; paint(); };
+      $("#eok").onclick = () => {
+        if(built.length < toks.length) return toast("단어를 다 놓아 주세요");
+        const ok = built.map(c => c.t).join(" ")===q.s;
+        if(!ok){ feedback(false, q.s); say(q.s); return nextQ(false, q.s); }
+        score++;
+        // 맞히면 따라 읽기
+        box.innerHTML = `<div class="ecard"><div class="eemo">🎉</div><div class="eword" style="font-size:30px">${esc(q.s)}</div><div class="emean">${esc(q.k)}</div>
+          <div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="muted" style="margin-top:8px">듣고 큰 소리로 따라 읽어 봐요!</div><div id="emic" class="muted"></div></div>
+          <div class="row" style="justify-content:center;margin-top:12px">${SR ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx">${i<qs.length-1 ? "따라 읽었어요 · 다음 ▶" : "따라 읽었어요 · 끝!"}</button></div>`;
+        say(q.s);
+        $("#enx").onclick = () => { i++; i < qs.length ? show() : finish(qs.length); };
+        if(SR) $("#erec2").onclick = () => {
+          const r = new SR(); r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 3;
+          const norm = s => s.toLowerCase().replace(/[^a-z' ]/g,"").trim();
+          $("#emic").textContent = "듣고 있어요… 말해 봐요 🎤";
+          r.onresult = ev => { const alts = [...ev.results[0]].map(a => norm(a.transcript)); const good = alts.some(a => a===norm(q.s));
+            $("#emic").innerHTML = good ? `<b style="color:var(--ok)">완벽해요! 👏</b>` : `이렇게 들렸어요: "${esc(ev.results[0][0].transcript)}"<br>한 번 더 해 볼까?`; };
+          r.onerror = () => { $("#emic").textContent = "마이크를 쓸 수 없어요. 그냥 소리 내서 읽어 봐요!"; };
+          try{ r.start(); }catch(e){}
+        };
+      };
+    };
+  }
+  else if(act==="abc"){
+    qs = PHONICS;
+    show = () => {
+      const [L, w, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      box.innerHTML = `<div class="ecard"><div class="eword" style="font-size:84px">${L} ${L.toLowerCase()}</div><div class="eemo">${e}</div><div class="emean" style="font-size:30px">${L==="X" ? `bo<b style="color:var(--main-d)">x</b>` : `<b style="color:var(--main-d)">${w[0]}</b>${w.slice(1)}`}</div>
+        <div class="row" style="justify-content:center"><button class="btn spk" data-say="${L}">🔤 글자 이름</button>${spk(w)}${spk(w,true)}</div></div>
+        <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "끝!"}</button></div>`;
+      say(w);
+      $("#eprev").onclick = () => { i--; show(); };
+      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
+    };
+  }
+  else if(act==="first"){
+    qs = shuffle(PHONICS.filter(p => p[0]!=="X")).slice(0, 10);
+    show = () => {
+      const [L, w, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const opts = shuffle([L, ...pickN(PHONICS.map(p => p[0]).filter(c => c!=="X"), 3, L)]);
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="emean">잘 듣고, 어떤 글자로 시작할까?</div><div class="row" style="justify-content:center">${spk(w)}${spk(w,true)}</div></div>
+        <div class="eopts four">${opts.map(o => `<button class="eopt big2" data-o="${o}">${o} ${o.toLowerCase()}</button>`).join("")}</div>`;
+      say(w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${L}"]`).classList.add("ok");
+        feedback(ok, `${w} → ${L}`); nextQ(ok, w);
+      });
+    };
+  }
+  else if(act==="vowel"){
+    qs = shuffle(CVC).slice(0, 10);
+    show = () => {
+      const [w, v, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const masked = w.replace(v, "_");
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="eword" style="letter-spacing:6px">${masked}</div><div class="emean">가운데 들어갈 소리는?</div><div class="row" style="justify-content:center">${spk(w)}${spk(w,true)}</div></div>
+        <div class="eopts five">${["a","e","i","o","u"].map(o => `<button class="eopt big2" data-o="${o}">${o}</button>`).join("")}</div>`;
+      say(w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===v; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${v}"]`).classList.add("ok");
+        box.querySelector(".eword").textContent = w; feedback(ok, w); nextQ(ok, w);
+      });
+    };
+  }
+  show();
+}
+
+// 선생님·어머님 화면: 영어 기록 카드
+function engReportCard(el){
+  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="estat"></div><div class="hwlist" id="elist"></div>`;
+  return DB.watchEng(list => {
+    const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total);
+    const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
+    const wc = {}; list.slice(0, 40).forEach(r => (r.wrong||[]).forEach(w => wc[w] = (wc[w]||0)+1));
+    const often = Object.entries(wc).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 ${wl.length}번 공부 · 전체 정답률 ${tot ? Math.round(ok/tot*100) : 0}%${often.length ? `<br>자주 틀린 것: <b>${often.map(([w,n]) => `${esc(w)}(${n})`).join(", ")}</b>` : ""}</div>`;
+    $("#elist", el).innerHTML = list.length ? list.slice(0, 20).map(engRecRow).join("") : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
+  });
+}
+
+// ───────── 수아: 문제 풀기 ─────────
+function solve(id){
+  app.onclick = null;
+  let hw = null, cur = -1, board = null, curKey = null, saveT = null, loadTok = 0, built = false, lastMsgN = -1, seenMsgN = 0;
+  const flush = async () => { clearTimeout(saveT); if(board && board.dirty && curKey){ board.dirty = false; try{ await saveRec(curKey, board.snap()); }catch(e){ board.dirty = true; toast("풀이 저장 실패: 인터넷을 확인해 주세요"); } } };
+  const onVis = () => { if(!board) return; if(document.hidden){ board.pause(); flush(); } };
+  document.addEventListener("visibilitychange", onVis); window.addEventListener("pagehide", flush);
+  cleanups.push(() => { flush(); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("pagehide", flush); board && board.destroy(); });
+
+  function build(){
+    app.innerHTML = `<div class="solve">
+      <aside class="plist">
+        <div class="ph"><button class="link" id="back">← 목록</button><span class="jua" id="ttl"></span></div>
+        <div class="rinfo" id="rinfo"></div>
+        <div class="items" id="items"></div>
+        <button class="big" id="submit">제출하기</button>
+      </aside>
+      <main class="pmain">
+        <div class="phead"><span class="no" id="pno"></span><span class="chip" id="patt"></span><span class="chip ing hide" id="tchip" style="margin-left:auto"></span></div>
+        <div class="pq" id="pq"></div>
+        <div class="lockmsg hide" id="lock"></div>
+        <div class="tools" id="tools">
+          <button class="tool on" data-c="#222"><span class="dot" style="background:#222"></span>검정</button>
+          <button class="tool" data-c="#e5484d"><span class="dot" style="background:#e5484d"></span>빨강</button>
+          <button class="tool" data-c="#2f6fde"><span class="dot" style="background:#2f6fde"></span>파랑</button>
+          <button class="tool" data-er="1">🧽 지우개</button>
+          <button class="tool" data-act="undo">↩ 되돌리기</button>
+          <button class="tool" data-act="clear">🗑 전체 지우기</button>
+          <button class="tool" data-act="finger">☝️ 손가락으로 쓰기</button>
+          <button class="tool hide" data-act="guide" id="gbtn">📐 자리 칸 꺼내기</button>
+        </div>
+        <div class="boardwrap" id="bw"></div>
+        <div id="ansbox">
+          <div class="ansrow"><span class="lab">답</span><span class="row" id="ansin"></span><button class="big" id="chk">답 확인 ✔</button></div>
+          <div class="anote muted" id="anote"></div>
+        </div>
+      </main>
+    </div>
+    <button class="fab" id="fab">💬<span class="nd hide" id="nd"></span></button>`;
+    board = new Board($("#bw"));
+    board.onChange = () => { clearTimeout(saveT); saveT = setTimeout(flush, 1500); };
+    $("#back").onclick = () => go(studentHome);
+    $("#items").onclick = e => { const b = e.target.closest(".it"); if(b) openProb(+b.dataset.i); };
+    $("#tools").onclick = e => {
+      const b = e.target.closest(".tool"); if(!b) return;
+      if(b.dataset.act==="undo") return board.undo();
+      if(b.dataset.act==="clear") return ask("전체 지울까요?", "지운 것도 녹화에는 남아요.", "지우기", "취소").then(y => y && board.clear());
+      if(b.dataset.act==="guide"){ board.guide = !board.guide; b.classList.toggle("on", board.guide); b.textContent = board.guide ? "📐 자리 칸 넣기" : "📐 자리 칸 꺼내기"; applyGuide(board.cv, board.guide ? hw.problems[cur].q : ""); board.changed(); return; }
+      if(b.dataset.act==="finger"){ board.finger = !board.finger; b.classList.toggle("on", board.finger); return; }
+      $("#tools").querySelectorAll("[data-c],[data-er]").forEach(x => x.classList.remove("on")); b.classList.add("on");
+      board.tool = b.dataset.er ? {c:"#000", w:4, e:1} : {c:b.dataset.c, w:4, e:0};
+    };
+    $("#chk").onclick = checkCur;
+    $("#ansin").onkeydown = e => { if(e.key==="Enter"){ e.preventDefault(); checkCur(); } };
+    $("#submit").onclick = submit;
+    $("#fab").onclick = () => { seenMsgN = lastMsgN; $("#nd").classList.add("hide"); openChatDrawer(id, "student"); };
+    unsubs.push(DB.watchMsgs(id, list => {
+      const n = list.length;
+      if(lastMsgN<0){ seenMsgN = n; }
+      lastMsgN = n;
+      if(n > seenMsgN && list[n-1].from==="teacher" && !$(".drawer")) $("#nd").classList.remove("hide");
+      if($(".drawer")) seenMsgN = n;
+    }));
+    built = true;
+    startClock();
+  }
+
+  // 하루 사용 시간 재기: 화면이 켜져 있을 때만 1초씩 더해요
+  let clockT = null, warned = false, locked = false;
+  async function startClock(){
+    const limit = await getLimit(); if(!limit || !$("#tchip")) return;
+    let last = Date.now();
+    const tick = () => {
+      const now = Date.now(); if(!document.hidden && !locked) addUsed(Math.min(now-last, 5000)); last = now;
+      const left = limit - getUsed();
+      $("#tchip").classList.remove("hide"); $("#tchip").textContent = `⏱ 남은 시간 ${fmtLeft(left)}`;
+      if(left <= 5*60000 && left > 0 && !warned){ warned = true; toast("5분 남았어요! 지금 푸는 문제까지 답을 써요"); }
+      if(left <= 0 && !locked){
+        locked = true; clearInterval(clockT); flush();
+        const m = modal(`<h3>오늘은 여기까지! ⏰</h3><div style="font-size:16px">오늘 숙제 시간을 다 썼어요.<br>지금까지 쓴 답과 풀이는 저장됐어요. 내일 이어서 풀어요!</div><div class="mbtns one"><button class="big" data-a>목록으로</button></div>`);
+        m.querySelector("[data-a]").onclick = () => go(studentHome);
+      }
+    };
+    tick(); clockT = setInterval(tick, 1000);
+  }
+  cleanups.push(() => clearInterval(clockT));
+
+  function renderSide(){
+    $("#ttl").textContent = hw.title;
+    const r2 = hw.round===2;
+    $("#rinfo").className = "rinfo" + (r2 ? " r2" : "");
+    $("#rinfo").textContent = r2 ? "틀린 문제 다시 풀기 (마지막 기회)" : "문제를 골라서 풀고, 답을 확인해요.";
+    const att = curAtt(hw);
+    $("#items").innerHTML = hw.problems.map((p,i) => {
+      const s = stOf(hw,i), ed = editable(hw,i), a = s["a"+att], n = attempts(hw,i);
+      let mark;
+      if(r2 && !ed) mark = s.ok1===true ? `<b style="color:var(--ok)">⭕</b>맞았어요` : `<b style="color:var(--blue)">✔</b>선생님 채점`;
+      else if(r2) mark = has(a) ? `<b style="color:var(--blue)">✔</b>다시 풀었어요` : `<b style="color:var(--bad)">!</b>다시 풀기`;
+      else mark = has(a) ? `<b style="color:var(--blue)">✔</b>풀이 ${n}회` : `<b style="color:#cdbfb3">○</b>`;
+      return `<button class="it ${i===cur?"cur":""} ${ed?"":"locked"}" data-i="${i}"><span class="n">${i+1}</span><span class="q">${richQ(p.q)}</span><span class="s">${mark}</span></button>`;
+    }).join("");
+    const left = hw.problems.filter((p,i) => editable(hw,i) && !has(stOf(hw,i)["a"+att])).length;
+    $("#submit").disabled = left>0;
+    $("#submit").textContent = left>0 ? `제출하기 (${left}문제 남음)` : (r2 ? "마지막 제출하기" : "제출하기");
+  }
+
+  async function openProb(i){
+    if(i===cur) return;
+    await flush();
+    cur = i; const tok = ++loadTok;
+    const p = hw.problems[i], ed = editable(hw,i), att = curAtt(hw), s = stOf(hw,i);
+    $("#pno").textContent = `${i+1}번`;
+    $("#patt").textContent = ed ? (att===2 ? "2번째 풀이 (마지막)" : "1번째 풀이") : "다 풀었어요";
+    $("#patt").className = "chip" + (ed && att===2 ? " r2" : "");
+    $("#pq").innerHTML = richQ(p.q) + (/^[\d.\s+\-−×÷*/()]+$/.test(p.q) ? " =" : "");
+    $("#tools").classList.toggle("hide", !ed);
+    $("#ansbox").classList.toggle("hide", !ed);
+    $("#lock").classList.toggle("hide", ed);
+    if(!ed) $("#lock").textContent = s.ok1===true ? `⭕ 1번째에 맞았어요! (내 답: ${s.a1})` : `✔ 이 문제는 선생님이 채점해요. (내 답: ${s.a1})`;
+    ansUI(p, s["a"+att] || "");
+    const tip = p.kind==="frac" ? (p.form==="improper" ? "가분수로 써요. " : p.form==="mixed" ? "대분수로 써요. 왼쪽 칸에 자연수를 써요. " : (p.simp ? "답은 기약분수로 써요. " : "") + "대분수면 왼쪽 칸에 자연수를 써요. ") : p.kind==="div" ? "나머지가 없으면 나머지 칸은 비워 둬요. " : p.kind==="set" ? "답이 여러 개면 쉼표(,)로 나눠 써요. " : p.kind==="cmp" ? "알맞은 기호를 눌러요. " : p.kind==="ratio" ? "가장 작은 자연수로 써요. " : "";
+    $("#anote").textContent = att===2 && ed ? `1번째 답 ${s.a1} 은(는) 틀렸어요. 다시 천천히 풀어 봐요!` : (has(s["a"+att]) ? "답을 적었어요. 고치고 싶으면 다시 써서 답 확인을 눌러요." : tip);
+    renderSide();
+    const key = recKey(id, i, ed ? att : 1);
+    curKey = null; board.readonly = true; board.load(null);
+    const rec = await loadRec(key);
+    if(tok!==loadTok) return;
+    board.load(rec); board.guide = p.kind==="div" && !!(rec && rec.guide);
+    applyGuide(board.cv, board.guide ? p.q : "");
+    $("#gbtn").classList.toggle("hide", !(p.kind==="div" && ed)); $("#gbtn").classList.toggle("on", board.guide); $("#gbtn").textContent = board.guide ? "📐 자리 칸 넣기" : "📐 자리 칸 꺼내기";
+    board.readonly = !ed; curKey = ed ? key : null;
+  }
+
+  async function checkCur(){
+    const r = readAns(hw.problems[cur]); if(r.err){ toast(r.err); return; }
+    const v = r.v, i = cur, att = curAtt(hw);
+    await flush();
+    try{ await DB.updateHW(id, {[`st.${i}.a${att}`]: v, lastAt: Date.now()}); }catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); return; }
+    toast("답을 적었어요 ✔");
+    setTimeout(() => {
+      if(cur!==i) return;
+      const next = hw.problems.findIndex((p,j) => j!==i && editable(hw,j) && !has(stOf(hw,j)["a"+att]));
+      if(next>=0) openProb(next);
+    }, 500);
+  }
+
+  async function submit(){
+    const r2 = hw.round===2;
+    if(!await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
+    await flush();
+    const att = curAtt(hw), patch = {}; let wrong = 0;
+    hw.problems.forEach((p,i) => { if(!editable(hw,i)) return; const ok = has(p.ans) ? checkAns(stOf(hw,i)["a"+att], p.ans, p.kind, p.simp, p.form) : null; patch[`st.${i}.ok${att}`] = ok; if(ok===false) wrong++; });
+    if(att===1 && wrong>0){ patch.status = "round2"; patch.round = 2; }
+    else { patch.status = "submitted"; patch.submittedAt = Date.now(); }
+    try{ await DB.updateHW(id, patch); }catch(e){ toast("제출 실패: 인터넷을 확인해 주세요"); return; }
+    if(patch.status==="round2"){
+      await tell("한 번 더 풀어 봐요! 💪", `틀린 문제가 <b>${wrong}개</b> 있어요.<br>빨간 느낌표(!) 문제를 다시 풀어요. 이번이 마지막 기회예요.`, "다시 풀기");
+      cur = -1; const first = hw.problems.findIndex((p,i) => editable(hw,i)); if(first>=0) openProb(first);
+    } else {
+      confetti();
+      await tell("제출 완료! 🎉", "수고했어요! 선생님이 채점하면 끝낸 숙제에서 볼 수 있어요.");
+      go(studentHome);
+    }
+  }
+
+  unsubs.push(DB.watchHW(id, h => {
+    if(!h){ go(studentHome); return; }
+    const roundChanged = hw && hw.round!==h.round;
+    hw = h;
+    if(h.status==="submitted" || h.status==="graded"){ if(!built) go(studentResult, id); return; }
+    if(!built){ build(); renderSide(); const first = h.problems.findIndex((p,i) => editable(h,i) && !has(stOf(h,i)["a"+curAtt(h)])); openProb(first>=0 ? first : 0); }
+    else if(!roundChanged) renderSide();
+  }));
+}
+
+// ───────── 답 칸 (단원마다 다르게) ─────────
+const inp = (id, v, cls="inp sm", mode="numeric", ph="") => `<input class="${cls}" id="${id}" inputmode="${mode}" autocomplete="off"${ph ? ` placeholder="${ph}"` : ""} value="${esc(v ?? "")}">`;
+const fracBox = (pre, w, n, d, whole=true) => `${whole ? inp(pre+"w", w) : ""}<span class="fin">${inp(pre+"n", n)}<span class="fl"></span>${inp(pre+"d", d)}</span>`;
+function ansUI(p, val){
+  const box = $("#ansin"), kind = p.kind; val = val || "";
+  if(kind==="frac"){
+    const m = /^(?:(\d+)(?:\s+|$))?(?:(\d+)\/(\d+))?$/.exec(val) || [];
+    box.innerHTML = fracBox("a", m[1], m[2], m[3], p.form!=="improper");
+  } else if(kind==="div" || kind==="divd"){
+    const m = val.split("…");
+    const mode = kind==="divd" ? "decimal" : "numeric";
+    box.innerHTML = `<span class="lab2">몫</span>${inp("aq", m[0], "inp sm", mode)}<span class="lab2">나머지</span>${inp("ar", m[1], "inp sm", mode)}`;
+  } else if(kind==="cmp"){
+    box.innerHTML = [">","=","<"].map(c => `<button class="btn cmpb${val===c?" on":""}" data-cmp="${esc(c)}" style="font-size:26px;min-width:64px;font-family:Pretendard,sans-serif">${esc(c)}</button>`).join("");
+    box.querySelectorAll("[data-cmp]").forEach(b => b.onclick = () => box.querySelectorAll("[data-cmp]").forEach(x => x.classList.toggle("on", x===b)));
+  } else if(kind==="ratio"){
+    const k = String(p.ans).split(":").length, m = val.split(":").map(x => x.trim());
+    box.innerHTML = Array.from({length:k}, (_,i) => inp("ar"+i, m[i])).join(`<span class="lab2" style="font-size:24px">:</span>`);
+  } else if(kind==="frac2"){
+    const m = val.split(",").map(x => (/(\d+)\/(\d+)/.exec(x)||[]));
+    box.innerHTML = fracBox("f0", "", m[0]?.[1], m[0]?.[2], false) + `<span class="lab2" style="font-size:24px">,</span>` + fracBox("f1", "", m[1]?.[1], m[1]?.[2], false);
+  } else if(kind==="pct"){
+    box.innerHTML = inp("ans", val.replace("%",""), "inp", "decimal", "답을 써요") + `<span class="lab2" style="font-size:22px">%</span>`;
+  } else if(kind==="set"){
+    box.innerHTML = inp("ans", val, "inp", "text", "예: 1, 2, 3");
+  } else if(kind==="text"){
+    box.innerHTML = inp("ans", val, "inp", "text", "예: 3할 2푼 5리");
+  } else {
+    box.innerHTML = inp("ans", val, "inp", kind ? "decimal" : "text", "답을 써요");
+  }
+}
+function readAns(p){
+  const kind = p.kind, g = id => ($("#"+id)?.value || "").trim();
+  if(kind==="frac"){
+    const w = g("aw"), n = g("an"), d = g("ad");
+    if((n && !d) || (!n && d)) return {err:"분자와 분모를 둘 다 써 주세요"};
+    if(!w && !n) return {err:"답을 먼저 써 주세요"};
+    return {v:[w, n ? `${n}/${d}` : ""].filter(Boolean).join(" ")};
+  }
+  if(kind==="div" || kind==="divd"){
+    const q = g("aq"), r = g("ar");
+    if(!q) return {err:"몫을 먼저 써 주세요"};
+    if(kind==="divd") return r ? {v:`${q}…${r}`} : {err:"나머지도 써 주세요"};
+    return {v: r && +r ? `${q}…${r}` : q};
+  }
+  if(kind==="cmp"){ const b = $("#ansin [data-cmp].on"); return b ? {v:b.dataset.cmp} : {err:">, =, < 중에서 골라 주세요"}; }
+  if(kind==="ratio"){
+    const k = String(p.ans).split(":").length, v = Array.from({length:k}, (_,i) => g("ar"+i));
+    return v.every(Boolean) ? {v:v.join(" : ")} : {err:"칸을 모두 채워 주세요"};
+  }
+  if(kind==="frac2"){
+    const v = [0,1].map(i => [g(`f${i}n`), g(`f${i}d`)]);
+    return v.every(([n,d]) => n && d) ? {v:v.map(([n,d]) => `${n}/${d}`).join(", ")} : {err:"두 분수의 분자, 분모를 모두 써 주세요"};
+  }
+  const v = g("ans"); if(!v) return {err:"답을 먼저 써 주세요"};
+  if(kind==="pct") return {v:v.replace(/%/g,"")+"%"};
+  return {v};
+}
+
+// ───────── 자동 숙제 ─────────
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const nextNum = list => { const nums = list.map(h => +(/(\d+)\s*$/.exec(h.title)||[])[1]).filter(Boolean); return (nums.length ? Math.max(...nums) : 0) + 1; };
+let autoTried = "";
+async function ensureAuto(list, force=false){
+  const d = new Date(), key = dayKey(d);
+  if(autoTried===key && !force) return; autoTried = key;
+  let c; try{ c = await DB.getConfig(); }catch(e){ return; }
+  if(!c || !c.on || !(c.stages||[]).length || !(c.days||[]).includes(d.getDay())) return;
+  const id = "auto-"+key; if(list.some(h => h.id===id)) return;
+  const ok = c.stages.filter(id => STAGE[id]); if(!ok.length) return; const sid = ok[list.filter(h => h.auto).length % ok.length];
+  try{ await DB.createHWId(id, {title:`${STUDENT} 수학과제${nextNum(list)}`, problems:makeProblems(sid, c.count||10), createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", auto:true, stage:sid}); }catch(e){}
+}
+
+// ───────── 하루 사용 시간 ─────────
+// 선생님이 정한 시간(분)만큼만 문제를 풀 수 있어요. 쓴 시간은 수아 기기에 날짜별로 저장돼요.
+const useKey = () => "sua-used-" + dayKey(new Date());
+const getUsed = () => { try{ return +localStorage.getItem(useKey()) || 0; }catch(e){ return 0; } };
+const addUsed = ms => { try{ localStorage.setItem(useKey(), String(getUsed() + ms)); }catch(e){} };
+async function getLimit(){ try{ const c = await DB.getConfig(); return c && c.limit ? c.limit*60000 : 0; }catch(e){ return 0; } }
+const fmtLeft = ms => { const m = Math.ceil(Math.max(0,ms)/60000); return `${m}분`; };
+
+// ───────── 사진 제출 ─────────
+const PTYPE = {planner:"스터디플래너", hw:"숙제 사진"};
+async function shrink(file, max, q){
+  const url = URL.createObjectURL(file);
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+  const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth*sc); c.height = Math.round(img.naturalHeight*sc);
+  const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+  let d = c.toDataURL("image/jpeg", q); while(d.length > 900000 && q > 0.3){ q -= 0.1; d = c.toDataURL("image/jpeg", q); }
+  return d;
+}
+async function openPhoto(p){
+  const m = modal(`<div class="bar" style="margin-bottom:6px"><h3 style="margin:0">${PTYPE[p.type]||"사진"}</h3><button class="link" data-x>닫기 ✕</button></div>
+    <div class="muted">${fmtFull(p.at)} 제출${p.checked ? " · 선생님 확인 ✔" : ""}</div>
+    ${has(p.memo) ? `<div style="margin:6px 0;white-space:pre-wrap">${esc(p.memo)}</div>` : ""}
+    <div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin-top:8px"><img data-img src="${p.thumb}" style="max-width:100%;max-height:100%;border-radius:12px;object-fit:contain"></div>`, true);
+  m.querySelector("[data-x]").onclick = () => m.remove();
+  try{ const full = await DB.getPhotoFull(p.id); if(full && m.isConnected) m.querySelector("[data-img]").src = full; }catch(e){}
+}
+// 사진 목록 (who: student / teacher / parent)
+function photoList(el, who){
+  let cur = [];
+  const u = DB.watchPhotos(list => {
+    list = list || [];
+    cur = list;
+    const t = el.querySelector("[data-cnt]"); if(t) t.textContent = who==="teacher" ? (list.filter(p => !p.checked).length ? `확인 안 한 사진 ${list.filter(p => !p.checked).length}장` : "") : "";
+    el.querySelector("[data-list]").innerHTML = list.length ? list.slice(0, who==="student" ? 8 : 60).map(p => `
+      <div class="hw" data-pid="${p.id}" style="cursor:pointer">
+        <img src="${p.thumb}" style="width:64px;height:64px;object-fit:cover;border-radius:12px;flex:none;border:2px solid var(--line)">
+        <div class="grow"><div style="font-size:20px">${PTYPE[p.type]||"사진"}${has(p.memo) ? ` <span class="muted" style="font-size:15px">· ${esc(p.memo.slice(0,20))}</span>` : ""}</div><div class="muted">${fmtFull(p.at)} 제출</div></div>
+        ${who==="teacher" ? `<button class="btn ok ${p.checked?"on":""}" data-chk="${p.id}">${p.checked ? "확인 ✔" : "확인하기"}</button><button class="btn" data-del="${p.id}">✕</button>` : `<span class="chip ${p.checked ? "done" : "sub"}">${p.checked ? "선생님 확인 ✔" : "제출 완료"}</span>`}
+      </div>`).join("") : `<div class="empty">아직 올린 사진이 없어요.</div>`;
+  }, who==="student" ? 8 : 30);
+  el.addEventListener("click", async e => {
+    const c = e.target.closest("[data-chk]"); if(c){ e.stopPropagation(); const p = cur.find(x => x.id===c.dataset.chk); DB.updatePhoto(p.id, {checked:!p.checked}).catch(() => toast("저장 실패")); return; }
+    const d = e.target.closest("[data-del]"); if(d){ e.stopPropagation(); if(await ask("사진을 지울까요?", "지우면 되돌릴 수 없어요.", "지우기", "취소")) DB.deletePhoto(d.dataset.del); return; }
+    const r = e.target.closest("[data-pid]"); if(r){ e.stopPropagation(); const p = cur.find(x => x.id===r.dataset.pid); if(p) openPhoto(p); }
+  });
+  return u;
+}
+// 수아: 사진 올리기
+function photoUpload(el){
+  const inp = el.querySelector("#pf"); let type = "planner";
+  el.querySelectorAll("[data-up]").forEach(b => b.onclick = e => { e.stopPropagation(); type = b.dataset.up; inp.value = ""; inp.click(); });
+  inp.onchange = async () => {
+    const files = [...inp.files].slice(0, 5); if(!files.length) return;
+    const urls = files.map(f => URL.createObjectURL(f));
+    const m = modal(`<h3>${PTYPE[type]} 올리기 📸</h3>
+      <div style="display:flex;gap:8px;overflow-x:auto;margin:6px 0">${urls.map(u => `<img src="${u}" style="height:140px;border-radius:12px;border:2px solid var(--line)">`).join("")}</div>
+      <textarea class="inp" data-memo placeholder="선생님께 한마디 (안 써도 돼요)" style="min-height:60px"></textarea>
+      <div class="mbtns"><button class="big gray" data-a="0">취소</button><button class="big" data-a="1">제출하기</button></div>`);
+    m.addEventListener("click", async e => {
+      const b = e.target.closest("[data-a]"); if(!b) return;
+      if(b.dataset.a==="0"){ urls.forEach(u => URL.revokeObjectURL(u)); m.remove(); return; }
+      b.disabled = true; b.textContent = "올리는 중…";
+      try{
+        const memo = m.querySelector("[data-memo]").value.trim();
+        for(const f of files){ const full = await shrink(f, 1600, .8), thumb = await shrink(f, 360, .7); await DB.addPhoto({type, memo, at:Date.now(), thumb, checked:false}, full); }
+        urls.forEach(u => URL.revokeObjectURL(u)); m.remove(); confetti(); toast("사진을 냈어요!");
+      }catch(err){ b.disabled = false; b.textContent = "제출하기"; toast("올리기 실패: 인터넷을 확인해 주세요"); }
+    });
+  };
+}
+
+// ───────── 축하 효과 ─────────
+function confetti(){
+  const em = ["🎉","⭐","💖","🌸","✨"];
+  for(let i=0;i<36;i++){
+    const d = document.createElement("div"); d.className = "confetti"; d.textContent = em[i%em.length];
+    d.style.left = Math.random()*100 + "vw"; d.style.animationDelay = (Math.random()*.6) + "s"; d.style.fontSize = (18+Math.random()*16) + "px";
+    document.body.appendChild(d); setTimeout(() => d.remove(), 2600);
+  }
+}
+
+// ───────── 채팅 ─────────
+function chatBox(el, id, me){
+  el.innerHTML = `<div class="chat"><div class="msgs"></div><form class="cin"><input class="inp" placeholder="메시지를 써요" maxlength="500"><button class="big blue">보내기</button></form></div>`;
+  const box = el.querySelector(".msgs");
+  const u = DB.watchMsgs(id, list => {
+    box.innerHTML = list.length ? list.map(m => `<div class="msg ${m.from===me?"me":""}"><div class="who">${m.from==="teacher" ? "선생님" : esc(STUDENT)}</div><div class="bub">${esc(m.text)}</div><div class="when">${fmtDT(m.at)}</div></div>`).join("") : `<div class="empty">아직 대화가 없어요. 궁금한 걸 물어봐요!</div>`;
+    box.scrollTop = box.scrollHeight;
+  });
+  el.querySelector("form").onsubmit = async e => {
+    e.preventDefault(); const inp = el.querySelector("input"), t = inp.value.trim(); if(!t) return;
+    inp.value = "";
+    try{ await DB.addMsg(id, {from:me, text:t, at:Date.now()}); }catch(err){ inp.value = t; toast("보내기 실패: 인터넷을 확인해 주세요"); }
+  };
+  return u;
+}
+function openChatDrawer(id, me){
+  if($(".drawer")) return;
+  const d = document.createElement("div"); d.className = "drawer";
+  d.innerHTML = `<div class="bar" style="margin-bottom:8px"><h1 style="font-size:22px">💬 ${me==="student" ? "선생님께 말하기" : esc(STUDENT)+"와 대화"}</h1><button class="link" id="dclose">닫기 ✕</button></div><div id="dchat" style="flex:1;min-height:0;display:flex"></div>`;
+  layer.appendChild(d);
+  const u = chatBox($("#dchat", d), id, me);
+  $("#dchat .chat", d).style.flex = "1";
+  $("#dclose", d).onclick = () => { u && u(); d.remove(); };
+}
+
+// ───────── 녹화 보기 ─────────
+async function openPlayer(title, key, guideQ=""){
+  const rec = await loadRec(key);
+  if(!rec || !rec.ev.length){ tell("녹화가 없어요", "이 풀이에는 쓴 내용이 없어요."); return; }
+  const m = modal(`<div class="bar" style="margin-bottom:6px"><h3 style="margin:0">${title}</h3><button class="link" data-x>닫기 ✕</button></div>
+    <div class="boardwrap" data-bw></div>
+    <div class="pctl">
+      <button class="btn" data-play style="min-width:64px">▶ 재생</button>
+      <input type="range" min="0" max="1000" value="0" data-rg>
+      <span class="tm" data-tm></span>
+    </div>
+    <div class="pctl">
+      <span class="muted">빠르기</span>
+      <button class="btn" data-sp="1">1배</button><button class="btn on" data-sp="2">2배</button><button class="btn" data-sp="4">4배</button>
+      <label class="muted" style="display:flex;align-items:center;gap:4px;margin-left:auto"><input type="checkbox" data-skip checked>멈춘 시간 건너뛰기</label>
+    </div>
+    <div class="muted" data-info style="margin-top:6px"></div>`, true);
+  const b = new Board(m.querySelector("[data-bw]"), true); applyGuide(b.cv, rec.guide ? guideQ : "");
+  let R = compress(rec), T = 0, speed = 2, playing = false, last = 0, raf = 0;
+  const info = () => { m.querySelector("[data-info]").textContent = `실제로 푼 시간 ${fmtSec(rec.dur)} · 획 ${rec.ev.filter(e=>e.k==="s").length}개${rec.guide ? " · 📐 자리 칸 꺼내서 풀었어요" : ""}`; };
+  const draw = () => { renderAt(b.ctx, R.ev, T); m.querySelector("[data-tm]").textContent = `${fmtSec(T)} / ${fmtSec(R.dur)}`; m.querySelector("[data-rg]").value = R.dur ? Math.round(T/R.dur*1000) : 0; };
+  b.redraw = () => draw();
+  const tick = now => { if(!playing) return; T += (now-last)*speed; last = now; if(T >= R.dur){ T = R.dur; playing = false; m.querySelector("[data-play]").textContent = "▶ 재생"; } draw(); if(playing) raf = requestAnimationFrame(tick); };
+  const play = () => { if(T >= R.dur) T = 0; playing = true; last = performance.now(); m.querySelector("[data-play]").textContent = "⏸ 멈춤"; raf = requestAnimationFrame(tick); };
+  const stop = () => { playing = false; cancelAnimationFrame(raf); m.querySelector("[data-play]").textContent = "▶ 재생"; };
+  m.querySelector("[data-play]").onclick = () => playing ? stop() : play();
+  m.querySelector("[data-rg]").oninput = e => { stop(); T = e.target.value/1000*R.dur; draw(); };
+  m.querySelectorAll("[data-sp]").forEach(x => x.onclick = () => { speed = +x.dataset.sp; m.querySelectorAll("[data-sp]").forEach(y => y.classList.toggle("on", y===x)); });
+  m.querySelector("[data-skip]").onchange = e => { const r = T/(R.dur||1); R = e.target.checked ? compress(rec) : {ev:rec.ev, dur:rec.dur+300}; T = r*R.dur; draw(); };
+  m.querySelector("[data-x]").onclick = () => { stop(); b.destroy(); m.remove(); };
+  info(); draw(); play();
+}
+
+// ───────── 수아: 결과 보기 ─────────
+function studentResult(id, parent=false){
+  app.onclick = null;
+  const home = parent ? parentHome : studentHome;
+  app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div><div id="body"></div>
+    ${parent ? "" : `<div class="card"><h2>💬 선생님과 대화</h2><div id="chat"></div></div>`}</div>`;
+  $("#back").onclick = () => go(home);
+  if(!parent) unsubs.push(chatBox($("#chat"), id, "student"));
+  unsubs.push(DB.watchHW(id, h => {
+    if(!h){ go(home); return; }
+    if(parent && !["submitted","graded"].includes(h.status)){ $("#body").innerHTML = `<div class="card" style="text-align:center"><div class="jua" style="font-size:30px">${esc(h.title)}</div><div style="margin-top:8px">${esc(STUDENT)}가 아직 풀고 있어요. (답 쓴 문제 ${h.problems.filter((_,i)=>attempts(h,i)>0).length} / ${h.problems.length})</div><div class="muted" style="margin-top:4px">낸 날 ${fmtD(h.createdAt)}</div></div>`; return; }
+    if(!["submitted","graded"].includes(h.status)){ go(solve, id); return; }
+    const g = h.status==="graded", n = h.problems.length, okN = h.problems.filter((_,i) => gradeOk(h,i)===true).length;
+    $("#body").innerHTML = `<div class="card" style="text-align:center">
+        <div class="jua" style="font-size:26px">${esc(h.title)}</div>
+        ${g ? `<div class="jua" style="font-size:52px;color:var(--main-d)">${okN}<span style="font-size:26px;color:var(--sub)"> / ${n}</span></div>` : `<div class="jua" style="font-size:22px;margin:10px 0;color:var(--blue-d)">선생님이 채점하고 있어요 ⏳</div>`}
+        <div class="muted">${parent ? `낸 날 ${fmtD(h.createdAt)} · ` : ""}제출한 날 ${h.submittedAt ? fmtD(h.submittedAt) : "-"}</div>
+      </div>
+      ${g && has(h.memo) ? `<div class="card"><h2>📝 선생님 한마디</h2><div style="white-space:pre-wrap;font-size:17px">${esc(h.memo)}</div></div>` : ""}
+      <div class="card"><h2>문제별 결과</h2>${h.problems.map((p,i) => {
+        const s = stOf(h,i), gr = h.grade && h.grade[i], fo = g ? gradeOk(h,i) : finalOk(h,i);
+        return `<div class="gq"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span>${fo===true ? `<span class="okc">⭕</span>` : fo===false ? `<span class="badc">❌</span>` : ""}</div>
+          <div class="att"><span class="lb">1번째 답</span><b>${esc(s.a1 ?? "-")}</b> ${s.ok1===true ? `<span class="okc">맞음</span>` : s.ok1===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,1)}" data-t="${i+1}번 · 1번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>
+          ${has(s.a2) ? `<div class="att"><span class="lb">2번째 답</span><b>${esc(s.a2)}</b> ${s.ok2===true ? `<span class="okc">맞음</span>` : s.ok2===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,2)}" data-t="${i+1}번 · 2번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>` : ""}
+          ${g && fo===false && has(p.ans) ? `<div class="att"><span class="lb">정답</span><b style="color:var(--ok)">${esc(p.ans)}</b></div>` : ""}
+          ${g && gr && has(gr.memo) ? `<div class="att"><span class="lb">선생님</span><span>${esc(gr.memo)}</span></div>` : ""}</div>`;
+      }).join("")}</div>`;
+  }));
+  app.onclick = e => { const b = e.target.closest("[data-k]"); if(b) openPlayer(b.dataset.t, b.dataset.k, b.dataset.q); };
+}
+
+// ───────── 어머님: 학습 리포트 ─────────
+let pinOK = false;
+async function parentHome(){
+  app.onclick = null;
+  if(!pinOK){
+    let c = null; try{ c = await DB.getConfig(); }catch(e){}
+    if(c && c.ppin){
+      app.innerHTML = `<div class="center"><h1 style="font-size:44px">어머님 보기</h1><p class="muted" style="margin:0">선생님께 받은 비밀번호 4자리를 써 주세요</p>
+        <input class="inp" id="pp" type="password" inputmode="numeric" maxlength="4" style="text-align:center;font-size:28px;letter-spacing:8px">
+        <button class="big" id="ppok">들어가기</button><div id="pperr" style="color:var(--bad)"></div><button class="link" id="ppback">← 처음으로</button></div>`;
+      const tryPin = () => { if($("#pp").value===c.ppin){ pinOK = true; go(parentHome); } else { $("#pperr").textContent = "비밀번호가 맞지 않아요."; $("#pp").value = ""; } };
+      $("#ppok").onclick = tryPin; $("#pp").onkeydown = e => { if(e.key==="Enter") tryPin(); };
+      $("#ppback").onclick = () => DB.logout();
+      return;
+    }
+  }
+  app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 학습 리포트`, "어머님")}<div id="rep"></div>
+    <div class="card" id="engc"></div>
+    <div class="card" id="ph"><h2>📸 스터디플래너·숙제 사진</h2><div class="hwlist" data-list></div></div></div>`;
+  bindOut();
+  unsubs.push(photoList($("#ph"), "parent"));
+  unsubs.push(engReportCard($("#engc")));
+  unsubs.push(DB.watchHWList(list => {
+    const done = list.filter(h => ["submitted","graded"].includes(h.status));
+    let tot = 0, fin = 0, first = 0; const byStage = {};
+    done.forEach(h => h.problems.forEach((p,i) => {
+      const ok = h.status==="graded" ? gradeOk(h,i) : finalOk(h,i); if(ok==null) return;
+      tot++; if(ok) fin++; if(stOf(h,i).ok1===true) first++;
+      const sid = p.stage || h.stage; if(sid && STAGE[sid]){ const b = byStage[sid] = byStage[sid] || {ok:0, n:0}; b.n++; if(ok) b.ok++; }
+    }));
+    const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+    const week = Date.now() - 7*864e5, weekN = done.filter(h => (h.submittedAt||0) >= week).length;
+    const stat = (lab, val, sub="") => `<div class="card" style="margin:0;padding:14px;text-align:center"><div class="muted">${lab}</div><div style="font-size:28px;font-weight:800;color:var(--main-d)">${val}</div><div class="muted" style="font-size:12px">${sub}</div></div>`;
+    const bar = (rate) => `<div style="height:12px;background:var(--soft);border-radius:99px;overflow:hidden;flex:1"><i style="display:block;height:100%;width:${rate}%;background:${rate>=80?"var(--ok)":rate>=60?"#ffb84d":"var(--bad)"};border-radius:99px"></i></div>`;
+    const stages = Object.entries(byStage).map(([sid,b]) => ({sid, ...b, r:pct(b.ok,b.n)})).sort((a,b) => a.r-b.r);
+    $("#rep").innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+        ${stat("끝낸 숙제", `${done.length}개`, `전체 ${list.length}개 중`)}
+        ${stat("최종 정답률", `${pct(fin,tot)}%`, `${tot}문제 중 ${fin}문제`)}
+        ${stat("한 번에 맞힌 비율", `${pct(first,tot)}%`, "1번째 풀이에서")}
+        ${stat("이번 주", `${weekN}개`, "최근 7일 제출")}
+      </div>
+      <div class="card"><h2>유형별 정답률</h2>
+        ${stages.length ? stages.map(x => `<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><div style="width:44%;font-size:14px">${esc(STAGE[x.sid].unit.replace(/^\d학년 · /,""))} · <b>${esc(STAGE[x.sid].name)}</b></div>${bar(x.r)}<div style="width:86px;text-align:right;font-size:14px"><b>${x.r}%</b> <span class="muted">(${x.ok}/${x.n})</span></div></div>`).join("") + `<div class="muted" style="margin-top:6px">빨간색·주황색 유형은 더 연습하면 좋아요.</div>` : `<div class="empty">아직 끝낸 숙제가 없어요.</div>`}
+      </div>
+      <div class="card"><h2>숙제 기록</h2><div class="hwlist">
+        ${list.length ? list.map(h => {
+          const [lab,cls] = statusOf(h), n = h.problems.length, g = h.status==="graded", d = ["submitted","graded"].includes(h.status);
+          const okN = h.problems.filter((_,i) => (g ? gradeOk(h,i) : finalOk(h,i))===true).length, o1 = h.problems.filter((_,i) => stOf(h,i).ok1===true).length;
+          return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출 ${fmtD(h.submittedAt)}` : ""}${d ? ` · 1번째 ${o1}/${n}` : ""}</div></div>${d ? `<div style="font-size:22px;font-weight:800;color:var(--main-d)">${okN}/${n}</div>` : ""}<span class="chip ${cls}">${lab}</span></button>`;
+        }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`}
+      </div></div>`;
+  }));
+  app.onclick = e => { const b = e.target.closest(".hw[data-id]"); if(b) go(studentResult, b.dataset.id, true); };
+}
+
+// ───────── 선생님: 숙제 목록 ─────────
+function teacherHome(){
+  app.onclick = null;
+  app.innerHTML = `<div class="page">${topBar("선생님 숙제방", "선생님")}
+    <div class="card" id="auto"><h2>🤖 자동 숙제</h2>
+      <label class="row" style="font-size:17px;font-weight:700"><input type="checkbox" id="aon" style="width:22px;height:22px"> 자동으로 숙제 내기</label>
+      <div class="muted" style="margin:6px 0 4px">고른 단원이 순서대로 돌아가며 하루에 한 숙제씩 나가요. ${esc(STUDENT)}가 앱을 여는 날 그날 숙제가 생겨요.</div>
+      <div class="ugrp"><div class="muted">유형 고르기</div><div id="apick"></div><button class="btn" id="aadd" style="margin-top:8px">+ 이 유형 넣기</button></div>
+      <div class="ugrp"><div class="muted">돌아가는 순서</div><div id="aseq"></div></div>
+      <div class="ugrp"><div class="muted">문제 수</div><div class="row">${[5,10,15,20].map(n => `<button class="btn" data-ac="${n}">${n}문제</button>`).join("")}</div></div>
+      <div class="ugrp"><div class="muted">요일</div><div class="row">${[1,2,3,4,5,6,0].map(d => `<button class="btn" data-ad="${d}">${days[d]}</button>`).join("")}</div></div>
+      <div class="muted" id="anext" style="margin:8px 0"></div>
+      <button class="big blue" id="asave">자동 숙제 저장</button>
+    </div>
+    <div class="card" id="ph"><h2>📸 사진 제출 <span class="muted" data-cnt style="font-size:15px"></span></h2><div class="hwlist" data-list></div></div>
+    <div class="card" id="engc"></div>
+    <div class="card" id="pin"><h2>🔒 어머님 보기 비밀번호</h2>
+      <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 어머님 화면에 못 들어가게 숫자 4자리를 정해요. 어머님께만 알려 드리세요.</div>
+      <div class="row"><input class="inp" id="pinv" inputmode="numeric" maxlength="4" placeholder="예) 1234" style="max-width:140px"><button class="btn" id="pins">저장</button><span class="muted" id="pinst"></span></div>
+    </div>
+    <div class="card" id="tl"><h2>⏱ 하루 사용 시간</h2>
+      <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 하루에 문제를 풀 수 있는 시간이에요. 시간이 끝나면 화면이 잠기고, 쓴 답과 풀이는 저장돼요.</div>
+      <div class="row">${[0,20,30,40,60].map(n => `<button class="btn" data-tl="${n}">${n ? n+"분" : "제한 없음"}</button>`).join("")}</div>
+    </div>
+    <button class="big" id="new">+ 직접 숙제 내기</button>
+    <div class="card" style="margin-top:14px"><h2>낸 숙제</h2><div class="hwlist" id="list"></div></div></div>`;
+  bindOut();
+  $("#new").onclick = () => go(teacherCreate);
+  let cfg = {on:false, stages:[], count:10, days:[1,2,3,4,5]}, curList = [];
+  const pickAuto = stagePicker($("#apick"), "c41_1_1");
+  const paint = () => {
+    $("#aon").checked = !!cfg.on;
+    cfg.stages = cfg.stages.filter(id => STAGE[id]);
+    $("#aseq").innerHTML = cfg.stages.length ? cfg.stages.map((id,k) => `<div class="row seqi" style="margin:4px 0;align-items:center"><b style="min-width:24px">${k+1}.</b><span class="grow" style="flex:1">${esc(STAGE[id].unit)}<br><span class="muted">${esc(STAGE[id].name)}</span></span><button class="btn" data-up="${k}" ${k?"":"disabled"}>▲</button><button class="btn" data-rm="${k}">✕</button></div>`).join("") : `<div class="muted">아직 없어요. 위에서 골라 넣어 주세요.</div>`;
+    document.querySelectorAll("[data-ac]").forEach(b => b.classList.toggle("on", +b.dataset.ac===cfg.count));
+    document.querySelectorAll("[data-ad]").forEach(b => b.classList.toggle("on", cfg.days.includes(+b.dataset.ad)));
+    let t = "";
+    if(!cfg.on) t = "지금은 꺼져 있어요.";
+    else if(!cfg.stages.length) t = "단원을 하나 이상 골라 주세요.";
+    else if(!cfg.days.length) t = "요일을 하나 이상 골라 주세요.";
+    else {
+      let d = new Date(); const todayDone = curList.some(h => h.id==="auto-"+dayKey(d));
+      if(todayDone || !cfg.days.includes(d.getDay())){ for(let k=0;k<7;k++){ d = new Date(d.getTime()+864e5); if(cfg.days.includes(d.getDay())) break; } }
+      const sid = cfg.stages[curList.filter(h => h.auto).length % cfg.stages.length];
+      t = `다음 숙제: ${fmtD(d.getTime())} · ${stageName(sid)} · ${cfg.count}문제`;
+    }
+    $("#anext").textContent = t;
+  };
+  unsubs.push(photoList($("#ph"), "teacher"));
+  unsubs.push(engReportCard($("#engc")));
+  DB.getConfig().then(c => { $("#pinst").textContent = c && c.ppin ? "비밀번호가 정해져 있어요" : "아직 없어요"; }).catch(() => {});
+  $("#pins").onclick = async () => {
+    const v = $("#pinv").value.trim(); if(!/^\d{4}$/.test(v)) return toast("숫자 4자리로 써 주세요");
+    try{ const c = await DB.getConfig(); await DB.setConfig({...(c||{on:false, stages:[], count:10, days:[1,2,3,4,5]}), ppin:v}); cfg.ppin = v; $("#pinv").value = ""; $("#pinst").textContent = "비밀번호가 정해져 있어요"; toast("어머님 비밀번호를 저장했어요"); }
+    catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+  };
+  const paintTL = () => document.querySelectorAll("[data-tl]").forEach(b => b.classList.toggle("on", +b.dataset.tl===(cfg.limit||0)));
+  DB.getConfig().then(c => { if(c) cfg = {...cfg, ...c}; paint(); paintTL(); }).catch(() => { paint(); paintTL(); });
+  $("#tl").onclick = e => {
+    const b = e.target.closest("[data-tl]"); if(!b) return;
+    const limit = +b.dataset.tl;
+    DB.getConfig().then(c => DB.setConfig({...(c||{on:false, stages:[], count:10, days:[1,2,3,4,5]}), limit}))
+      .then(() => { cfg.limit = limit; paintTL(); toast(limit ? `하루 ${limit}분으로 정했어요` : "시간 제한을 껐어요"); })
+      .catch(() => toast("저장 실패: 인터넷을 확인해 주세요"));
+  };
+  $("#auto").onclick = e => {
+    const b = e.target.closest("button"); if(!b) return;
+    if(b.dataset.g) return;
+    if(b.id==="aadd"){ const sid = pickAuto(); if(cfg.stages.includes(sid)) return toast("이미 들어 있어요"); cfg.stages.push(sid); toast("넣었어요. 저장을 눌러야 적용돼요"); }
+    else if(b.dataset.rm) cfg.stages.splice(+b.dataset.rm, 1);
+    else if(b.dataset.up){ const k = +b.dataset.up; [cfg.stages[k-1], cfg.stages[k]] = [cfg.stages[k], cfg.stages[k-1]]; }
+    else if(b.dataset.ac) cfg.count = +b.dataset.ac;
+    else if(b.dataset.ad){ const d = +b.dataset.ad, k = cfg.days.indexOf(d); k>=0 ? cfg.days.splice(k,1) : cfg.days.push(d); }
+    else if(b.id==="asave"){
+      DB.getConfig().then(c => DB.setConfig({...cfg, on:$("#aon").checked, limit:cfg.limit||0, ppin:(c&&c.ppin)||cfg.ppin||""})).then(() => { cfg.on = $("#aon").checked; toast("자동 숙제를 저장했어요"); ensureAuto(curList, true); paint(); }).catch(() => toast("저장 실패: 인터넷을 확인해 주세요"));
+      return;
+    }
+    paint();
+  };
+  $("#aon").onchange = () => { cfg.on = $("#aon").checked; paint(); };
+  unsubs.push(DB.watchHWList(list => {
+    curList = list; paint();
+    $("#list").innerHTML = list.length ? list.map(h => {
+      const [lab,cls] = statusOf(h), n = h.problems.length;
+      let sc = "";
+      if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
+      else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
+      else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+    }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
+  }));
+  app.onclick = e => { const b = e.target.closest(".hw"); if(b) go(teacherGrade, b.dataset.id); };
+}
+
+// ───────── 선생님: 숙제 만들기 ─────────
+function teacherCreate(){
+  app.onclick = null;
+  app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div>
+    <div class="card" id="memoCard" style="display:none;background:var(--yel)"><h2>📌 지난 숙제 메모 (나만 보기)</h2><div id="lastMemo" style="white-space:pre-wrap"></div></div>
+    <div class="card"><h2>숙제 제목</h2><input class="inp" id="title"></div>
+    <div class="card"><h2>단원 골라서 문제 넣기</h2>
+      <div class="row">
+        <div id="stage" style="flex:1 1 100%"></div>
+        <span class="muted">문제 수</span><select class="inp" id="cnt" style="max-width:110px">${[5,10,15,20].map(n=>`<option ${n===10?"selected":""}>${n}</option>`).join("")}</select>
+      </div>
+      <button class="big gray" id="gen" style="margin-top:10px">문제 넣기</button>
+      <div class="muted" style="margin-top:8px">쉬운 문제 → 어려운 문제 순서로 들어가요.</div>
+    </div>
+    <div class="card"><h2>문제 목록 <span class="muted" id="pc"></span></h2>
+      <div class="muted" style="margin-bottom:8px">정답 칸을 비워 두면 자동 채점 없이 선생님이 직접 채점해요.</div>
+      <div id="rows"></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="add">+ 직접 문제 추가</button><button class="btn" id="clr">모두 지우기</button></div>
+    </div>
+    <button class="big" id="send">숙제 내기</button></div>`;
+  $("#back").onclick = () => go(teacherHome);
+  const pickStage = stagePicker($("#stage"), "c41_1_1");
+  const rows = $("#rows");
+  const addRow = (q="", a="", ext={}) => { const d = document.createElement("div"); d.className = "prow"; d.dataset.ext = JSON.stringify(ext); d.innerHTML = `<span class="n"></span><input class="inp" data-q placeholder="문제" value="${esc(q)}"><input class="inp" data-a placeholder="정답" value="${esc(a)}"><button class="btn" data-del>✕</button>`; rows.appendChild(d); renum(); };
+  const renum = () => { [...rows.children].forEach((r,i) => r.querySelector(".n").textContent = i+1); $("#pc").textContent = `(${rows.children.length}문제)`; };
+  rows.onclick = e => { if(e.target.closest("[data-del]")){ e.target.closest(".prow").remove(); renum(); } };
+  $("#gen").onclick = () => { makeProblems(pickStage(), +$("#cnt").value).forEach(({q, ans, ...ext}) => addRow(q, ans, ext)); };
+  $("#add").onclick = () => { addRow(); rows.lastChild.querySelector("[data-q]").focus(); };
+  $("#clr").onclick = async () => { if(rows.children.length && await ask("모두 지울까요?", "문제 목록이 비워져요.", "지우기", "취소")){ rows.innerHTML = ""; renum(); } };
+  renum();
+  const u = DB.watchHWList(async list => {
+    if($("#title").dataset.set) return; $("#title").dataset.set = 1;
+    $("#title").value = `${STUDENT} 수학과제${nextNum(list)}`;
+    const g = list.find(h => h.status==="graded");
+    if(g){ const t = await DB.getNote(g.id); if(has(t)){ $("#memoCard").style.display = ""; $("#lastMemo").textContent = `[${g.title}] ${t}`; } }
+  });
+  unsubs.push(u);
+  $("#send").onclick = async () => {
+    const problems = [...rows.children].map(r => { const ext = JSON.parse(r.dataset.ext||"{}"), q = r.querySelector("[data-q]").value.trim(), ans = r.querySelector("[data-a]").value.trim(); return {kind:"", simp:false, stage:"", ...ext, ...(ext.kind ? {} : {kind:""}), q, ans}; }).filter(p => p.q);
+    const title = $("#title").value.trim();
+    if(!title) return toast("제목을 써 주세요");
+    if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
+    if(!await ask("숙제를 낼까요?", `${esc(title)} · ${problems.length}문제`, "숙제 내기", "취소")) return;
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:""}); toast("숙제를 냈어요!"); go(teacherHome); }
+    catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+  };
+}
+
+// ───────── 선생님: 채점 ─────────
+function teacherGrade(id){
+  app.onclick = null;
+  let hw = null, dirty = false, built = false;
+  app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button><button class="link" id="del" style="color:var(--bad)">숙제 지우기</button></div>
+    <div id="upd" class="banner hide"><span>${esc(STUDENT)}가 새로 풀었어요.</span><button class="btn" id="reload">새로 보기</button></div>
+    <div id="body"></div>
+    <div class="card"><h2>💬 ${esc(STUDENT)}와 대화</h2><div id="chat"></div></div></div>`;
+  $("#back").onclick = async () => { if(dirty && !await ask("채점을 저장하지 않았어요", "저장하지 않고 나갈까요?", "나가기", "취소")) return; go(teacherHome); };
+  $("#del").onclick = async () => { if(await ask("숙제를 지울까요?", "지우면 되돌릴 수 없어요.", "지우기", "취소")){ await DB.deleteHW(id); go(teacherHome); } };
+  $("#reload").onclick = () => { dirty = false; render(); };
+  unsubs.push(chatBox($("#chat"), id, "teacher"));
+
+  async function render(){
+    $("#upd").classList.add("hide");
+    const h = hw, n = h.problems.length, [lab,cls] = statusOf(h), canGrade = ["submitted","graded"].includes(h.status);
+    const ok1N = h.problems.filter((_,i)=>stOf(h,i).ok1===true).length, finN = h.problems.filter((_,i)=>finalOk(h,i)===true).length;
+    const note = await DB.getNote(id);
+    $("#body").innerHTML = `<div class="card">
+        <div class="row" style="justify-content:space-between"><span class="jua" style="font-size:26px">${esc(h.title)}</span><span class="chip ${cls}">${lab}</span></div>
+        <div class="muted" style="margin-top:4px">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출한 날 ${fmtD(h.submittedAt)}` : ""}</div>
+        ${canGrade ? `<div class="sum" style="margin-top:8px">1번째 ${ok1N}/${n} 맞음 → 최종 ${finN}/${n} 맞음 <span class="muted">(자동 채점)</span></div>` : `<div class="muted" style="margin-top:8px">${esc(STUDENT)}가 아직 제출하지 않았어요. 풀고 있는 녹화는 지금도 볼 수 있어요.</div>`}
+      </div>
+      <div class="card"><h2>문제별 채점</h2>${h.problems.map((p,i) => {
+        const s = stOf(h,i), gr = (h.grade && h.grade[i]) || {}, ok = gradeOk(h,i);
+        const line = (k) => { const a = s["a"+k], o = s["ok"+k]; if(!has(a) && k===2) return ""; return `<div class="att"><span class="lb">${k}번째 답</span><b>${esc(a ?? "-")}</b> ${o===true ? `<span class="okc">✔ 맞음</span>` : o===false ? `<span class="badc">✗ 틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,k)}" data-t="${i+1}번 ${esc(p.q)} · ${k}번째 풀이">▶ 풀이 보기</button></div>`; };
+        return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span></div>
+          ${line(1)}${line(2)}
+          <div class="att"><span class="lb">채점</span><button class="btn ok ${ok===true?"on":""}" data-g="1" ${canGrade?"":"disabled"}>⭕ 맞음</button><button class="btn bad ${ok===false?"on":""}" data-g="0" ${canGrade?"":"disabled"}>❌ 틀림</button></div>
+          <div class="att"><span class="lb">메모</span><input class="inp" data-m style="flex:1" placeholder="이 문제에 대한 말 (${esc(STUDENT)}에게 보여요)" value="${esc(gr.memo || "")}"></div></div>`;
+      }).join("")}</div>
+      <div class="card"><h2>📝 ${esc(STUDENT)}에게 한마디 <span class="muted">(${esc(STUDENT)}에게 보여요)</span></h2><textarea class="inp" id="memo" placeholder="예) 받아내림을 잘했어요! 소수점 위치만 조심해요.">${esc(h.memo || "")}</textarea></div>
+      <div class="card" style="background:var(--yel)"><h2>📌 나만 보는 메모 <span class="muted">(다음 숙제 낼 때 보여요)</span></h2><textarea class="inp" id="note" placeholder="예) 자릿수 다른 뺄셈에서 빈자리 0을 안 채움 → 다음엔 5단계 더">${esc(note)}</textarea><button class="btn" id="saveNote" style="margin-top:8px">메모만 저장</button></div>
+      <button class="big" id="save" ${canGrade?"":"disabled"}>${h.status==="graded" ? "채점 고친 것 저장" : "채점 완료하기"}</button>`;
+    built = true;
+  }
+  app.onclick = async e => {
+    const pb = e.target.closest("[data-k]"); if(pb) return openPlayer(pb.dataset.t, pb.dataset.k, pb.dataset.q);
+    const gb = e.target.closest("[data-g]");
+    if(gb && !gb.disabled){ const q = gb.closest(".gq"); q.querySelectorAll("[data-g]").forEach(b => b.classList.toggle("on", b===gb)); dirty = true; return; }
+    if(e.target.id==="saveNote"){ await DB.setNote(id, $("#note").value); toast("메모를 저장했어요"); return; }
+    if(e.target.id==="save"){
+      const grade = {}; let miss = 0;
+      document.querySelectorAll(".gq").forEach(q => { const i = q.dataset.i, on = q.querySelector("[data-g].on"); if(!on) miss++; grade[i] = {ok: on ? on.dataset.g==="1" : null, memo: q.querySelector("[data-m]").value.trim()}; });
+      if(miss && !await ask("채점 안 한 문제가 있어요", `${miss}문제가 비어 있어요. 그래도 저장할까요?`, "저장", "취소")) return;
+      try{
+        await DB.setNote(id, $("#note").value);
+        await DB.updateHW(id, {grade, memo:$("#memo").value.trim(), status:"graded", gradedAt:Date.now()});
+        dirty = false; toast(`채점 완료! ${STUDENT}에게 보여요`);
+      }catch(err){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+    }
+  };
+  app.oninput = e => { if(e.target.closest("#body") && e.target.id!=="note") dirty = true; };
+  cleanups.push(() => { app.oninput = null; });
+  unsubs.push(DB.watchHW(id, h => {
+    if(!h){ go(teacherHome); return; }
+    hw = h;
+    if(!built || !dirty) render(); else $("#upd").classList.remove("hide");
+  }));
+}
+
+// 앱 설치(홈 화면에 추가)용
+
+
+// ───────── 시작 ─────────
+(async () => {
+  try{ DB = FIREBASE_CONFIG ? await makeFirebase() : makeLocal(); }
+  catch(e){ app.innerHTML = `<div class="center"><h1>앗!</h1><p>연결할 수 없어요. 인터넷을 확인하고 새로 고침해 주세요.</p></div>`; return; }
+  if(DB.mode==="local"){ const d = $("#demo"); d.classList.remove("hide"); d.innerHTML = "🧪 <b>체험 모드</b> — 지금은 이 기기에만 저장돼요. 안내서대로 설정하면 수아와 선생님이 서로 다른 기기에서 함께 쓸 수 있어요. (같은 컴퓨터에서 창을 두 개 열어 한쪽은 선생님, 한쪽은 수아로 들어가면 미리 써 볼 수 있어요.)"; }
+  let first = true;
+  DB.onAuth(r => {
+    if(!first && r===role) return; first = false; role = r;
+    if(r==="teacher") go(teacherHome);
+    else if(r==="student") go(studentHome);
+    else if(r==="parent") go(parentHome);
+    else go(startScreen);
+  });
+})();
+</script>
+</body>
+</html>
