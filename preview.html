@@ -177,6 +177,7 @@ textarea.inp{min-height:80px;resize:vertical}
 .stabs{display:flex;gap:8px;margin:0 0 14px}
 .stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
 .stab.on{border-color:var(--main);background:var(--soft);color:var(--main-d)}
+.stab{position:relative}.nb{position:absolute;top:-6px;right:-4px;background:var(--bad);color:#fff;border-radius:99px;min-width:22px;height:22px;font-size:14px;line-height:22px;padding:0 6px;font-family:Pretendard,sans-serif;font-weight:800}
 .egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
 .eunit{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;border:2px solid var(--line);border-radius:18px;background:#fff;font-size:19px;cursor:pointer;font-family:var(--disp)}
 .eunit:active{transform:scale(.97)}
@@ -1254,11 +1255,14 @@ function bindOut(){ $("#out").onclick = async () => { if(await ask("나갈까요
 
 // ───────── 수아: 숙제 목록 ─────────
 function studentHome(){
-  const tab = (() => { try{ return localStorage.getItem("sua-tab") || "math"; }catch(e){ return "math"; } })();
+  let tab = (() => { try{ return localStorage.getItem("sua-tab") || "math"; }catch(e){ return "math"; } })();
+  if(!["math","eng","test"].includes(tab)) tab = "math";
+  const T = (k, lab) => `<button class="stab ${tab===k?"on":""}" data-tab="${k}">${lab}<span class="nb hide" data-nb="${k}"></span></button>`;
   app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 공부방`, "")}
     <div class="banner hide" id="tleft"></div>
-    <div class="stabs"><button class="stab ${tab==="math"?"on":""}" data-tab="math">📐 ${esc(STUDENT)} 수학숙제</button><button class="stab ${tab==="eng"?"on":""}" data-tab="eng">🔤 ${esc(STUDENT)} 영어공부</button></div>
+    <div class="stabs">${T("math", "📐 수학숙제")}${T("eng", "🔤 영어공부")}${T("test", "📝 시험")}</div>
     <div id="tab-eng" class="${tab==="eng"?"":"hide"}">${engHomeHTML()}</div>
+    <div id="tab-test" class="${tab==="test"?"":"hide"}">${testHomeHTML()}</div>
     <div id="tab-math" class="${tab==="math"?"":"hide"}">
     <div class="card"><h2>해야 할 숙제</h2><div class="hwlist" id="todo"></div></div>
     <div class="card"><h2>끝낸 숙제</h2><div class="hwlist" id="done"></div></div>
@@ -1269,26 +1273,47 @@ function studentHome(){
     </div></div></div>`;
   photoUpload($("#ph")); unsubs.push(photoList($("#ph"), "student"));
   bindOut();
+  const isDone = h => ["submitted","graded"].includes(h.status);
   unsubs.push(DB.watchHWList(list => {
-    ensureAuto(list);
-    const card = h => { const [lab,cls] = statusOf(h); const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${h.problems.length}문제</div></div>${s}<span class="chip ${cls}">${lab}</span></button>`; };
-    const todo = list.filter(h => !["submitted","graded"].includes(h.status)), done = list.filter(h => ["submitted","graded"].includes(h.status));
-    $("#todo").innerHTML = todo.length ? todo.map(card).join("") : `<div class="empty">숙제가 없어요. 신난다! 🎈</div>`;
-    $("#done").innerHTML = done.length ? done.map(card).join("") : `<div class="empty">아직 없어요.</div>`;
+    ensureAuto(list); ensureAutoEng(list);
+    const card = h => {
+      const [lab,cls] = statusOf(h), k = hwKind(h);
+      if(k==="eng"){ const sc = isDone(h) ? `<div class="jua" style="font-size:20px">${engHWScore(h)}</div>` : "";
+        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : "새 과제"}</span></button>`; }
+      const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
+      const sub = k==="test" ? `${h.problems.length}문제${h.minutes ? ` · ${h.minutes}분` : ""}` : `${h.problems.length}문제`;
+      return `<button class="hw" data-id="${h.id}" data-k="${k}"><div class="grow"><div class="ti">${k==="test"?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${sub}</div></div>${s}<span class="chip ${cls}">${k==="test" && !isDone(h) ? (cls==="new" ? "새 시험" : "보는 중") : lab}</span></button>`;
+    };
+    const put = (sel, arr, empty) => { const el = $(sel); if(el) el.innerHTML = arr.length ? arr.map(card).join("") : `<div class="empty">${empty}</div>`; };
+    const by = k => list.filter(h => hwKind(h)===k);
+    put("#todo", by("math").filter(h => !isDone(h)), "숙제가 없어요. 신난다! 🎈"); put("#done", by("math").filter(isDone), "아직 없어요.");
+    put("#etodo", by("eng").filter(h => !isDone(h)), "영어 과제가 없어요. 혼자 더 해 볼까? ✨"); put("#edone", by("eng").filter(isDone), "아직 없어요.");
+    put("#ttodo", by("test").filter(h => !isDone(h)), "지금 볼 시험이 없어요."); put("#tdone", by("test").filter(isDone), "아직 없어요.");
+    ["math","eng","test"].forEach(k => { const n = by(k).filter(h => !isDone(h)).length, b = document.querySelector(`[data-nb="${k}"]`); if(b){ b.textContent = n; b.classList.toggle("hide", !n); } });
   }));
   let limit = 0;
-  getLimit().then(l => { limit = l; if(l){ const left = l - getUsed(); const t = $("#tleft"); if(!t) return; t.classList.remove("hide"); t.textContent = left>0 ? `⏱ 오늘 남은 시간: ${fmtLeft(left)}` : "⏱ 오늘 숙제 시간이 끝났어요. 내일 또 만나요!"; } });
+  getLimit().then(l => { limit = l; if(l){ const left = l - getUsed(); const t = $("#tleft"); if(!t) return; t.classList.remove("hide"); t.textContent = left>0 ? `⏱ 오늘 남은 시간: ${fmtLeft(left)}` : "⏱ 오늘 공부 시간이 끝났어요. 내일 또 만나요!"; } });
   const engClick = bindEngHome(() => limit);
+  const over = () => { if(limit && getUsed() >= limit){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 이어서 해요."); return true; } return false; };
   app.onclick = e => {
     const tb = e.target.closest("[data-tab]");
-    if(tb){ const t = tb.dataset.tab; try{ localStorage.setItem("sua-tab", t); }catch(er){}
+    if(tb){ const t = tb.dataset.tab; tab = t; try{ localStorage.setItem("sua-tab", t); }catch(er){}
       document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x===tb));
-      $("#tab-eng").classList.toggle("hide", t!=="eng"); $("#tab-math").classList.toggle("hide", t!=="math"); return; }
+      ["math","eng","test"].forEach(k => $("#tab-"+k).classList.toggle("hide", t!==k)); return; }
     if(engClick(e)) return;
-    const b = e.target.closest(".hw[data-id]"); if(!b) return; const isDone = !!b.closest("#done");
-    if(!isDone && limit && getUsed() >= limit){ tell("오늘은 여기까지! ⏰", "오늘 숙제 시간을 다 썼어요. 내일 이어서 풀어요."); return; }
-    go(isDone ? studentResult : solve, b.dataset.id);
+    const b = e.target.closest(".hw[data-id]"); if(!b) return;
+    const done = !!b.closest("#done,#edone,#tdone");
+    if(b.dataset.k==="eng"){
+      if(done){ go(engPlay, b.dataset.u, b.dataset.a); return; }   // 끝낸 과제는 연습으로 다시
+      if(!over()) go(engPlay, b.dataset.u, b.dataset.a, null, b.dataset.id);
+      return;
+    }
+    if(!done && over()) return;
+    if(!done && b.dataset.k==="test"){
+      ask("시험을 시작할까요? 📝", "시험은 <b>한 번만</b> 풀 수 있어요. 끝날 때까지 정답은 안 보여요." + (b.textContent.includes("분") ? "<br>시간이 끝나면 자동으로 제출돼요." : ""), "시작하기", "나중에").then(y => y && go(solve, b.dataset.id));
+      return;
+    }
+    go(done ? studentResult : solve, b.dataset.id);
   };
 }
 
@@ -1370,11 +1395,17 @@ function engClock(){
 
 // 수아 화면: 영어 탭 내용
 function engHomeHTML(){
-  return `<div class="card" style="display:flex;align-items:center;gap:12px;background:var(--lav)"><div style="font-size:44px">📝</div><div style="flex:1 1 auto;min-width:0"><h2 style="margin:0">영어 실력 알아보기</h2><div class="muted">내가 영어를 얼마나 아는지 알아봐요 (15분쯤)</div></div><button class="big" data-etest style="width:auto;flex:none;padding-left:22px;padding-right:22px">해 보기</button></div>
-    <div class="card"><h2>🔤 오늘 뭐 공부할까?</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
+  return `<div class="card"><h2>해야 할 영어 과제</h2><div class="hwlist" id="etodo"></div></div>
+    <div class="card"><h2>🔤 혼자 더 공부하기</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
     <div class="egrid">${ENG.map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${u.name}</span></button>`).join("")}
     <button class="eunit ph" data-eu="phonics"><span class="eic">🔠</span><span>파닉스</span></button></div></div>
+    <div class="card"><h2>끝낸 영어 과제</h2><div class="hwlist" id="edone"></div></div>
     <div class="card"><h2>내 영어 기록</h2><div class="hwlist" id="erec"></div></div>`;
+}
+function testHomeHTML(){
+  return `<div class="card"><h2>📝 봐야 할 시험</h2><div class="hwlist" id="ttodo"></div></div>
+    <div class="card" style="display:flex;align-items:center;gap:12px;background:var(--lav)"><div style="font-size:44px">🔤</div><div style="flex:1 1 auto;min-width:0"><h2 style="margin:0">영어 실력 알아보기</h2><div class="muted">내가 영어를 얼마나 아는지 알아봐요 (15분쯤)</div></div><button class="big" data-etest style="width:auto;flex:none;padding-left:22px;padding-right:22px">해 보기</button></div>
+    <div class="card"><h2>끝낸 시험</h2><div class="hwlist" id="tdone"></div></div>`;
 }
 function engRecRow(r, who="student"){
   const u = engUnit(r.unit) || {name:r.unit, icon:"🔤"};
@@ -1386,7 +1417,7 @@ function engRecRow(r, who="student"){
   return `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}</div>`;
 }
 function bindEngHome(limitRef){
-  unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.slice(0,10).map(engRecRow).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
+  unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.filter(r => !r.hw).slice(0,10).map(r => engRecRow(r)).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
   return e => {
     const tb = e.target.closest("[data-etest]");
     if(tb){ if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; } go(engTest); return true; }
@@ -1400,7 +1431,7 @@ function bindEngHome(limitRef){
 }
 
 // ───────── 영어: 공부 화면 ─────────
-function engPlay(unitId, act, only){
+function engPlay(unitId, act, only, hwId){
   const u = engUnit(unitId), t0 = Date.now();
   engClock();
   app.onclick = null;
@@ -1414,17 +1445,22 @@ function engPlay(unitId, act, only){
   box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
 
   const finish = async (total) => {
-    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0};
-    try{ await DB.addEng(rec); }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
+    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {})};
+    try{
+      await DB.addEng(rec);
+      if(hwId) await DB.updateHW(hwId, {"st.r": {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at}, status:"submitted", submittedAt:Date.now()});
+    }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
     if(total && score===total) confetti();
+    if(hwId) prog.textContent = "";
     const msg = !total ? "끝까지 다 봤어요! 👏" : score===total ? "다 맞았어요! 최고! 🎉" : score >= total*0.7 ? "잘했어요! 👍" : "괜찮아요, 한 번 더 해 볼까? 💪";
     box.innerHTML = `<div class="center" style="min-height:0;padding:20px 0">
       <div class="jua" style="font-size:30px">${msg}</div>
       ${total ? `<div class="jua" style="font-size:54px;color:var(--main-d)">${score} / ${total}</div>` : ""}
       ${rec.wrong.length ? `<div class="muted" style="font-size:17px">틀린 것: <b>${rec.wrong.map(esc).join(", ")}</b></div>` : ""}
+      ${hwId ? `<div class="chip ok" style="font-size:16px">✔ 과제 제출 완료!</div>` : ""}
       <div class="row" style="justify-content:center;margin-top:10px">
         ${rec.wrong.length && words.length ? `<button class="big" id="eagain">틀린 것만 다시</button>` : ""}
-        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">다른 공부 하기</button></div></div>`;
+        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">${hwId ? "목록으로" : "다른 공부 하기"}</button></div></div>`;
     prog.textContent = "";
     $("#ehome").onclick = () => go(studentHome);
     $("#eredo").onclick = () => go(engPlay, unitId, act);
@@ -1852,7 +1888,22 @@ function solve(id){
     }));
     built = true;
     startClock();
+    if(hw.test && hw.minutes) startTestClock();
   }
+  let testT = null;
+  async function startTestClock(){
+    let t0 = hw.st && hw.st.t0;
+    if(!t0){ t0 = Date.now(); try{ await DB.updateHW(id, {"st.t0": t0}); }catch(e){} }
+    const chip = document.createElement("span"); chip.className = "chip r2"; chip.id = "xchip"; $(".phead").insertBefore(chip, $("#tchip"));
+    const tick = () => {
+      const left = hw.minutes*60000 - (Date.now() - t0), m = Math.floor(Math.max(0,left)/60000), sec = Math.floor(Math.max(0,left)%60000/1000);
+      chip.textContent = `📝 시험 ${m}:${String(sec).padStart(2,"0")}`;
+      if(left <= 60000 && !chip.dataset.w){ chip.dataset.w = 1; toast("1분 남았어요!"); }
+      if(left <= 0){ clearInterval(testT); submit(true); }
+    };
+    tick(); testT = setInterval(tick, 1000);
+  }
+  cleanups.push(() => clearInterval(testT));
 
   // 하루 사용 시간 재기: 화면이 켜져 있을 때만 1초씩 더해요
   let clockT = null, warned = false, locked = false;
@@ -1878,7 +1929,7 @@ function solve(id){
     $("#ttl").textContent = hw.title;
     const r2 = hw.round===2;
     $("#rinfo").className = "rinfo" + (r2 ? " r2" : "");
-    $("#rinfo").textContent = r2 ? "틀린 문제 다시 풀기 (마지막 기회)" : "문제를 골라서 풀고, 답을 확인해요.";
+    $("#rinfo").textContent = hw.test ? "📝 시험이에요. 다 풀고 제출해요. (한 번만)" : r2 ? "틀린 문제 다시 풀기 (마지막 기회)" : "문제를 골라서 풀고, 답을 확인해요.";
     const att = curAtt(hw);
     $("#items").innerHTML = hw.problems.map((p,i) => {
       const s = stOf(hw,i), ed = editable(hw,i), a = s["a"+att], n = attempts(hw,i);
@@ -1891,6 +1942,7 @@ function solve(id){
     const left = hw.problems.filter((p,i) => editable(hw,i) && !has(stOf(hw,i)["a"+att])).length;
     $("#submit").disabled = left>0;
     $("#submit").textContent = left>0 ? `제출하기 (${left}문제 남음)` : (r2 ? "마지막 제출하기" : "제출하기");
+    if(hw.test){ $("#submit").disabled = false; if(left>0) $("#submit").textContent = `시험 제출 (${left}문제 안 풂)`; else $("#submit").textContent = "시험 제출하기"; }
   }
 
   async function openProb(i){
@@ -1899,7 +1951,7 @@ function solve(id){
     cur = i; const tok = ++loadTok;
     const p = hw.problems[i], ed = editable(hw,i), att = curAtt(hw), s = stOf(hw,i);
     $("#pno").textContent = `${i+1}번`;
-    $("#patt").textContent = ed ? (att===2 ? "2번째 풀이 (마지막)" : "1번째 풀이") : "다 풀었어요";
+    $("#patt").textContent = ed ? (hw.test ? "시험 문제" : att===2 ? "2번째 풀이 (마지막)" : "1번째 풀이") : "다 풀었어요";
     $("#patt").className = "chip" + (ed && att===2 ? " r2" : "");
     $("#pq").innerHTML = richQ(p.q) + (/^[\d.\s+\-−×÷*/()]+$/.test(p.q) ? " =" : "");
     $("#tools").classList.toggle("hide", !ed);
@@ -1933,15 +1985,27 @@ function solve(id){
     }, 500);
   }
 
-  async function submit(){
+  let submitting = false;
+  async function submit(auto=false){
     const r2 = hw.round===2;
-    if(!await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
+    if(submitting) return;
+    if(hw.test && auto!==true){
+      const left = hw.problems.filter((p,i) => !has(stOf(hw,i).a1)).length;
+      if(!await ask("시험을 제출할까요?", (left ? `아직 안 푼 문제가 <b>${left}개</b> 있어요.<br>` : "") + "제출하면 고칠 수 없어요.", "제출하기", "더 볼래요")) return;
+    } else if(!hw.test && !await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
+    submitting = true;
     await flush();
     const att = curAtt(hw), patch = {}; let wrong = 0;
     hw.problems.forEach((p,i) => { if(!editable(hw,i)) return; const ok = has(p.ans) ? checkAns(stOf(hw,i)["a"+att], p.ans, p.kind, p.simp, p.form) : null; patch[`st.${i}.ok${att}`] = ok; if(ok===false) wrong++; });
-    if(att===1 && wrong>0){ patch.status = "round2"; patch.round = 2; }
+    if(att===1 && wrong>0 && !hw.test){ patch.status = "round2"; patch.round = 2; }
     else { patch.status = "submitted"; patch.submittedAt = Date.now(); }
-    try{ await DB.updateHW(id, patch); }catch(e){ toast("제출 실패: 인터넷을 확인해 주세요"); return; }
+    try{ await DB.updateHW(id, patch); }catch(e){ submitting = false; toast("제출 실패: 인터넷을 확인해 주세요"); return; }
+    if(hw.test){
+      confetti();
+      await tell(auto===true ? "시간이 끝났어요! ⏰" : "시험 끝! 🎉", "수고했어요! 쓴 답은 다 제출됐어요.<br>끝낸 시험에서 결과를 볼 수 있어요.");
+      go(studentHome); return;
+    }
+    submitting = false;
     if(patch.status==="round2"){
       await tell("한 번 더 풀어 봐요! 💪", `틀린 문제가 <b>${wrong}개</b> 있어요.<br>빨간 느낌표(!) 문제를 다시 풀어요. 이번이 마지막 기회예요.`, "다시 풀기");
       cur = -1; const first = hw.problems.findIndex((p,i) => editable(hw,i)); if(first>=0) openProb(first);
@@ -2023,7 +2087,8 @@ function readAns(p){
 
 // ───────── 자동 숙제 ─────────
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-const nextNum = list => { const nums = list.map(h => +(/(\d+)\s*$/.exec(h.title)||[])[1]).filter(Boolean); return (nums.length ? Math.max(...nums) : 0) + 1; };
+const hwKind = h => h.subj==="eng" ? "eng" : h.test ? "test" : "math";
+const nextNum = (list, kind="math") => { const nums = list.filter(h => hwKind(h)===kind).map(h => +(/(\d+)\s*$/.exec(h.title)||[])[1]).filter(Boolean); return (nums.length ? Math.max(...nums) : 0) + 1; };
 let autoTried = "";
 async function ensureAuto(list, force=false){
   const d = new Date(), key = dayKey(d);
@@ -2031,9 +2096,24 @@ async function ensureAuto(list, force=false){
   let c; try{ c = await DB.getConfig(); }catch(e){ return; }
   if(!c || !c.on || !(c.stages||[]).length || !(c.days||[]).includes(d.getDay())) return;
   const id = "auto-"+key; if(list.some(h => h.id===id)) return;
-  const ok = c.stages.filter(id => STAGE[id]); if(!ok.length) return; const sid = ok[list.filter(h => h.auto).length % ok.length];
+  const ok = c.stages.filter(id => STAGE[id]); if(!ok.length) return; const sid = ok[list.filter(h => h.auto && hwKind(h)==="math").length % ok.length];
   try{ await DB.createHWId(id, {title:`${STUDENT} 수학과제${nextNum(list)}`, problems:makeProblems(sid, c.count||10), createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", auto:true, stage:sid}); }catch(e){}
 }
+// 영어 자동 과제: 정한 요일에 (단원 + 공부 방법) 순서대로 하나씩
+let autoTriedE = "";
+async function ensureAutoEng(list, force=false){
+  const d = new Date(), key = dayKey(d);
+  if(autoTriedE===key && !force) return; autoTriedE = key;
+  let c; try{ c = await DB.getConfig(); }catch(e){ return; }
+  if(!c || !c.eOn || !(c.eSeq||[]).length || !(c.eDays||[]).includes(d.getDay())) return;
+  const id = "auto-e-"+key; if(list.some(h => h.id===id)) return;
+  const seq = c.eSeq.filter(x => engUnit(x.u)); if(!seq.length) return;
+  const x = seq[list.filter(h => h.auto && hwKind(h)==="eng").length % seq.length];
+  try{ await DB.createHWId(id, engHWDoc(`${STUDENT} 영어과제${nextNum(list,"eng")}`, x.u, x.a, true)); }catch(e){}
+}
+const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
+const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name} · ${engActName(a)}` : ""; };
+const engHWScore = h => { const r = h.st && h.st.r; return r ? (r.total ? `${r.score}/${r.total}` : "다 봤어요") : ""; };
 
 // ───────── 하루 사용 시간 ─────────
 // 선생님이 정한 시간(분)만큼만 문제를 풀 수 있어요. 쓴 시간은 수아 기기에 날짜별로 저장돼요.
@@ -2229,6 +2309,7 @@ async function parentHome(){
   unsubs.push(photoList($("#ph"), "parent"));
   unsubs.push(engReportCard($("#engc")));
   unsubs.push(DB.watchHWList(list => {
+    list = list.filter(h => hwKind(h)!=="eng");
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
     let tot = 0, fin = 0, first = 0; const byStage = {};
     done.forEach(h => h.problems.forEach((p,i) => {
@@ -2286,10 +2367,73 @@ function teacherHome(){
       <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 하루에 문제를 풀 수 있는 시간이에요. 시간이 끝나면 화면이 잠기고, 쓴 답과 풀이는 저장돼요.</div>
       <div class="row">${[0,20,30,40,60].map(n => `<button class="btn" data-tl="${n}">${n ? n+"분" : "제한 없음"}</button>`).join("")}</div>
     </div>
-    <button class="big" id="new">+ 직접 숙제 내기</button>
-    <div class="card" style="margin-top:14px"><h2>낸 숙제</h2><div class="hwlist" id="list"></div></div></div>`;
+    <div class="card" id="eauto"><h2>🤖 영어 자동 과제</h2>
+      <label class="row" style="font-size:17px;font-weight:700"><input type="checkbox" id="eon" style="width:22px;height:22px"> 자동으로 영어 과제 내기</label>
+      <div class="muted" style="margin:6px 0 4px">넣은 순서대로 돌아가며, 고른 요일에 하루 한 과제씩 나가요.</div>
+      <div class="ugrp"><div class="muted">단원 + 공부 방법</div><div class="row"><select class="inp" id="eu" style="flex:1;min-width:140px"></select><select class="inp" id="ea" style="flex:1;min-width:140px"></select></div><button class="btn" id="eadd" style="margin-top:8px">+ 넣기</button></div>
+      <div class="ugrp"><div class="muted">돌아가는 순서</div><div id="eseq"></div></div>
+      <div class="ugrp"><div class="muted">요일</div><div class="row">${[1,2,3,4,5,6,0].map(d => `<button class="btn" data-ed="${d}">${days[d]}</button>`).join("")}</div></div>
+      <div class="muted" id="enext" style="margin:8px 0"></div>
+      <button class="big blue" id="esave">영어 자동 과제 저장</button>
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button></div>
+    <div class="card" style="margin-top:14px"><h2>낸 숙제 · 과제 · 시험</h2><div class="hwlist" id="list"></div></div></div>`;
   bindOut();
   $("#new").onclick = () => go(teacherCreate);
+  $("#newt").onclick = () => go(teacherCreate, "test");
+  const unitOpts = sel => ENG.map(u => `<option value="${u.id}" ${u.id===sel?"selected":""}>${u.icon} ${esc(u.name)}</option>`).join("") + `<option value="phonics" ${sel==="phonics"?"selected":""}>🔠 파닉스</option>`;
+  const actOpts = (u, sel) => (u==="phonics" ? PH_ACTS : ENG_ACTS).map(a => `<option value="${a.id}" ${a.id===sel?"selected":""}>${a.icon} ${esc(a.name)}</option>`).join("");
+  $("#newe").onclick = () => {
+    const m = modal(`<h3>🔤 영어 과제 내기</h3><div class="muted">제목</div><input class="inp" id="mt" value="${esc(`${STUDENT} 영어과제${nextNum(curList,"eng")}`)}">
+      <div class="muted" style="margin-top:8px">단원</div><select class="inp" id="mu">${unitOpts("animal")}</select>
+      <div class="muted" style="margin-top:8px">공부 방법</div><select class="inp" id="ma">${actOpts("animal","mean")}</select>
+      <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
+    $("#mu", m).onchange = () => $("#ma", m).innerHTML = actOpts($("#mu", m).value);
+    m.onclick = async ev => {
+      if(ev.target.closest("[data-x]")) return m.remove();
+      if(!ev.target.closest("[data-ok]")) return;
+      const t = $("#mt", m).value.trim(); if(!t) return toast("제목을 써 주세요");
+      try{ await DB.createHW(engHWDoc(t, $("#mu", m).value, $("#ma", m).value)); m.remove(); toast("영어 과제를 냈어요!"); }catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+    };
+  };
+  // 영어 자동 과제
+  let ecfg = {eOn:false, eSeq:[], eDays:[1,2,3,4,5]};
+  $("#eu").innerHTML = unitOpts("animal"); $("#ea").innerHTML = actOpts("animal", "learn");
+  $("#eu").onchange = () => $("#ea").innerHTML = actOpts($("#eu").value);
+  const paintE = () => {
+    $("#eon").checked = !!ecfg.eOn;
+    ecfg.eSeq = (ecfg.eSeq||[]).filter(x => engUnit(x.u));
+    $("#eseq").innerHTML = ecfg.eSeq.length ? ecfg.eSeq.map((x,k) => `<div class="row" style="margin:4px 0;align-items:center"><b style="min-width:24px">${k+1}.</b><span style="flex:1">${engPairName(x.u, x.a)}</span><button class="btn" data-eup="${k}" ${k?"":"disabled"}>▲</button><button class="btn" data-erm="${k}">✕</button></div>`).join("") : `<div class="muted">아직 없어요. 위에서 골라 넣어 주세요.</div>`;
+    document.querySelectorAll("[data-ed]").forEach(b => b.classList.toggle("on", ecfg.eDays.includes(+b.dataset.ed)));
+    let t = "";
+    if(!ecfg.eOn) t = "지금은 꺼져 있어요.";
+    else if(!ecfg.eSeq.length) t = "하나 이상 넣어 주세요.";
+    else if(!ecfg.eDays.length) t = "요일을 하나 이상 골라 주세요.";
+    else {
+      let d = new Date(); const todayDone = curList.some(h => h.id==="auto-e-"+dayKey(d));
+      if(todayDone || !ecfg.eDays.includes(d.getDay())){ for(let k=0;k<7;k++){ d = new Date(d.getTime()+864e5); if(ecfg.eDays.includes(d.getDay())) break; } }
+      const x = ecfg.eSeq[curList.filter(h => h.auto && hwKind(h)==="eng").length % ecfg.eSeq.length];
+      t = `다음 과제: ${fmtD(d.getTime())} · ${engPairName(x.u, x.a)}`;
+    }
+    $("#enext").textContent = t;
+  };
+  DB.getConfig().then(c => { if(c) ecfg = {...ecfg, eOn:!!c.eOn, eSeq:c.eSeq||[], eDays:c.eDays||[1,2,3,4,5]}; paintE(); }).catch(paintE);
+  $("#eon").onchange = () => { ecfg.eOn = $("#eon").checked; paintE(); };
+  $("#eauto").onclick = e => {
+    const b = e.target.closest("button"); if(!b) return;
+    if(b.id==="eadd"){ const x = {u:$("#eu").value, a:$("#ea").value}; if(ecfg.eSeq.some(y => y.u===x.u && y.a===x.a)) return toast("이미 들어 있어요"); ecfg.eSeq.push(x); toast("넣었어요. 저장을 눌러야 적용돼요"); }
+    else if(b.dataset.erm) ecfg.eSeq.splice(+b.dataset.erm, 1);
+    else if(b.dataset.eup){ const k = +b.dataset.eup; [ecfg.eSeq[k-1], ecfg.eSeq[k]] = [ecfg.eSeq[k], ecfg.eSeq[k-1]]; }
+    else if(b.dataset.ed){ const d = +b.dataset.ed, k = ecfg.eDays.indexOf(d); k>=0 ? ecfg.eDays.splice(k,1) : ecfg.eDays.push(d); }
+    else if(b.id==="esave"){
+      ecfg.eOn = $("#eon").checked;
+      DB.getConfig().then(c => DB.setConfig({...(c||{on:false, stages:[], count:10, days:[1,2,3,4,5]}), eOn:ecfg.eOn, eSeq:ecfg.eSeq, eDays:ecfg.eDays}))
+        .then(() => { cfg.eOn = ecfg.eOn; cfg.eSeq = ecfg.eSeq; cfg.eDays = ecfg.eDays; toast("영어 자동 과제를 저장했어요"); ensureAutoEng(curList, true); paintE(); })
+        .catch(() => toast("저장 실패: 인터넷을 확인해 주세요"));
+      return;
+    }
+    paintE();
+  };
   let cfg = {on:false, stages:[], count:10, days:[1,2,3,4,5]}, curList = [];
   const pickAuto = stagePicker($("#apick"), "c41_1_1");
   const paint = () => {
@@ -2343,25 +2487,43 @@ function teacherHome(){
   };
   $("#aon").onchange = () => { cfg.on = $("#aon").checked; paint(); };
   unsubs.push(DB.watchHWList(list => {
-    curList = list; paint();
+    curList = list; paint(); paintE();
     $("#list").innerHTML = list.length ? list.map(h => {
       const [lab,cls] = statusOf(h), n = h.problems.length;
+      if(hwKind(h)==="eng"){ const done = ["submitted","graded"].includes(h.status);
+        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : "안 함"}</span></button>`; }
       let sc = "";
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
-  app.onclick = e => { const b = e.target.closest(".hw"); if(b) go(teacherGrade, b.dataset.id); };
+  app.onclick = e => {
+    const b = e.target.closest(".hw[data-id]"); if(!b) return;
+    if(b.dataset.k!=="eng") return go(teacherGrade, b.dataset.id);
+    const h = curList.find(x => x.id===b.dataset.id); if(!h) return;
+    const r = h.st && h.st.r;
+    const m = modal(`<h3>🔤 ${esc(h.title)}</h3><div style="font-size:17px">${engPairName(h.unit, h.act)}</div>
+      <div class="muted" style="margin:6px 0">낸 날 ${fmtFull(h.createdAt)}${h.submittedAt ? `<br>제출 ${fmtFull(h.submittedAt)}` : ""}</div>
+      ${r ? `<div style="font-size:18px">${r.total ? `점수 <b>${r.score}/${r.total}</b>` : "끝까지 다 봤어요"} · ${fmtSec(r.dur||0)}</div>${(r.wrong||[]).length ? `<div class="muted">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : ""}` : `<div class="muted">아직 안 했어요.</div>`}
+      <div class="mbtns"><button class="big gray" data-del style="color:var(--bad)">과제 지우기</button><button class="big" data-x>닫기</button></div>`);
+    m.onclick = async ev => {
+      if(ev.target.closest("[data-x]")) return m.remove();
+      if(ev.target.closest("[data-del]")){ m.remove(); if(await ask("이 과제를 지울까요?", "지우면 되돌릴 수 없어요.", "지우기", "취소")){ try{ await DB.deleteHW(h.id); toast("지웠어요"); }catch(e){ toast("지우기 실패"); } } }
+    };
+  };
 }
 
 // ───────── 선생님: 숙제 만들기 ─────────
-function teacherCreate(){
+function teacherCreate(mode){
+  const T = mode==="test";
   app.onclick = null;
   app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div>
     <div class="card" id="memoCard" style="display:none;background:var(--yel)"><h2>📌 지난 숙제 메모 (나만 보기)</h2><div id="lastMemo" style="white-space:pre-wrap"></div></div>
-    <div class="card"><h2>숙제 제목</h2><input class="inp" id="title"></div>
+    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">
+      ${T ? `<div class="row" style="margin-top:10px;align-items:center"><span class="muted">시험 시간</span><select class="inp" id="mins" style="max-width:150px">${[0,10,15,20,30,40,50].map(n => `<option value="${n}" ${n===20?"selected":""}>${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></div>
+      <div class="muted" style="margin-top:6px">시험은 다시 풀기 없이 한 번만 풀고, 제출할 때까지 정답이 안 보여요. 시간이 끝나면 자동으로 제출돼요.</div>` : ""}</div>
     <div class="card"><h2>단원 골라서 문제 넣기</h2>
       <div class="row">
         <div id="stage" style="flex:1 1 100%"></div>
@@ -2375,7 +2537,7 @@ function teacherCreate(){
       <div id="rows"></div>
       <div class="row" style="margin-top:8px"><button class="btn" id="add">+ 직접 문제 추가</button><button class="btn" id="clr">모두 지우기</button></div>
     </div>
-    <button class="big" id="send">숙제 내기</button></div>`;
+    <button class="big" id="send">${T ? "시험 내기" : "숙제 내기"}</button></div>`;
   $("#back").onclick = () => go(teacherHome);
   const pickStage = stagePicker($("#stage"), "c41_1_1");
   const rows = $("#rows");
@@ -2388,7 +2550,7 @@ function teacherCreate(){
   renum();
   const u = DB.watchHWList(async list => {
     if($("#title").dataset.set) return; $("#title").dataset.set = 1;
-    $("#title").value = `${STUDENT} 수학과제${nextNum(list)}`;
+    $("#title").value = T ? `${STUDENT} 수학시험${nextNum(list,"test")}` : `${STUDENT} 수학과제${nextNum(list)}`;
     const g = list.find(h => h.status==="graded");
     if(g){ const t = await DB.getNote(g.id); if(has(t)){ $("#memoCard").style.display = ""; $("#lastMemo").textContent = `[${g.title}] ${t}`; } }
   });
@@ -2398,8 +2560,9 @@ function teacherCreate(){
     const title = $("#title").value.trim();
     if(!title) return toast("제목을 써 주세요");
     if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
-    if(!await ask("숙제를 낼까요?", `${esc(title)} · ${problems.length}문제`, "숙제 내기", "취소")) return;
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:""}); toast("숙제를 냈어요!"); go(teacherHome); }
+    const minutes = T ? +$("#mins").value : 0;
+    if(!await ask(T ? "시험을 낼까요?" : "숙제를 낼까요?", `${esc(title)} · ${problems.length}문제${T ? ` · ${minutes ? minutes+"분" : "시간 제한 없음"}` : ""}`, T ? "시험 내기" : "숙제 내기", "취소")) return;
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {})}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
