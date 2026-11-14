@@ -2001,7 +2001,29 @@ function solve(id){
     tTotal += add; tPer[i] += add;
     try{ await DB.updateHW(id, {"st.tm": tTotal, [`st.${i}.t`]: tPer[i]}); }catch(e){}
   };
-  const timeT = setInterval(() => { tickTime(); if(tAcc >= 20000) saveTime(); }, 1000);
+  // 나갔다 온 것 · 멈춘 것 기록 (선생님·어머님만 봐요)
+  let evs = null, lastAct = Date.now(), idleFrom = 0;
+  const AWAY_KEY = "sua-away-" + id;
+  const logEv = ev => {
+    if(!hw) return; if(evs===null) evs = ((hw.st && hw.st.ev) || []).slice();
+    evs.push(ev); if(evs.length > 120) evs = evs.slice(-120);
+    DB.updateHW(id, {"st.ev": evs}).catch(() => {});
+  };
+  const endIdle = now => { if(idleFrom){ const d = now - idleFrom; if(d >= 120000) logEv({k:"idle", i:cur, s:idleFrom, d}); idleFrom = 0; } };
+  const onAct = () => { const now = Date.now(); endIdle(now); lastAct = now; };
+  const onVisAway = () => {
+    const now = Date.now();
+    if(document.hidden){ endIdle(now); try{ localStorage.setItem(AWAY_KEY, JSON.stringify({s:now, i:cur})); }catch(e){} }
+    else { let a = null; try{ a = JSON.parse(localStorage.getItem(AWAY_KEY) || "null"); localStorage.removeItem(AWAY_KEY); }catch(e){}
+      if(a && now - a.s >= 5000) logEv({k:"out", i:a.i, s:a.s, d:now - a.s}); lastAct = now; }
+  };
+  ["pointerdown","keydown","input"].forEach(t => document.addEventListener(t, onAct, true));
+  document.addEventListener("visibilitychange", onVisAway);
+  cleanups.push(() => { ["pointerdown","keydown","input"].forEach(t => document.removeEventListener(t, onAct, true)); document.removeEventListener("visibilitychange", onVisAway); endIdle(Date.now()); });
+  const timeT = setInterval(() => {
+    tickTime(); if(tAcc >= 20000) saveTime();
+    const now = Date.now(); if(!document.hidden && !idleFrom && now - lastAct >= 120000) idleFrom = lastAct;
+  }, 1000);
   cleanups.push(() => clearInterval(timeT));
   const flush = async () => { await saveTime(); clearTimeout(saveT); if(board && board.dirty && curKey){ board.dirty = false; try{ await saveRec(curKey, board.snap()); }catch(e){ board.dirty = true; toast("풀이 저장 실패: 인터넷을 확인해 주세요"); } } };
   const onVis = () => { if(!board) return; if(document.hidden){ board.pause(); flush(); } };
@@ -2063,6 +2085,8 @@ function solve(id){
       if($(".drawer")) seenMsgN = n;
     }));
     built = true;
+    try{ const a = JSON.parse(localStorage.getItem(AWAY_KEY) || "null"); localStorage.removeItem(AWAY_KEY);
+      if(a && Date.now() - a.s >= 5000 && Date.now() - a.s < 6*3600e3) logEv({k:"out", i:a.i, s:a.s, d:Date.now() - a.s}); }catch(e){}
     startClock();
     if(hw.test && hw.minutes) startTestClock();
   }
@@ -2290,6 +2314,11 @@ async function ensureAutoEng(list, force=false){
   const x = seq[list.filter(h => h.auto && hwKind(h)==="eng").length % seq.length];
   try{ await DB.createHWId(id, engHWDoc(`${STUDENT} 영어과제${nextNum(list,"eng")}`, x.u, x.a, true)); }catch(e){}
 }
+// 나갔다 옴 · 멈춤 요약
+const evSum = h => { const ev = (h.st && h.st.ev) || []; const o = ev.filter(e => e.k==="out"), d = ev.filter(e => e.k==="idle");
+  return {o:o.length, od:o.reduce((a,e) => a+e.d, 0), d:d.length, dd:d.reduce((a,e) => a+e.d, 0), ev}; };
+const evLine = h => { const v = evSum(h); if(!v.o && !v.d) return ""; return [v.o ? `🚪 나갔다 옴 ${v.o}번 (${fmtSec(v.od)})` : "", v.d ? `💤 멈춤 ${v.d}번 (${fmtSec(v.dd)})` : ""].filter(Boolean).join(" · "); };
+const hm = t => { const d = new Date(t); return `${d.getHours()<12?"오전":"오후"} ${(d.getHours()%12)||12}:${String(d.getMinutes()).padStart(2,"0")}`; };
 // 오늘 스터디플래너 사진을 올렸는지
 const plannerToday = ps => ps.some(p => p.type==="planner" && dayKey(new Date(p.at))===dayKey(new Date()));
 async function plannerNudge(){
@@ -2524,7 +2553,7 @@ async function parentHome(){
         ${list.length ? list.map(h => {
           const [lab,cls] = statusOf(h), n = h.problems.length, g = h.status==="graded", d = ["submitted","graded"].includes(h.status);
           const okN = h.problems.filter((_,i) => (g ? gradeOk(h,i) : finalOk(h,i))===true).length, o1 = h.problems.filter((_,i) => stOf(h,i).ok1===true).length;
-          return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출 ${fmtD(h.submittedAt)}` : ""}${d ? ` · 1번째 ${o1}/${n}` : ""}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}</div></div>${d ? `<div style="font-size:22px;font-weight:800;color:var(--main-d)">${okN}/${n}</div>` : ""}<span class="chip ${cls}">${lab}</span></button>`;
+          return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출 ${fmtD(h.submittedAt)}` : ""}${d ? ` · 1번째 ${o1}/${n}` : ""}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div>${d ? `<div style="font-size:22px;font-weight:800;color:var(--main-d)">${okN}/${n}</div>` : ""}<span class="chip ${cls}">${lab}</span></button>`;
         }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`}
       </div></div>`;
   }));
@@ -2684,7 +2713,7 @@ function teacherHome(){
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
   app.onclick = e => {
@@ -2777,6 +2806,7 @@ function teacherGrade(id){
         <div class="row" style="justify-content:space-between"><span class="jua" style="font-size:26px">${esc(h.title)}</span><span class="chip ${cls}">${lab}</span></div>
         <div class="muted" style="margin-top:4px">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출한 날 ${fmtD(h.submittedAt)}` : ""}</div>
         ${h.st && h.st.tm ? `<div style="margin-top:4px;font-size:17px">⏱ 푸는 데 걸린 시간 <b>${fmtSec(h.st.tm)}</b> <span class="muted">(화면 켜고 푼 시간만)</span></div>` : ""}
+        ${evLine(h) ? `<details style="margin-top:4px;font-size:16px"><summary style="cursor:pointer">${evLine(h)}</summary><div class="muted" style="margin-top:4px;line-height:1.7">${evSum(h).ev.slice().sort((a,b) => a.s-b.s).map(e => `${hm(e.s)} · ${e.i>=0 ? `${e.i+1}번 문제에서 ` : ""}${e.k==="out" ? "🚪 나갔다 옴" : "💤 멈춤"} ${fmtSec(e.d)}`).join("<br>")}</div></details>` : ""}
         ${canGrade ? `<div class="sum" style="margin-top:8px">1번째 ${ok1N}/${n} 맞음 → 최종 ${finN}/${n} 맞음 <span class="muted">(자동 채점)</span></div>` : `<div class="muted" style="margin-top:8px">${esc(STUDENT)}가 아직 제출하지 않았어요. 풀고 있는 녹화는 지금도 볼 수 있어요.</div>`}
       </div>
       <div class="card"><h2>문제별 채점</h2>${h.problems.map((p,i) => {
