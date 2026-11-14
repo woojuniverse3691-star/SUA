@@ -1390,6 +1390,7 @@ const PH_ACTS = [
   {id:"abc", name:"알파벳 소리", icon:"🔊", desc:"글자랑 단어 소리 듣기"},
   {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
   {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
+  {id:"speed", name:"빨리 맞히기", icon:"⚡", desc:"60초 동안 듣고 글자 고르기"},
 ];
 const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
 const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
@@ -1674,6 +1675,46 @@ function engPlay(unitId, act, only, hwId, part){
         const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${L}"]`).classList.add("ok");
         feedback(ok, `${w} → ${L}`); nextQ(ok, w);
       });
+    };
+  }
+  else if(act==="speed"){
+    // ⚡ 빨리 맞히기: 60초 동안 소리 듣고 첫 글자 고르기 (시간 재기 게임)
+    const LIM = 60, letters = PHONICS.filter(p => p[0]!=="X");
+    let left = LIM, n = 0, combo = 0, timer = null, on = false, cur = null, best = 0;
+    try{ best = +localStorage.getItem("sua-speed-best") || 0; }catch(e){}
+    const stop = () => { if(timer){ clearInterval(timer); timer = null; } };
+    cleanups.push(stop);
+    const paint = () => { prog.textContent = `⏱ ${left}초 · ⭐ ${score}개`; };
+    const end = () => {
+      stop(); on = false; prog.style.cssText = "";
+      if(score > best){ try{ localStorage.setItem("sua-speed-best", score); }catch(e){} toast(`🎉 새 기록! ${score}개`); }
+      finish(n);
+    };
+    const ask1 = () => {
+      if(!on) return;
+      cur = shuffle(letters.filter(p => !cur || p[0]!==cur[0]))[0];
+      const [L, w, e] = cur, opts = shuffle([L, ...pickN(letters.map(p => p[0]), 3, L)]);
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="emean">${combo >= 3 ? `🔥 ${combo}개 연속!` : "어떤 글자로 시작할까?"}</div><div class="row" style="justify-content:center">${spk(w)}</div></div>
+        <div class="eopts four">${opts.map(o => `<button class="eopt big2" data-o="${o}">${o} ${o.toLowerCase()}</button>`).join("")}</div>`;
+      say(w);
+      let done = false;
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(done || !on) return; done = true; n++;
+        const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad");
+        if(ok){ score++; combo++; } else { combo = 0; wrong.push(w); box.querySelector(`[data-o="${L}"]`).classList.add("ok"); }
+        paint(); setTimeout(ask1, ok ? 350 : 1000);
+      });
+    };
+    show = () => {
+      prog.textContent = "";
+      box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+        <div style="font-size:64px">⚡</div><div class="jua" style="font-size:28px">빨리 맞히기</div>
+        <div style="font-size:18px;line-height:1.7">${LIM}초 동안 소리를 듣고<br>시작하는 글자를 빨리 골라요!${best ? `<br>내 최고 기록: <b>${best}개</b>` : ""}</div>
+        <button class="big" id="sgo" style="margin-top:10px">시작!</button></div>`;
+      $("#sgo").onclick = () => {
+        on = true; left = LIM; prog.style.cssText = "font-size:22px;font-weight:800;color:var(--main-d)"; paint(); ask1();
+        timer = setInterval(() => { left--; if(left <= 0){ left = 0; paint(); end(); } else paint(); }, 1000);
+      };
     };
   }
   else if(act==="vowel"){
