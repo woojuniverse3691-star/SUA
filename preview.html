@@ -1990,7 +1990,20 @@ function engReportCard(el, who="teacher"){
 function solve(id){
   app.onclick = null;
   let hw = null, cur = -1, board = null, curKey = null, saveT = null, loadTok = 0, built = false, lastMsgN = -1, seenMsgN = 0;
-  const flush = async () => { clearTimeout(saveT); if(board && board.dirty && curKey){ board.dirty = false; try{ await saveRec(curKey, board.snap()); }catch(e){ board.dirty = true; toast("풀이 저장 실패: 인터넷을 확인해 주세요"); } } };
+  // 푸는 시간 재기 (화면이 켜져 있을 때만, 문제별 + 전체)
+  let tAcc = 0, tLast = Date.now(), tTotal = null, tPer = {};
+  const tickTime = () => { const now = Date.now(); if(built && cur>=0 && !document.hidden && !(typeof locked!=="undefined" && locked)) tAcc += Math.min(now - tLast, 5000); tLast = now; };
+  const saveTime = async () => {
+    tickTime(); if(tAcc < 1000 || !hw || cur<0) return;
+    if(tTotal===null){ tTotal = (hw.st && hw.st.tm) || 0; }
+    const i = cur, add = tAcc; tAcc = 0;
+    if(tPer[i]===undefined) tPer[i] = stOf(hw,i).t || 0;
+    tTotal += add; tPer[i] += add;
+    try{ await DB.updateHW(id, {"st.tm": tTotal, [`st.${i}.t`]: tPer[i]}); }catch(e){}
+  };
+  const timeT = setInterval(() => { tickTime(); if(tAcc >= 20000) saveTime(); }, 1000);
+  cleanups.push(() => clearInterval(timeT));
+  const flush = async () => { await saveTime(); clearTimeout(saveT); if(board && board.dirty && curKey){ board.dirty = false; try{ await saveRec(curKey, board.snap()); }catch(e){ board.dirty = true; toast("풀이 저장 실패: 인터넷을 확인해 주세요"); } } };
   const onVis = () => { if(!board) return; if(document.hidden){ board.pause(); flush(); } };
   document.addEventListener("visibilitychange", onVis); window.addEventListener("pagehide", flush);
   cleanups.push(() => { flush(); document.removeEventListener("visibilitychange", onVis); window.removeEventListener("pagehide", flush); board && board.destroy(); });
@@ -2111,6 +2124,7 @@ function solve(id){
   async function openProb(i){
     if(i===cur) return;
     await flush();
+    tLast = Date.now();
     cur = i; const tok = ++loadTok;
     const p = hw.problems[i], ed = editable(hw,i), att = curAtt(hw), s = stOf(hw,i);
     $("#pno").textContent = `${i+1}번`;
@@ -2443,6 +2457,7 @@ function studentResult(id, parent=false){
     const g = h.status==="graded", n = h.problems.length, okN = h.problems.filter((_,i) => gradeOk(h,i)===true).length;
     $("#body").innerHTML = `<div class="card" style="text-align:center">
         <div class="jua" style="font-size:26px">${esc(h.title)}</div>
+        ${h.st && h.st.tm ? `<div class="muted" style="font-size:16px">⏱ ${fmtSec(h.st.tm)} 걸렸어요</div>` : ""}
         ${g ? `<div class="jua" style="font-size:52px;color:var(--main-d)">${okN}<span style="font-size:26px;color:var(--sub)"> / ${n}</span></div>` : `<div class="jua" style="font-size:22px;margin:10px 0;color:var(--blue-d)">선생님이 채점하고 있어요 ⏳</div>`}
         <div class="muted">${parent ? `낸 날 ${fmtD(h.createdAt)} · ` : ""}제출한 날 ${h.submittedAt ? fmtD(h.submittedAt) : "-"}</div>
       </div>
@@ -2509,7 +2524,7 @@ async function parentHome(){
         ${list.length ? list.map(h => {
           const [lab,cls] = statusOf(h), n = h.problems.length, g = h.status==="graded", d = ["submitted","graded"].includes(h.status);
           const okN = h.problems.filter((_,i) => (g ? gradeOk(h,i) : finalOk(h,i))===true).length, o1 = h.problems.filter((_,i) => stOf(h,i).ok1===true).length;
-          return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출 ${fmtD(h.submittedAt)}` : ""}${d ? ` · 1번째 ${o1}/${n}` : ""}</div></div>${d ? `<div style="font-size:22px;font-weight:800;color:var(--main-d)">${okN}/${n}</div>` : ""}<span class="chip ${cls}">${lab}</span></button>`;
+          return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출 ${fmtD(h.submittedAt)}` : ""}${d ? ` · 1번째 ${o1}/${n}` : ""}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}</div></div>${d ? `<div style="font-size:22px;font-weight:800;color:var(--main-d)">${okN}/${n}</div>` : ""}<span class="chip ${cls}">${lab}</span></button>`;
         }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`}
       </div></div>`;
   }));
@@ -2669,7 +2684,7 @@ function teacherHome(){
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
   app.onclick = e => {
@@ -2761,12 +2776,13 @@ function teacherGrade(id){
     $("#body").innerHTML = `<div class="card">
         <div class="row" style="justify-content:space-between"><span class="jua" style="font-size:26px">${esc(h.title)}</span><span class="chip ${cls}">${lab}</span></div>
         <div class="muted" style="margin-top:4px">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출한 날 ${fmtD(h.submittedAt)}` : ""}</div>
+        ${h.st && h.st.tm ? `<div style="margin-top:4px;font-size:17px">⏱ 푸는 데 걸린 시간 <b>${fmtSec(h.st.tm)}</b> <span class="muted">(화면 켜고 푼 시간만)</span></div>` : ""}
         ${canGrade ? `<div class="sum" style="margin-top:8px">1번째 ${ok1N}/${n} 맞음 → 최종 ${finN}/${n} 맞음 <span class="muted">(자동 채점)</span></div>` : `<div class="muted" style="margin-top:8px">${esc(STUDENT)}가 아직 제출하지 않았어요. 풀고 있는 녹화는 지금도 볼 수 있어요.</div>`}
       </div>
       <div class="card"><h2>문제별 채점</h2>${h.problems.map((p,i) => {
         const s = stOf(h,i), gr = (h.grade && h.grade[i]) || {}, ok = gradeOk(h,i);
         const line = (k) => { const a = s["a"+k], o = s["ok"+k]; if(!has(a) && k===2) return ""; return `<div class="att"><span class="lb">${k}번째 답</span><b>${esc(a ?? "-")}</b> ${o===true ? `<span class="okc">✔ 맞음</span>` : o===false ? `<span class="badc">✗ 틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,k)}" data-t="${i+1}번 ${esc(p.q)} · ${k}번째 풀이">▶ 풀이 보기</button></div>`; };
-        return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span></div>
+        return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span>${s.t ? `<span class="muted">· ⏱ ${fmtSec(s.t)}</span>` : ""}</div>
           ${line(1)}${line(2)}
           <div class="att"><span class="lb">채점</span><button class="btn ok ${ok===true?"on":""}" data-g="1" ${canGrade?"":"disabled"}>⭕ 맞음</button><button class="btn bad ${ok===false?"on":""}" data-g="0" ${canGrade?"":"disabled"}>❌ 틀림</button></div>
           <div class="att"><span class="lb">메모</span><input class="inp" data-m style="flex:1" placeholder="이 문제에 대한 말 (${esc(STUDENT)}에게 보여요)" value="${esc(gr.memo || "")}"></div></div>`;
