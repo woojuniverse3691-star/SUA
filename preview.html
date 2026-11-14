@@ -1687,15 +1687,81 @@ const ETEST = [
     {lv:5, w:"weekend", e:"🗓️"}, {lv:5, w:"favorite", e:"💖"},
     {lv:6, w:"beautiful", e:"🌸"}, {lv:6, w:"tomorrow", e:"➡️"},
   ]},
+  {id:"spk", name:"말하기", icon:"🎤", items:[
+    {lv:3, t:"word", s:"map", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:3, t:"word", s:"pet", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:4, t:"word", s:"jump", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:3, t:"read", s:"I like apples.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:4, t:"read", s:"Where is my cap? It's on the desk.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:5, t:"read", s:"I went to the park with my family yesterday.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:4, t:"ans", s:"What's your name?", keys:["name is","i'm","i am","im "], hint:"My name is ○○.", tip:"질문을 듣고 영어로 대답해요!"},
+    {lv:4, t:"ans", s:"What can you do?", keys:["i can"], hint:"I can swim.", tip:"질문을 듣고 영어로 대답해요!"},
+  ]},
 ];
+// ───────── 녹음 + 듣고 판정 (아이패드 사파리·갤탭 크롬) ─────────
+const normEn = s => String(s||"").toLowerCase().replace(/[’']/g,"'").replace(/[^a-z' ]/g," ").replace(/\s+/g," ").trim();
+function judgeSpeech(it, heard){
+  if(heard==null) return null;
+  const h = " " + normEn(heard) + " ";
+  if(it.t==="word") return h.includes(" " + normEn(it.s) + " ");
+  if(it.t==="ans") return it.keys.some(k => h.includes(k.startsWith(" ") ? k : " " + k)) || it.keys.some(k => h.includes(k));
+  const want = normEn(it.s).split(" "), got = new Set(normEn(heard).split(" "));
+  return want.filter(w => got.has(w)).length / want.length >= 0.7;
+}
+// 녹음하면서 동시에 글자로 알아듣기. 둘 중 하나가 안 되면 되는 것만 해요.
+function recordSpeech(maxMs=7000){
+  let stopFn = null;
+  const p = new Promise(async resolve => {
+    let stream = null, mr = null, chunks = [], heard = null, done = false, recDone = false, srDone = false, mime = "";
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const finish = () => { if(done || !(recDone && srDone)) return; done = true; if(stream) stream.getTracks().forEach(t => t.stop());
+      const blob = chunks.length ? new Blob(chunks, {type: mime || chunks[0].type || "audio/mp4"}) : null; resolve({blob, heard}); };
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mime = ["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+      mr = new MediaRecorder(stream, mime ? {mimeType:mime, audioBitsPerSecond:24000} : undefined);
+      mr.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
+      mr.onstop = () => { recDone = true; finish(); };
+      mr.start();
+    }catch(e){ recDone = true; }
+    let sr = null;
+    if(SR){ try{
+      sr = new SR(); sr.lang = "en-US"; sr.interimResults = false; sr.maxAlternatives = 3;
+      sr.onresult = e => { heard = [...e.results[0]].map(a => a.transcript).join(" / "); };
+      sr.onerror = () => {}; sr.onend = () => { srDone = true; if(mr && mr.state==="recording") setTimeout(() => { try{ mr.stop(); }catch(e){} }, 400); finish(); };
+      sr.start();
+    }catch(e){ sr = null; } }
+    if(!sr) srDone = true;
+    const stopAll = () => { try{ sr && sr.stop(); }catch(e){} if(mr && mr.state==="recording"){ try{ mr.stop(); }catch(e){} } else { recDone = true; } if(!sr){ srDone = true; } finish(); };
+    stopFn = stopAll; setTimeout(stopAll, maxMs);
+    if(!mr && !sr) resolve({blob:null, heard:null});
+  });
+  return {done:p, stop:() => stopFn && stopFn()};
+}
+const blobToURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+async function saveVoice(meta, blob){
+  if(!blob) return "";
+  const data = await blobToURL(blob); if(data.length > 950000) return "";
+  const id = "voice-" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  try{ await DB.saveRec(id, {type:"voice", at:Date.now(), ...meta, data}); return id; }catch(e){ return ""; }
+}
+async function playVoice(id, btn){
+  if(btn) btn.textContent = "⏳";
+  try{ const d = await DB.loadRec(id); if(!d || !d.data){ toast("녹음을 찾을 수 없어요"); return; } const a = new Audio(d.data); await a.play(); }
+  catch(e){ toast("이 기기에서는 재생이 안 돼요"); }
+  finally{ if(btn) btn.textContent = "▶ 듣기"; }
+}
+
 // 영역별 수준: 그 학년 문항을 절반 넘게 맞힌 가장 높은 학년 (아래 학년이 무너지면 거기서 멈춤)
 function etestLevel(res){
+  res = res.filter(r => r.ok!==null && r.ok!==undefined);
+  if(!res.length) return 0;
   const by = {}; res.forEach(r => { const b = by[r.lv] = by[r.lv] || {ok:0, n:0}; b.n++; if(r.ok) b.ok++; });
   let lv = 2;
   for(const g of [3,4,5,6]){ const b = by[g]; if(!b || b.ok*2 <= b.n) break; lv = g; }
   return lv;
 }
-const etestLabel = lv => lv<=2 ? "기초부터" : lv===6 ? "6학년 이상" : `${lv}학년 수준`;
+const etestLabel = lv => lv===0 ? "녹음 들어 보기" : lv<=2 ? "기초부터" : lv===6 ? "6학년 이상" : `${lv}학년 수준`;
 function etestAdvice(L){
   const tips = [];
   if(L.ph <= 3) tips.push("파닉스(글자 소리)부터 다지면 좋아요");
@@ -1705,6 +1771,8 @@ function etestAdvice(L){
   if(L.lis < L.voc) tips.push("단어보다 듣기가 약해요. 듣기·따라 읽기를 많이 해요");
   if(L.dic < L.voc) tips.push("뜻은 알지만 철자가 약해요. 철자 맞추기·받아쓰기를 늘려요");
   if(L.sen < L.voc) tips.push("문장 순서 연습(문장 만들기)이 필요해요");
+  if(L.spk && L.spk < L.voc) tips.push("아는 것보다 읽고 말하기가 약해요. 매일 따라 읽기를 꼭 해요");
+  if(L.spk===0) tips.push("말하기는 앱이 판정을 못 했어요. 녹음을 직접 들어 봐 주세요");
   return tips;
 }
 
@@ -1727,11 +1795,11 @@ function engTest(){
     <button class="big" id="estart" style="margin-top:10px">시작하기</button></div>`;
   $("#estart").onclick = () => show();
 
-  const answer = ok => {
+  const answer = (ok, ans, extra={}) => {
     const sec = ETEST[si], it = sec.items[ii];
-    results[sec.id].push({lv:it.lv, ok, q:it.w || it.s});
+    results[sec.id].push({lv:it.lv, ok, q:it.w || it.s, a:ans ?? "", ...extra});
     doneCount++;
-    miss = ok ? 0 : miss + 1;
+    miss = sec.id==="spk" ? 0 : ok ? 0 : miss + 1;   // 말하기는 기계 판정이라 중간에 멈추지 않아요
     const f = document.createElement("div"); f.className = "efb ok"; f.innerHTML = ok ? "좋아요! 👍" : "다음 문제! 💪"; f.style.color = ok ? "var(--ok)" : "var(--blue-d)"; box.appendChild(f);
     setTimeout(() => {
       ii++;
@@ -1744,6 +1812,7 @@ function engTest(){
     const sec = ETEST[si];
     box.innerHTML = `<div class="center" style="min-height:0;padding:30px 0"><div style="font-size:64px">${sec.icon}</div><div class="jua" style="font-size:28px">다음은 ${esc(sec.name)}!</div><button class="big" id="ego">계속하기</button></div>`;
     $("#ego").onclick = () => show();
+    if(sec.id==="spk") $("#ego").insertAdjacentHTML("beforebegin", `<div style="font-size:17px;line-height:1.6">이번엔 소리 내서 말해요 🎤<br>마이크 허락 창이 뜨면 <b>"허용"</b>을 눌러요.<br>목소리는 선생님이 들을 수 있게 녹음돼요.</div>`);
   };
   const show = () => {
     const sec = ETEST[si], it = sec.items[ii];
@@ -1775,22 +1844,50 @@ function engTest(){
       paint();
       box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { built.push(chips.find(c => c.k===+b.dataset.c)); paint(); });
       $("#eclr").onclick = () => { built = []; paint(); };
-      $("#eok").onclick = () => { if(built.length < toks.length) return toast("단어를 다 놓아 주세요"); if(lock()) answer(built.map(c => c.t).join(" ")===it.s); };
+      $("#eok").onclick = () => { if(built.length < toks.length) return toast("단어를 다 놓아 주세요"); const v = built.map(c => c.t).join(" "); if(lock()) answer(v===it.s, v); };
+    } else if(sec.id==="spk"){
+      let tries = 0;
+      box.innerHTML = `${bar}<div class="ecard"><div class="emean">${esc(it.tip)}</div>
+        ${it.t==="ans" ? `<div class="eemo">💬</div><div class="row" style="justify-content:center">${spk(it.s)}${spk(it.s,true)}</div>` : `<div class="eword" style="${it.t==="read" ? "font-size:30px" : "font-size:54px"}">${esc(it.s)}</div>`}
+        <div id="emic" class="muted" style="min-height:48px;margin-top:8px"></div></div>
+        <div class="row" style="justify-content:center;margin-top:8px"><button class="big" id="erecb">🎤 말하기 시작</button>${it.t==="ans" ? `<button class="big gray" id="ehint2">💡 도움말</button>` : ""}</div>
+        <div style="text-align:center"><button class="big gray" id="edk" style="margin-top:12px">못 하겠어요 🤔</button></div>`;
+      if(it.t==="ans") setTimeout(() => say(it.s), 300);
+      if($("#ehint2")) $("#ehint2").onclick = () => { $("#emic").innerHTML = `이렇게 말해도 돼요: <b>${esc(it.hint)}</b>`; say(it.hint.replace("○○","Sua")); };
+      let busy = false;
+      const talk = async () => {
+        if(busy) return; busy = true;
+        const b = $("#erecb"); b.textContent = "⏹ 다 말했어요"; $("#emic").textContent = "듣고 있어요… 말해 봐요 🎤";
+        const r = recordSpeech(it.t==="read" ? 9000 : 6000);
+        b.onclick = () => r.stop();
+        const {blob, heard} = await r.done; tries++;
+        const again = (msg, label) => { busy = false; $("#emic").innerHTML = msg; b.textContent = label; b.onclick = talk; };
+        if(!blob && heard==null){
+          if(tries >= 2){ $("#emic").textContent = "마이크가 안 돼서 다음으로 넘어가요"; if(lock()) answer(null, "(마이크 안 됨)"); return; }
+          return again("마이크를 쓸 수 없어요. 허용을 눌렀는지 확인해 줘요.", "🎤 다시 해 보기");
+        }
+        const ok = judgeSpeech(it, heard);
+        const vid = await saveVoice({ctx:"test", q:it.s, heard:heard||"", ok}, blob);
+        if(ok===false && tries < 2) return again(`이렇게 들렸어요: "${esc(heard||"")}"<br>한 번만 더 해 볼까?`, "🎤 한 번 더");
+        $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 말했어요! 👏</b>` : ok===null ? "녹음했어요 ✔" : "괜찮아요! 다음으로 가요";
+        if(lock()) answer(ok, heard || "", {voice:vid});
+      };
+      $("#erecb").onclick = talk;
     } else if(sec.id==="dic"){
       box.innerHTML = `${bar}<div class="ecard"><div class="eemo">🎧</div><div class="emean">잘 듣고 영어로 써요</div><div class="row" style="justify-content:center">${spk(it.w)}${spk(it.w,true)}</div></div>
         <input class="inp einput" id="ein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 영어로 써요">
         <div class="row" style="justify-content:center;margin-top:12px"><button class="big" id="eok">확인 ✔</button></div><div style="text-align:center">${dunno}</div>`;
       setTimeout(() => say(it.w), 300);
-      const check = () => { const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요"); if(lock()) answer(v.toLowerCase()===it.w.toLowerCase()); };
+      const check = () => { const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요"); if(lock()) answer(v.toLowerCase()===it.w.toLowerCase(), v); };
       $("#eok").onclick = check; $("#ein").onkeydown = e => { if(e.key==="Enter") check(); };
     }
-    box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { if(lock()){ b.classList.add("on2"); answer(b.dataset.o===it.a); } });
-    $("#edk").onclick = () => { if(lock()) answer(false); };
+    box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { if(lock()){ b.classList.add("on2"); answer(b.dataset.o===it.a, b.dataset.o); } });
+    $("#edk").onclick = () => { if(lock()) answer(false, "(모름)"); };
   };
   const finish = async () => {
     const L = {}; ETEST.forEach(s => L[s.id] = etestLevel(results[s.id]));
-    const all = Object.values(results).flat(), ok = all.filter(r => r.ok).length;
-    const rec = {at:Date.now(), unit:"test", act:"test", score:ok, total:all.length, wrong:all.filter(r => !r.ok).map(r => r.q), levels:L, dur:Date.now()-t0};
+    const all = Object.values(results).flat(), judged = all.filter(r => r.ok!==null), ok = judged.filter(r => r.ok).length;
+    const rec = {at:Date.now(), unit:"test", act:"test", score:ok, total:judged.length, wrong:judged.filter(r => !r.ok).map(r => r.q), levels:L, items:results, dur:Date.now()-t0};
     try{ await DB.addEng(rec); }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
     confetti(); prog.textContent = "";
     box.innerHTML = `<div class="center" style="min-height:0;padding:24px 0"><div style="font-size:70px">🏅</div>
@@ -1800,17 +1897,42 @@ function engTest(){
     $("#ehome").onclick = () => go(studentHome);
   };
 }
+function etestCopyText(r){
+  const L = r.levels || {}, I = r.items || {}, lines = [];
+  lines.push(`[수아 영어 실력 알아보기] ${fmtFull(r.at)} · 걸린 시간 ${fmtSec(r.dur||0)}`);
+  lines.push("영역별 수준: " + ETEST.map(s => `${s.name} ${etestLabel(L[s.id] ?? 2)}`).join(" / "));
+  ETEST.forEach(s => {
+    const rs = I[s.id] || []; if(!rs.length) return;
+    lines.push(`\n■ ${s.name} (${rs.length}문제 풂${rs.length < s.items.length ? `, ${s.items.length - rs.length}문제는 연달아 틀려서 멈춤` : ""})`);
+    rs.forEach(x => lines.push(`- [${x.lv}학년] ${x.q} → ${x.ok===null ? "판정 없음" : x.ok ? "O" : "X"}${x.a ? ` (답: ${x.a})` : ""}`));
+  });
+  lines.push("\n추천: " + etestAdvice(L).join(" / "));
+  return lines.join("\n");
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); toast("결과를 복사했어요. Claude한테 붙여 넣으면 돼요"); }
+  catch(e){ const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("결과를 복사했어요"); }catch(er){ toast("복사가 안 돼요. 화면을 캡처해 주세요"); } ta.remove(); }
+}
 function etestResultHTML(r){
   const L = r.levels || {};
   const tips = etestAdvice(L);
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0">${ETEST.map(s => `<div class="card" style="margin:0;padding:10px;text-align:center"><div class="muted">${s.icon} ${s.name}</div><div style="font-size:19px;font-weight:800;color:var(--main-d)">${etestLabel(L[s.id]||2)}</div></div>`).join("")}</div>
-    <div style="font-size:15px;line-height:1.7">${tips.map(t => `· ${esc(t)}`).join("<br>")}</div>`;
+  const sp = (r.items && r.items.spk) || [];
+  const spHTML = sp.length ? `<div style="margin-top:10px"><div class="ti" style="font-size:16px">🎤 말하기 녹음</div>${sp.map(x => `<div class="row" style="align-items:center;margin:4px 0;gap:8px">${x.voice ? `<button class="btn" data-voice="${esc(x.voice)}">▶ 듣기</button>` : `<span class="muted">녹음 없음</span>`}<span style="flex:1"><b>${esc(x.q)}</b><br><span class="muted">앱이 들은 말: ${esc(x.a || "-")} · ${x.ok===null ? "판정 없음" : x.ok ? "잘 말했어요" : "다시 연습"}</span></span></div>`).join("")}</div>` : "";
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0">${ETEST.map(s => `<div class="card" style="margin:0;padding:10px;text-align:center"><div class="muted">${s.icon} ${s.name}</div><div style="font-size:19px;font-weight:800;color:var(--main-d)">${etestLabel(L[s.id] ?? 2)}</div></div>`).join("")}</div>
+    <div style="font-size:15px;line-height:1.7">${tips.map(t => `· ${esc(t)}`).join("<br>")}</div>${spHTML}
+    <button class="btn" data-ecopy="${r.at}" style="margin-top:10px">📋 결과 복사</button>`;
 }
 
 // 선생님·어머님 화면: 영어 기록 카드
 function engReportCard(el){
   el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="etest"></div><div id="estat"></div><div class="hwlist" id="elist"></div>`;
+  let lastList = [];
+  el.addEventListener("click", e => {
+    const v = e.target.closest("[data-voice]"); if(v){ e.stopPropagation(); playVoice(v.dataset.voice, v); return; }
+    const c = e.target.closest("[data-ecopy]"); if(c){ e.stopPropagation(); const r = lastList.find(x => String(x.at)===c.dataset.ecopy); if(r) copyText(etestCopyText(r)); }
+  });
   return DB.watchEng(list => {
+    lastList = list;
     const lt = list.find(r => r.act==="test");
     $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
     list = list.filter(r => r.act!=="test");
