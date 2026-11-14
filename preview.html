@@ -1391,6 +1391,7 @@ const PH_ACTS = [
   {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
   {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
   {id:"speed", name:"빨리 맞히기", icon:"⚡", desc:"60초 동안 듣고 글자 고르기"},
+  {id:"rain", name:"단어 비", icon:"🌧️", desc:"내려오는 단어를 타자로 쳐요"},
 ];
 const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
 const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
@@ -1714,6 +1715,66 @@ function engPlay(unitId, act, only, hwId, part){
       $("#sgo").onclick = () => {
         on = true; left = LIM; prog.style.cssText = "font-size:22px;font-weight:800;color:var(--main-d)"; paint(); ask1();
         timer = setInterval(() => { left--; if(left <= 0){ left = 0; paint(); end(); } else paint(); }, 1000);
+      };
+    };
+  }
+  else if(act==="rain"){
+    // 🌧️ 단어 비: 하늘에서 내려오는 짧은 단어를 타자로 쳐서 없애기
+    const LIVES = 5, LIM = 90, pool = shuffle(CVC.map(c => ({w:c[0], e:c[2]})));
+    let lives = LIVES, left = LIM, n = 0, on = false, raf = 0, timer = null, drops = [], last = 0, born = 0, nextSpawn = 0, pi = 0, best = 0, sky = null, inp = null;
+    try{ best = +localStorage.getItem("sua-rain-best") || 0; }catch(e){}
+    const stop = () => { on = false; cancelAnimationFrame(raf); if(timer){ clearInterval(timer); timer = null; } };
+    cleanups.push(stop);
+    const paint = () => { prog.textContent = `${"❤️".repeat(Math.max(lives, 0))} · ⏱ ${left}초 · ⭐ ${score}개`; };
+    const end = () => {
+      if(!on) return; stop(); prog.style.cssText = "";
+      if(score > best){ try{ localStorage.setItem("sua-rain-best", score); }catch(e){} toast(`🎉 새 기록! ${score}개`); }
+      finish(n);
+    };
+    const spawn = () => {
+      let d = null; for(let k = 0; k < pool.length && !d; k++){ const c = pool[pi++ % pool.length]; if(!drops.some(x => x.w===c.w)) d = c; }
+      if(!d) return;
+      const el = document.createElement("div");
+      el.style.cssText = "position:absolute;top:0;left:0;padding:6px 14px;border-radius:16px;background:#fff;border:3px solid var(--line);font-size:24px;font-weight:800;white-space:nowrap;transition:opacity .2s,border-color .1s";
+      el.innerHTML = `<span style="margin-right:6px">${d.e}</span>${esc(d.w)}`;
+      sky.appendChild(el);
+      const x = 8 + Math.random() * Math.max(0, sky.clientWidth - el.offsetWidth - 16);
+      el.style.left = x + "px"; el.style.transform = "translateY(-50px)";
+      drops.push({w:d.w, el, y:-50});
+    };
+    const tick = ts => {
+      if(!on) return;
+      if(!last){ last = ts; born = ts; }
+      const dt = Math.min(ts - last, 50) / 1000, age = (ts - born) / 1000; last = ts;
+      if(ts >= nextSpawn){ spawn(); nextSpawn = ts + Math.max(1800, 3600 - age * 20); }
+      const H = sky.clientHeight, speed = 26 + age * 0.45;
+      for(const d of drops.slice()){
+        d.y += speed * dt; d.el.style.transform = `translateY(${d.y}px)`;
+        if(d.y > H - 46){ drops.splice(drops.indexOf(d), 1); d.el.remove(); n++; wrong.push(d.w); lives--; paint(); if(lives <= 0) return end(); }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    const onType = () => {
+      if(!on) return;
+      const v = inp.value.trim().toLowerCase();
+      drops.forEach(d => d.el.style.borderColor = v && d.w.startsWith(v) ? "var(--main)" : "var(--line)");
+      const hit = drops.find(d => d.w===v); if(!hit) return;
+      drops.splice(drops.indexOf(hit), 1); hit.el.style.borderColor = "var(--ok)"; hit.el.style.opacity = "0"; setTimeout(() => hit.el.remove(), 220);
+      score++; n++; inp.value = ""; say(hit.w); paint();
+    };
+    show = () => {
+      prog.textContent = "";
+      box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+        <div style="font-size:64px">🌧️</div><div class="jua" style="font-size:28px">단어 비</div>
+        <div style="font-size:18px;line-height:1.7">하늘에서 단어가 내려와요.<br>땅에 닿기 전에 똑같이 타자로 쳐요!<br>${LIVES}번 놓치면 끝나요.${best ? `<br>내 최고 기록: <b>${best}개</b>` : ""}</div>
+        <button class="big" id="sgo" style="margin-top:10px">시작!</button></div>`;
+      $("#sgo").onclick = () => {
+        box.innerHTML = `<div id="rsky" style="position:relative;height:min(46vh,380px);overflow:hidden;border-radius:18px;background:linear-gradient(#eaf4ff,#fff);border-bottom:6px solid #b7e3a8"></div>
+          <input class="inp" id="rinp" placeholder="여기에 쳐요" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" style="margin-top:12px;font-size:26px;text-align:center">`;
+        sky = $("#rsky"); inp = $("#rinp"); inp.oninput = onType; inp.focus();
+        on = true; lives = LIVES; left = LIM; prog.style.cssText = "font-size:20px;font-weight:800;color:var(--main-d)"; paint();
+        timer = setInterval(() => { left--; if(left <= 0){ left = 0; paint(); end(); } else paint(); }, 1000);
+        raf = requestAnimationFrame(tick);
       };
     };
   }
