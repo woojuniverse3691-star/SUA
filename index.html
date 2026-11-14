@@ -172,6 +172,48 @@ textarea.inp{min-height:80px;resize:vertical}
 .ugrp .row{margin-top:4px}
 .pq,.it .q,.ansrow .inp,.inp.sm,.gq .qq,.prow .inp,.att b,.fr{font-family:Pretendard,"Noto Sans KR",sans-serif}
 .banner{background:var(--lav);color:var(--blue-d);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* 플래너 알림 */
+.pnote{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 12px;padding:14px 16px;border:3px dashed var(--main);border-radius:18px;background:#fff0f6;color:var(--main-d);font-family:var(--disp);font-size:20px;cursor:pointer;text-align:left;animation:pnb 1.6s ease-in-out infinite}
+.pnote .pt{flex:1;min-width:0}.pnote .go{font-size:16px;white-space:nowrap;background:var(--main);color:#fff;border-radius:99px;padding:4px 12px}
+@media (max-width:520px){.pnote{font-size:17px}}
+@keyframes pnb{50%{transform:scale(1.015)}}
+.card.glow{box-shadow:0 0 0 4px var(--main),0 8px 26px #ff7eb655;transition:box-shadow .3s}
+/* 영어공부 */
+.stabs{display:flex;gap:8px;margin:0 0 14px}
+.stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
+.stab.on{border-color:var(--main);background:var(--soft);color:var(--main-d)}
+.stab{position:relative}.nb{position:absolute;top:-6px;right:-4px;background:var(--bad);color:#fff;border-radius:99px;min-width:22px;height:22px;font-size:14px;line-height:22px;padding:0 6px;font-family:Pretendard,sans-serif;font-weight:800}
+.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.eunit{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;border:2px solid var(--line);border-radius:18px;background:#fff;font-size:19px;cursor:pointer;font-family:var(--disp)}
+.eunit:active{transform:scale(.97)}
+.eunit.ph{background:var(--lav);border-color:#d9d0ff}
+.eic{font-size:36px;line-height:1.1}
+.eplay{position:relative;min-height:420px}
+.ecard{text-align:center;padding:10px 6px}
+.eemo{font-size:78px;line-height:1.15}
+.eword{font-family:Pretendard,sans-serif;font-weight:800;font-size:46px;color:var(--ink);margin:4px 0}
+.emean{font-size:26px;color:var(--main-d);margin:2px 0 10px}
+.spk{font-size:17px}
+.eopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.eopts.one{grid-template-columns:1fr}.eopt.on2{border-color:var(--main)}.eopts.four{grid-template-columns:repeat(4,1fr)}.eopts.five{grid-template-columns:repeat(5,1fr)}
+.eopt{border:2px solid var(--line);background:#fff;border-radius:16px;padding:16px 8px;font-size:22px;cursor:pointer;font-family:var(--disp)}
+.eopt.big2{font-family:Pretendard,sans-serif;font-weight:800;font-size:30px}
+.eopt.ok{border-color:var(--ok);background:#e6f8f1}.eopt.bad{border-color:var(--bad);background:#ffe9ee}
+.efb{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);background:#fff;border-radius:22px;padding:16px 26px;font-size:30px;text-align:center;box-shadow:0 8px 30px #0002;pointer-events:none;animation:pop .25s ease-out}
+.efb.ok{color:var(--ok)}.efb.bad{color:var(--bad)}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.6);opacity:0}}
+.eslots{display:flex;justify-content:center;gap:6px;margin:10px 0;flex-wrap:wrap}
+.eslot{width:44px;height:54px;border-bottom:4px solid var(--line);font-family:Pretendard,sans-serif;font-weight:800;font-size:34px;display:flex;align-items:center;justify-content:center}
+.eslot.on{border-color:var(--main)}
+.etiles{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.etile{width:52px;height:56px;border:2px solid var(--line);border-radius:14px;background:var(--yel);font-family:Pretendard,sans-serif;font-weight:800;font-size:28px;cursor:pointer}
+.etile:disabled,.echip:disabled{opacity:.25}
+.echip{border:2px solid var(--line);border-radius:14px;background:var(--yel);padding:10px 14px;font-family:Pretendard,sans-serif;font-weight:700;font-size:24px;cursor:pointer}
+.echip.on{background:#fff;border-color:var(--main)}
+.eline{min-height:60px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;border:2px dashed var(--line);border-radius:16px;padding:8px;margin-top:10px}
+.einput{display:block;margin:8px auto 0;max-width:420px;text-align:center;font-family:Pretendard,sans-serif;font-weight:700;font-size:30px}
+@media (max-width:520px){.eword{font-size:36px}.eopts.four,.eopts.five{grid-template-columns:repeat(3,1fr)}.stab{font-size:17px}}
 </style>
 </head>
 <body>
@@ -229,6 +271,7 @@ async function makeFirebase(){
     updateHW:(id,p) => F.updateDoc(F.doc(fs,"hw",id), p),
     deleteHW:id => F.deleteDoc(F.doc(fs,"hw",id)),
     saveRec:(k,o) => F.setDoc(F.doc(fs,"rec",k), o),
+    delRec:k => F.deleteDoc(F.doc(fs,"rec",k)),
     async loadRec(k){ const d = await F.getDoc(F.doc(fs,"rec",k)); return d.exists() ? d.data() : null; },
     watchMsgs(id, cb){ return F.onSnapshot(F.query(F.collection(fs,"hw",id,"msgs"), F.orderBy("at")), s => cb(s.docs.map(d => d.data()))); },
     addMsg:(id,m) => F.addDoc(F.collection(fs,"hw",id,"msgs"), m),
@@ -242,6 +285,9 @@ async function makeFirebase(){
     async deletePhoto(id){ await F.deleteDoc(F.doc(fs,"photos",id)); try{ await F.deleteDoc(F.doc(fs,"photoFull",id)); }catch(e){} },
     setConfig:o => F.setDoc(F.doc(fs,"config","auto"), o),
     createHWId:(id,o) => F.setDoc(F.doc(fs,"hw",id), o),
+    // 영어 기록은 rec 모음에 type:"eng"로 저장 (규칙 안 바꿔도 됨)
+    addEng:o => F.setDoc(F.doc(fs,"rec","eng-"+o.at.toString(36)+Math.random().toString(36).slice(2,6)), {type:"eng", ...o}),
+    watchEng(cb){ return F.onSnapshot(F.query(F.collection(fs,"rec"), F.where("type","==","eng")), s => cb(s.docs.map(d => d.data()).sort((a,b) => b.at-a.at)), () => cb([])); },
   };
 }
 function makeLocal(){
@@ -270,6 +316,7 @@ function makeLocal(){
     async updateHW(id, p){ for(const [k,v] of Object.entries(p)) setPath(D.hw[id], k, v); save(); },
     async deleteHW(id){ delete D.hw[id]; delete D.msgs[id]; save(); },
     async saveRec(k, o){ D.rec[k] = o; save(true); },
+    async delRec(k){ delete D.rec[k]; save(true); },
     async loadRec(k){ return D.rec[k] ? clone(D.rec[k]) : null; },
     watchMsgs(id, cb){ return sub(() => cb(clone(D.msgs[id] || []))); },
     async addMsg(id, m){ (D.msgs[id] = D.msgs[id] || []).push(m); save(); },
@@ -283,6 +330,8 @@ function makeLocal(){
     async deletePhoto(id){ delete D.photos[id]; delete (D.pfull||{})[id]; save(); },
     async setConfig(o){ D.config = clone(o); save(true); },
     async createHWId(id, o){ D.hw[id] = clone(o); save(); },
+    async addEng(o){ (D.eng = D.eng||[]).push(clone(o)); save(); },
+    watchEng(cb){ return sub(() => cb(clone(D.eng||[]).sort((a,b) => b.at-a.at))); },
   };
 }
 const recKey = (id,i,att) => `${id}_${i}_${att}`;
@@ -1225,32 +1274,716 @@ function bindOut(){ $("#out").onclick = async () => { if(await ask("나갈까요
 
 // ───────── 수아: 숙제 목록 ─────────
 function studentHome(){
-  app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 숙제방`, "")}
+  let tab = (() => { try{ return localStorage.getItem("sua-tab") || "math"; }catch(e){ return "math"; } })();
+  if(!["math","eng","test"].includes(tab)) tab = "math";
+  const T = (k, lab) => `<button class="stab ${tab===k?"on":""}" data-tab="${k}">${lab}<span class="nb hide" data-nb="${k}"></span></button>`;
+  app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 공부방`, "")}
     <div class="banner hide" id="tleft"></div>
+    <button class="pnote hide" id="pnote"><span class="pt">📒 오늘 <b>스터디플래너 사진</b> 꼭 올리기!</span><span class="go">올리기 ›</span></button>
+    <div class="stabs">${T("math", "📐 수학숙제")}${T("eng", "🔤 영어공부")}${T("test", "📝 시험")}</div>
+    <div id="tab-eng" class="${tab==="eng"?"":"hide"}">${engHomeHTML()}</div>
+    <div id="tab-test" class="${tab==="test"?"":"hide"}">${testHomeHTML()}</div>
+    <div id="tab-math" class="${tab==="math"?"":"hide"}">
     <div class="card"><h2>해야 할 숙제</h2><div class="hwlist" id="todo"></div></div>
     <div class="card"><h2>끝낸 숙제</h2><div class="hwlist" id="done"></div></div>
     <div class="card" id="ph"><h2>📸 사진 제출</h2>
       <div class="row" style="flex-wrap:nowrap"><button class="big" data-up="planner" style="flex:1">스터디플래너</button><button class="big gray" data-up="hw" style="flex:1">숙제 사진</button></div>
       <input type="file" id="pf" accept="image/*" multiple hidden>
       <div class="muted" style="margin:10px 0 4px">내가 올린 사진</div><div class="hwlist" data-list></div>
-    </div></div>`;
+    </div></div></div>`;
   photoUpload($("#ph")); unsubs.push(photoList($("#ph"), "student"));
   bindOut();
+  unsubs.push(DB.watchPhotos(ps => { const n = $("#pnote"); if(n) n.classList.toggle("hide", plannerToday(ps)); }, 10));
+  $("#pnote").onclick = e => {
+    e.stopPropagation();
+    try{ localStorage.setItem("sua-tab", "math"); }catch(er){}
+    document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x.dataset.tab==="math"));
+    ["math","eng","test"].forEach(k => $("#tab-"+k).classList.toggle("hide", k!=="math"));
+    $("#ph").scrollIntoView({behavior:"smooth", block:"center"});
+    $("#ph").classList.add("glow"); setTimeout(() => $("#ph") && $("#ph").classList.remove("glow"), 2400);
+  };
+  const isDone = h => ["submitted","graded"].includes(h.status);
   unsubs.push(DB.watchHWList(list => {
-    ensureAuto(list);
-    const card = h => { const [lab,cls] = statusOf(h); const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${h.problems.length}문제</div></div>${s}<span class="chip ${cls}">${lab}</span></button>`; };
-    const todo = list.filter(h => !["submitted","graded"].includes(h.status)), done = list.filter(h => ["submitted","graded"].includes(h.status));
-    $("#todo").innerHTML = todo.length ? todo.map(card).join("") : `<div class="empty">숙제가 없어요. 신난다! 🎈</div>`;
-    $("#done").innerHTML = done.length ? done.map(card).join("") : `<div class="empty">아직 없어요.</div>`;
+    ensureAuto(list); ensureAutoEng(list);
+    const card = h => {
+      const [lab,cls] = statusOf(h), k = hwKind(h);
+      if(k==="eng"){ const sc = isDone(h) ? `<div class="jua" style="font-size:20px">${engHWScore(h)}</div>` : "";
+        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : "새 과제"}</span></button>`; }
+      const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
+      const sub = k==="test" ? `${h.problems.length}문제${h.minutes ? ` · ${h.minutes}분` : ""}` : `${h.problems.length}문제`;
+      return `<button class="hw" data-id="${h.id}" data-k="${k}"><div class="grow"><div class="ti">${k==="test"?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${sub}</div></div>${s}<span class="chip ${cls}">${k==="test" && !isDone(h) ? (cls==="new" ? "새 시험" : "보는 중") : lab}</span></button>`;
+    };
+    const put = (sel, arr, empty) => { const el = $(sel); if(el) el.innerHTML = arr.length ? arr.map(card).join("") : `<div class="empty">${empty}</div>`; };
+    const by = k => list.filter(h => hwKind(h)===k);
+    put("#todo", by("math").filter(h => !isDone(h)), "숙제가 없어요. 신난다! 🎈"); put("#done", by("math").filter(isDone), "아직 없어요.");
+    put("#etodo", by("eng").filter(h => !isDone(h)), "영어 과제가 없어요. 혼자 더 해 볼까? ✨"); put("#edone", by("eng").filter(isDone), "아직 없어요.");
+    put("#ttodo", by("test").filter(h => !isDone(h)), "지금 볼 시험이 없어요."); put("#tdone", by("test").filter(isDone), "아직 없어요.");
+    ["math","eng","test"].forEach(k => { const n = by(k).filter(h => !isDone(h)).length, b = document.querySelector(`[data-nb="${k}"]`); if(b){ b.textContent = n; b.classList.toggle("hide", !n); } });
   }));
   let limit = 0;
-  getLimit().then(l => { limit = l; if(l){ const left = l - getUsed(); const t = $("#tleft"); if(!t) return; t.classList.remove("hide"); t.textContent = left>0 ? `⏱ 오늘 남은 시간: ${fmtLeft(left)}` : "⏱ 오늘 숙제 시간이 끝났어요. 내일 또 만나요!"; } });
+  getLimit().then(l => { limit = l; if(l){ const left = l - getUsed(); const t = $("#tleft"); if(!t) return; t.classList.remove("hide"); t.textContent = left>0 ? `⏱ 오늘 남은 시간: ${fmtLeft(left)}` : "⏱ 오늘 공부 시간이 끝났어요. 내일 또 만나요!"; } });
+  const engClick = bindEngHome(() => limit);
+  const over = () => { if(limit && getUsed() >= limit){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 이어서 해요."); return true; } return false; };
   app.onclick = e => {
-    const b = e.target.closest(".hw"); if(!b) return; const isDone = !!b.closest("#done");
-    if(!isDone && limit && getUsed() >= limit){ tell("오늘은 여기까지! ⏰", "오늘 숙제 시간을 다 썼어요. 내일 이어서 풀어요."); return; }
-    go(isDone ? studentResult : solve, b.dataset.id);
+    const tb = e.target.closest("[data-tab]");
+    if(tb){ const t = tb.dataset.tab; tab = t; try{ localStorage.setItem("sua-tab", t); }catch(er){}
+      document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x===tb));
+      ["math","eng","test"].forEach(k => $("#tab-"+k).classList.toggle("hide", t!==k)); return; }
+    if(engClick(e)) return;
+    const b = e.target.closest(".hw[data-id]"); if(!b) return;
+    const done = !!b.closest("#done,#edone,#tdone");
+    if(b.dataset.k==="eng"){
+      if(done){ go(engPlay, b.dataset.u, b.dataset.a); return; }   // 끝낸 과제는 연습으로 다시
+      if(!over()) go(engPlay, b.dataset.u, b.dataset.a, null, b.dataset.id);
+      return;
+    }
+    if(!done && over()) return;
+    if(!done && b.dataset.k==="test"){
+      ask("시험을 시작할까요? 📝", "시험은 <b>한 번만</b> 풀 수 있어요. 끝날 때까지 정답은 안 보여요." + (b.textContent.includes("분") ? "<br>시간이 끝나면 자동으로 제출돼요." : ""), "시작하기", "나중에").then(y => y && go(solve, b.dataset.id));
+      return;
+    }
+    go(done ? studentResult : solve, b.dataset.id);
   };
+}
+
+// ───────── 영어공부 ─────────
+// 초등 3·4학년 수준 기본 단어·문장 (직접 만든 목록)
+const ENG = [
+  {id:"animal", name:"동물", icon:"🐶", words:[["dog","개","🐶"],["cat","고양이","🐱"],["bird","새","🐦"],["fish","물고기","🐟"],["rabbit","토끼","🐰"],["bear","곰","🐻"],["lion","사자","🦁"],["tiger","호랑이","🐯"],["monkey","원숭이","🐵"],["elephant","코끼리","🐘"]],
+   sents:[["I have a dog.","나는 개가 있어요."],["The cat is cute.","고양이가 귀여워요."],["Look at the bird.","새를 보세요."],["The lion is big.","사자는 커요."],["I like rabbits.","나는 토끼를 좋아해요."],["Can you see the monkey?","원숭이가 보이니?"]]},
+  {id:"food", name:"음식", icon:"🍎", words:[["apple","사과","🍎"],["banana","바나나","🍌"],["bread","빵","🍞"],["milk","우유","🥛"],["egg","달걀","🥚"],["rice","밥","🍚"],["pizza","피자","🍕"],["juice","주스","🧃"],["cookie","쿠키","🍪"],["water","물","💧"]],
+   sents:[["I like apples.","나는 사과를 좋아해요."],["Do you like pizza?","너는 피자를 좋아하니?"],["I want some milk.","우유를 좀 마시고 싶어요."],["I am hungry.","나는 배고파요."],["The cookie is sweet.","쿠키가 달아요."],["Let's eat bread.","빵을 먹자."]]},
+  {id:"color", name:"색깔", icon:"🌈", words:[["red","빨간색","🔴"],["blue","파란색","🔵"],["yellow","노란색","🟡"],["green","초록색","🟢"],["pink","분홍색","🩷"],["purple","보라색","🟣"],["black","검은색","⚫"],["white","흰색","⚪"],["orange","주황색","🟠"],["brown","갈색","🟤"]],
+   sents:[["My bag is red.","내 가방은 빨간색이에요."],["I like pink.","나는 분홍색을 좋아해요."],["The sky is blue.","하늘은 파란색이에요."],["What color is it?","그건 무슨 색이니?"],["It is green.","그건 초록색이에요."],["The banana is yellow.","바나나는 노란색이에요."]]},
+  {id:"family", name:"가족·사람", icon:"👪", words:[["mother","엄마","👩"],["father","아빠","👨"],["sister","언니·누나·여동생","👧"],["brother","오빠·형·남동생","👦"],["grandma","할머니","👵"],["grandpa","할아버지","👴"],["baby","아기","👶"],["family","가족","👪"],["friend","친구","🤝"],["teacher","선생님","🧑‍🏫"]],
+   sents:[["This is my mother.","이분은 우리 엄마예요."],["He is my brother.","그는 내 남동생이에요."],["I love my family.","나는 우리 가족을 사랑해요."],["She is my friend.","그녀는 내 친구예요."],["Who is he?","그는 누구니?"],["My teacher is kind.","우리 선생님은 친절해요."]]},
+  {id:"school", name:"학교·학용품", icon:"🎒", words:[["book","책","📖"],["pencil","연필","✏️"],["bag","가방","🎒"],["chair","의자","🪑"],["ruler","자","📏"],["scissors","가위","✂️"],["clock","시계","🕰️"],["door","문","🚪"],["notebook","공책","📓"],["school","학교","🏫"]],
+   sents:[["This is my pencil.","이건 내 연필이에요."],["Open your book.","책을 펴세요."],["Close the door.","문을 닫으세요."],["I have a ruler.","나는 자가 있어요."],["Sit down, please.","앉으세요."],["Stand up, please.","일어나세요."]]},
+  {id:"body", name:"몸", icon:"🖐️", words:[["head","머리","🙆"],["eye","눈","👁️"],["ear","귀","👂"],["nose","코","👃"],["mouth","입","👄"],["hand","손","✋"],["foot","발","🦶"],["leg","다리","🦵"],["arm","팔","💪"],["hair","머리카락","💇"]],
+   sents:[["Touch your nose.","코를 만지세요."],["I have two eyes.","나는 눈이 두 개 있어요."],["Clap your hands.","손뼉을 치세요."],["My hair is long.","내 머리카락은 길어요."],["Raise your arm.","팔을 드세요."],["My leg hurts.","다리가 아파요."]]},
+  {id:"weather", name:"날씨", icon:"☀️", words:[["sunny","맑은","☀️"],["rainy","비 오는","🌧️"],["cloudy","흐린","☁️"],["snowy","눈 오는","🌨️"],["windy","바람 부는","🌬️"],["hot","더운","🥵"],["cold","추운","🥶"],["warm","따뜻한","🌤️"],["cool","시원한","🍃"],["rainbow","무지개","🌈"]],
+   sents:[["It is sunny today.","오늘은 맑아요."],["How is the weather?","날씨가 어때?"],["It is raining.","비가 오고 있어요."],["It is cold outside.","밖은 추워요."],["I see a rainbow.","무지개가 보여요."],["It is windy.","바람이 불어요."]]},
+  {id:"number", name:"숫자", icon:"🔢", words:[["one","하나, 1","1️⃣"],["two","둘, 2","2️⃣"],["three","셋, 3","3️⃣"],["four","넷, 4","4️⃣"],["five","다섯, 5","5️⃣"],["six","여섯, 6","6️⃣"],["seven","일곱, 7","7️⃣"],["eight","여덟, 8","8️⃣"],["nine","아홉, 9","9️⃣"],["ten","열, 10","🔟"]],
+   sents:[["I am ten years old.","나는 열 살이에요."],["How many apples?","사과가 몇 개니?"],["I have three pencils.","나는 연필이 세 자루 있어요."],["Count to ten.","열까지 세어 봐요."],["Two cats are sleeping.","고양이 두 마리가 자고 있어요."],["How old are you?","너는 몇 살이니?"]]},
+  {id:"action", name:"움직임", icon:"🏃", words:[["run","달리다","🏃"],["jump","뛰어오르다","🤸"],["swim","수영하다","🏊"],["dance","춤추다","💃"],["sing","노래하다","🎤"],["read","읽다","📚"],["write","쓰다","✍️"],["sleep","자다","😴"],["eat","먹다","🍽️"],["play","놀다","⚽"]],
+   sents:[["I can swim.","나는 수영할 수 있어요."],["Can you dance?","너는 춤출 수 있니?"],["Let's play soccer.","축구하자."],["She is singing.","그녀는 노래하고 있어요."],["I like to read.","나는 읽는 걸 좋아해요."],["He can run fast.","그는 빨리 달릴 수 있어요."]]},
+  {id:"day", name:"요일", icon:"📅", words:[["Monday","월요일","🌙"],["Tuesday","화요일","🔥"],["Wednesday","수요일","💧"],["Thursday","목요일","🌳"],["Friday","금요일","✨"],["Saturday","토요일","🎈"],["Sunday","일요일","☀️"],["today","오늘","📅"],["tomorrow","내일","➡️"],["week","주, 일주일","🗓️"]],
+   sents:[["Today is Monday.","오늘은 월요일이에요."],["What day is it?","오늘 무슨 요일이니?"],["See you tomorrow.","내일 봐."],["I like Sunday.","나는 일요일이 좋아요."],["It is Saturday.","토요일이에요."],["I go to school on Friday.","나는 금요일에 학교에 가요."]]},
+  {id:"clothes", name:"옷", icon:"👕", words:[["shirt","셔츠","👕"],["pants","바지","👖"],["dress","원피스","👗"],["hat","모자","🧢"],["shoes","신발","👟"],["socks","양말","🧦"],["coat","코트","🧥"],["gloves","장갑","🧤"],["glasses","안경","👓"],["scarf","목도리","🧣"]],
+   sents:[["Put on your coat.","코트를 입으세요."],["I like your hat.","네 모자가 마음에 들어."],["Where are my socks?","내 양말 어디 있지?"],["These are my shoes.","이건 내 신발이에요."],["Take off your gloves.","장갑을 벗으세요."],["Her dress is pretty.","그녀의 원피스는 예뻐요."]]},
+  {id:"place", name:"장소", icon:"🏞️", words:[["home","집","🏠"],["park","공원","🏞️"],["zoo","동물원","🦒"],["library","도서관","📚"],["hospital","병원","🏥"],["store","가게","🏪"],["bank","은행","🏦"],["beach","바닷가","🏖️"],["room","방","🛏️"],["kitchen","부엌","🍳"]],
+   sents:[["Let's go to the park.","공원에 가자."],["Where is the library?","도서관은 어디에 있니?"],["I am at home.","나는 집에 있어요."],["The zoo is fun.","동물원은 재미있어요."],["Go straight.","똑바로 가세요."],["It is next to the bank.","그건 은행 옆에 있어요."]]},
+];
+const PHONICS = [["A","apple","🍎"],["B","bear","🐻"],["C","cat","🐱"],["D","dog","🐶"],["E","egg","🥚"],["F","fish","🐟"],["G","gift","🎁"],["H","hat","🧢"],["I","ink","🖋️"],["J","jam","🍓"],["K","kite","🪁"],["L","lion","🦁"],["M","milk","🥛"],["N","nose","👃"],["O","octopus","🐙"],["P","pig","🐷"],["Q","queen","👸"],["R","red","🔴"],["S","sun","☀️"],["T","tiger","🐯"],["U","umbrella","☂️"],["V","violin","🎻"],["W","water","💧"],["X","box","📦"],["Y","yellow","🟡"],["Z","zoo","🦒"]];
+const CVC = [["cat","a","🐱"],["bag","a","🎒"],["hat","a","🧢"],["map","a","🗺️"],["bed","e","🛏️"],["pen","e","🖊️"],["red","e","🔴"],["ten","e","🔟"],["pig","i","🐷"],["six","i","6️⃣"],["fish","i","🐟"],["lip","i","👄"],["dog","o","🐶"],["box","o","📦"],["fox","o","🦊"],["sock","o","🧦"],["bus","u","🚌"],["sun","u","☀️"],["cup","u","🥤"],["duck","u","🦆"]];
+const ENG_ACTS = [
+  {id:"learn", name:"단어 외우기", icon:"🃏", desc:"그림 보고 듣고 외워요"},
+  {id:"mean", name:"뜻 고르기", icon:"🤔", desc:"영어 보고 뜻 고르기"},
+  {id:"spell", name:"철자 맞추기", icon:"🔤", desc:"뜻 보고 글자 골라 쓰기"},
+  {id:"dict", name:"듣고 받아쓰기", icon:"🎧", desc:"듣고 직접 써요"},
+  {id:"sent", name:"문장 만들기", icon:"🧩", desc:"단어 순서 맞추고 따라 읽기"},
+];
+const PH_ACTS = [
+  {id:"abc", name:"알파벳 소리", icon:"🔊", desc:"글자랑 단어 소리 듣기"},
+  {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
+  {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
+];
+const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
+const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+const pickN = (a, n, not) => shuffle(a.filter(x => x!==not)).slice(0, n);
+
+// 발음: 기기에 들어 있는 영어 읽어 주기 (인터넷 필요 없음)
+let enVoice = null;
+function loadVoice(){
+  if(!("speechSynthesis" in window)) return;
+  const vs = speechSynthesis.getVoices().filter(v => /^en[-_]US/i.test(v.lang));
+  enVoice = vs.find(v => /Samantha|Google US|Aria|Jenny/i.test(v.name)) || vs[0] || speechSynthesis.getVoices().find(v => /^en/i.test(v.lang)) || null;
+}
+if("speechSynthesis" in window){ loadVoice(); speechSynthesis.onvoiceschanged = loadVoice; }
+function say(text, slow=false){
+  if(!("speechSynthesis" in window)){ toast("이 기기는 소리 읽기를 못 해요"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; if(enVoice) u.voice = enVoice;
+  u.rate = slow ? 0.55 : 0.85; u.pitch = 1.05; speechSynthesis.speak(u);
+}
+
+// 영어 하는 동안에도 하루 사용 시간 재기
+function engClock(){
+  let last = Date.now(), done = false;
+  const t = setInterval(async () => {
+    const now = Date.now(); if(!document.hidden) addUsed(Math.min(now-last, 5000)); last = now;
+    const limit = await getLimit();
+    if(limit && getUsed() >= limit && !done){ done = true; clearInterval(t); speechSynthesis && speechSynthesis.cancel();
+      const m = modal(`<h3>오늘은 여기까지! ⏰</h3><div style="font-size:16px">오늘 공부 시간을 다 썼어요. 내일 또 해요!</div><div class="mbtns one"><button class="big" data-a>알겠어요</button></div>`);
+      m.querySelector("[data-a]").onclick = () => go(studentHome);
+    }
+  }, 1000);
+  cleanups.push(() => { clearInterval(t); try{ speechSynthesis.cancel(); }catch(e){} });
+}
+
+// 수아 화면: 영어 탭 내용
+function engHomeHTML(){
+  return `<div class="card"><h2>해야 할 영어 과제</h2><div class="hwlist" id="etodo"></div></div>
+    <div class="card"><h2>🔤 혼자 더 공부하기</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
+    <div class="egrid">${ENG.map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${u.name}</span></button>`).join("")}
+    <button class="eunit ph" data-eu="phonics"><span class="eic">🔠</span><span>파닉스</span></button></div></div>
+    <div class="card"><h2>끝낸 영어 과제</h2><div class="hwlist" id="edone"></div></div>
+    <div class="card"><h2>내 영어 기록</h2><div class="hwlist" id="erec"></div></div>`;
+}
+function testHomeHTML(){
+  return `<div class="card"><h2>📝 봐야 할 시험</h2><div class="hwlist" id="ttodo"></div></div>
+    <div class="card" style="display:flex;align-items:center;gap:12px;background:var(--lav)"><div style="font-size:44px">🔤</div><div style="flex:1 1 auto;min-width:0"><h2 style="margin:0">영어 실력 알아보기</h2><div class="muted">내가 영어를 얼마나 아는지 알아봐요 (15분쯤)</div></div><button class="big" data-etest style="width:auto;flex:none;padding-left:22px;padding-right:22px">해 보기</button></div>
+    <div class="card"><h2>끝낸 시험</h2><div class="hwlist" id="tdone"></div></div>`;
+}
+function engRecRow(r, who="student"){
+  const u = engUnit(r.unit) || {name:r.unit, icon:"🔤"};
+  if(r.act==="test") return who==="student"
+    ? `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">📝 영어 실력 알아보기</div><div class="muted">${fmtFull(r.at)}</div></div><span class="chip ok">다 했어요 🏅</span></div>`
+    : `<div class="hw" style="cursor:default;display:block"><div class="ti">📝 영어 실력 알아보기 <span class="muted" style="font-size:14px">${fmtFull(r.at)} · ${fmtSec(r.dur||0)} · ${r.score}/${r.total} 맞힘</span></div>${etestResultHTML(r)}</div>`;
+  const sc = r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
+  const wrong = (r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "";
+  const vs = who!=="student" && (r.voices||[]).length ? voiceListHTML(r.voices, "🎤 따라 읽기 녹음") : "";
+  return `<div class="hw" style="cursor:default;${vs ? "flex-wrap:wrap" : ""}"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}${vs ? `<div style="flex-basis:100%">${vs}</div>` : ""}</div>`;
+}
+function bindEngHome(limitRef){
+  unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.filter(r => !r.hw).slice(0,10).map(r => engRecRow(r)).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
+  return e => {
+    const tb = e.target.closest("[data-etest]");
+    if(tb){ if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; } go(engTest); return true; }
+    const b = e.target.closest("[data-eu]"); if(!b) return false;
+    if(limitRef() && getUsed() >= limitRef()){ tell("오늘은 여기까지! ⏰", "오늘 공부 시간을 다 썼어요. 내일 또 해요."); return true; }
+    const u = engUnit(b.dataset.eu), acts = u.id==="phonics" ? PH_ACTS : ENG_ACTS;
+    const m = modal(`<h3>${u.icon} ${esc(u.name)}</h3><div class="hwlist">${acts.map(a => `<button class="hw" data-act="${a.id}"><span style="font-size:28px">${a.icon}</span><div class="grow"><div class="ti">${a.name}</div><div class="muted">${a.desc}</div></div></button>`).join("")}</div><div class="mbtns one"><button class="big gray" data-x>닫기</button></div>`);
+    m.onclick = ev => { if(ev.target.closest("[data-x]")) return m.remove(); const a = ev.target.closest("[data-act]"); if(a){ m.remove(); go(engPlay, u.id, a.dataset.act); } };
+    return true;
+  };
+}
+
+// ───────── 영어: 공부 화면 ─────────
+function engPlay(unitId, act, only, hwId){
+  const u = engUnit(unitId), t0 = Date.now();
+  engClock();
+  app.onclick = null;
+  app.innerHTML = `<div class="page"><div class="bar"><h1 style="font-size:26px">${u.icon} ${esc(u.name)} · ${esc(engActName(act))}</h1><div class="row"><span class="muted" id="eprog"></span><button class="link" id="eback">그만하기</button></div></div>
+    <div class="card eplay" id="ebox"></div></div>`;
+  $("#eback").onclick = async () => { if(await ask("그만할까요?", "지금 한 건 저장되지 않아요.", "그만하기", "계속하기")) go(studentHome); };
+  const box = $("#ebox"), prog = $("#eprog");
+  const words = u.words ? u.words.map(([w,k,e]) => ({w,k,e})) : [];
+  let qs = [], i = 0, score = 0, wrong = []; const vlog = [];
+  const spk = (t, slow) => `<button class="btn spk" data-say="${esc(t)}" ${slow?'data-slow="1"':""}>${slow ? "🐢 천천히" : "🔊 듣기"}</button>`;
+  box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
+
+  const finish = async (total) => {
+    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {}), ...(vlog.length ? {voices:vlog} : {})};
+    try{
+      await DB.addEng(rec);
+      if(hwId) await DB.updateHW(hwId, {"st.r": {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at}, status:"submitted", submittedAt:Date.now()});
+    }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
+    if(total && score===total) confetti();
+    if(hwId) prog.textContent = "";
+    const msg = !total ? "끝까지 다 봤어요! 👏" : score===total ? "다 맞았어요! 최고! 🎉" : score >= total*0.7 ? "잘했어요! 👍" : "괜찮아요, 한 번 더 해 볼까? 💪";
+    box.innerHTML = `<div class="center" style="min-height:0;padding:20px 0">
+      <div class="jua" style="font-size:30px">${msg}</div>
+      ${total ? `<div class="jua" style="font-size:54px;color:var(--main-d)">${score} / ${total}</div>` : ""}
+      ${rec.wrong.length ? `<div class="muted" style="font-size:17px">틀린 것: <b>${rec.wrong.map(esc).join(", ")}</b></div>` : ""}
+      ${hwId ? `<div class="chip ok" style="font-size:16px">✔ 과제 제출 완료!</div>` : ""}
+      <div class="row" style="justify-content:center;margin-top:10px">
+        ${rec.wrong.length && words.length ? `<button class="big" id="eagain">틀린 것만 다시</button>` : ""}
+        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">${hwId ? "목록으로" : "다른 공부 하기"}</button></div></div>`;
+    prog.textContent = "";
+    $("#ehome").onclick = async () => { if(hwId) await plannerNudge(); go(studentHome); };
+    $("#eredo").onclick = () => go(engPlay, unitId, act);
+    if($("#eagain")) $("#eagain").onclick = () => go(engPlay, unitId, act, rec.wrong);
+  };
+  const nextQ = (ok, label) => {
+    if(ok) score++; else wrong.push(label);
+    i++; setTimeout(() => i < qs.length ? show() : finish(qs.length), ok ? 700 : 1500);
+  };
+  const feedback = (ok, right) => {
+    const f = document.createElement("div"); f.className = "efb " + (ok ? "ok" : "bad");
+    f.innerHTML = ok ? "딩동댕! ⭕" : `아쉬워요 ❌<br><span style="font-size:20px">정답: ${esc(right)}</span>`;
+    box.appendChild(f);
+  };
+  let show = () => {};
+  const pool = only ? words.filter(x => only.includes(x.w)) : words;
+
+  if(act==="learn"){
+    qs = shuffle(words);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      box.innerHTML = `<div class="ecard"><div class="eemo">${q.e}</div><div class="eword">${esc(q.w)}</div><div class="emean">${esc(q.k)}</div>
+        <div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div></div>
+        <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "다 외웠어요!"}</button></div>`;
+      say(q.w);
+      $("#eprev").onclick = () => { i--; show(); };
+      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
+    };
+  }
+  else if(act==="mean"){
+    qs = shuffle(pool);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const opts = shuffle([q, ...pickN(words, 3, q)]);
+      box.innerHTML = `<div class="ecard"><div class="eword">${esc(q.w)}</div><div class="row" style="justify-content:center">${spk(q.w)}</div></div>
+        <div class="eopts">${opts.map(o => `<button class="eopt" data-o="${esc(o.w)}">${o.e} ${esc(o.k)}</button>`).join("")}</div>`;
+      say(q.w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===q.w; b.classList.add(ok ? "ok" : "bad");
+        if(!ok) box.querySelector(`[data-o="${CSS.escape(q.w)}"]`).classList.add("ok");
+        feedback(ok, q.k); nextQ(ok, q.w);
+      });
+    };
+  }
+  else if(act==="spell" || act==="dict"){
+    qs = shuffle(pool);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      let built = [];
+      const top = act==="spell"
+        ? `<div class="eemo">${q.e}</div><div class="emean">${esc(q.k)}</div>`
+        : `<div class="eemo">🎧</div><div class="emean">잘 듣고 써 봐요</div><div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div>`;
+      if(act==="spell"){
+        const extra = shuffle("abcdefghijklmnopqrstuvwxyz".split("").filter(c => !q.w.toLowerCase().includes(c))).slice(0, 3);
+        const tiles = shuffle(q.w.split("").concat(extra)).map((c,k) => ({c, k}));
+        const paint = () => {
+          box.querySelector(".eslots").innerHTML = q.w.split("").map((_,k) => `<span class="eslot ${built[k]?"on":""}">${built[k] ? esc(built[k].c) : ""}</span>`).join("");
+          box.querySelectorAll("[data-t]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.t));
+        };
+        box.innerHTML = `<div class="ecard">${top}<div class="eslots"></div></div>
+          <div class="etiles">${tiles.map(t => `<button class="etile" data-t="${t.k}">${esc(t.c)}</button>`).join("")}</div>
+          <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="edel">⌫ 지우기</button><button class="big gray" id="ehint">💡 힌트</button><button class="big" id="eok">확인 ✔</button></div>`;
+        paint();
+        box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { if(built.length >= q.w.length) return; built.push(tiles.find(t => t.k===+b.dataset.t)); paint(); if(built.length===q.w.length) say(built.map(x=>x.c).join("")); });
+        $("#edel").onclick = () => { built.pop(); paint(); };
+        $("#ehint").onclick = () => { say(q.w); toast(`첫 글자는 "${q.w[0]}" 예요`); };
+        $("#eok").onclick = () => {
+          if(built.length < q.w.length) return toast("칸을 다 채워 주세요");
+          if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 1600);
+          const ok = built.map(x => x.c).join("")===q.w; feedback(ok, q.w); say(q.w); nextQ(ok, q.w);
+        };
+      } else {
+        box.innerHTML = `<div class="ecard">${top}</div>
+          <input class="inp einput" id="ein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 영어로 써요">
+          <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="ehint">💡 힌트</button><button class="big" id="eok">확인 ✔</button></div>`;
+        setTimeout(() => say(q.w), 250);
+        $("#ehint").onclick = () => toast(`${q.e} ${q.k} · ${q.w.length}글자, "${q.w[0]}"로 시작해요`);
+        const check = () => {
+          const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요");
+          if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 1600);
+          const ok = v.toLowerCase()===q.w.toLowerCase(); $("#ein").disabled = true; feedback(ok, `${q.w} (${q.k})`); nextQ(ok, q.w);
+        };
+        $("#eok").onclick = check; $("#ein").onkeydown = e => { if(e.key==="Enter") check(); };
+      }
+    };
+  }
+  else if(act==="sent"){
+    qs = shuffle(u.sents.map(([s,k]) => ({s,k})));
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const toks = q.s.split(" "), chips = shuffle(toks.map((t,k) => ({t,k})));
+      let built = [];
+      const paint = () => {
+        box.querySelector(".eline").innerHTML = built.length ? built.map((c,n) => `<button class="echip on" data-b="${n}">${esc(c.t)}</button>`).join("") : `<span class="muted">아래 단어를 순서대로 눌러요</span>`;
+        box.querySelectorAll("[data-c]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.c));
+        box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { built.splice(+b.dataset.b, 1); paint(); });
+      };
+      box.innerHTML = `<div class="ecard"><div class="emean">${esc(q.k)}</div><div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="eline"></div></div>
+        <div class="etiles">${chips.map(c => `<button class="echip" data-c="${c.k}">${esc(c.t)}</button>`).join("")}</div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="eclr">다시 놓기</button><button class="big" id="eok">확인 ✔</button></div>`;
+      paint();
+      box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { built.push(chips.find(c => c.k===+b.dataset.c)); paint(); });
+      $("#eclr").onclick = () => { built = []; paint(); };
+      $("#eok").onclick = () => {
+        if(built.length < toks.length) return toast("단어를 다 놓아 주세요");
+        const ok = built.map(c => c.t).join(" ")===q.s;
+        if(!ok){ feedback(false, q.s); say(q.s); return nextQ(false, q.s); }
+        score++;
+        // 맞히면 따라 읽기
+        box.innerHTML = `<div class="ecard"><div class="eemo">🎉</div><div class="eword" style="font-size:30px">${esc(q.s)}</div><div class="emean">${esc(q.k)}</div>
+          <div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="muted" style="margin-top:8px">듣고 큰 소리로 따라 읽어 봐요!</div><div id="emic" class="muted"></div></div>
+          <div class="row" style="justify-content:center;margin-top:12px">${(SR || (navigator.mediaDevices && window.MediaRecorder)) ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx">${i<qs.length-1 ? "따라 읽었어요 · 다음 ▶" : "따라 읽었어요 · 끝!"}</button></div>`;
+        say(q.s);
+        $("#enx").onclick = () => { i++; i < qs.length ? show() : finish(qs.length); };
+        if($("#erec2")) $("#erec2").onclick = async () => {
+          const btn = $("#erec2"); if(btn.dataset.busy) return; btn.dataset.busy = 1;
+          btn.textContent = "⏹ 다 읽었어요"; $("#emic").textContent = "듣고 있어요… 읽어 봐요 🎤";
+          const r = recordSpeech(9000); btn.onclick = () => r.stop();
+          const {blob, heard} = await r.done;
+          const ok = judgeSpeech({t:"read", s:q.s}, heard);
+          const vid = await saveVoice({ctx:"practice", q:q.s, heard:heard||"", ok}, blob);
+          if(vid || heard!=null) vlog.push({voice:vid, q:q.s, a:heard||"", ok});
+          $("#emic").innerHTML = !blob && heard==null ? "마이크를 쓸 수 없어요. 그냥 소리 내서 읽어 봐요!" : ok ? `<b style="color:var(--ok)">잘 읽었어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
+          btn.remove();
+        };
+      };
+    };
+  }
+  else if(act==="abc"){
+    qs = PHONICS;
+    show = () => {
+      const [L, w, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      box.innerHTML = `<div class="ecard"><div class="eword" style="font-size:84px">${L} ${L.toLowerCase()}</div><div class="eemo">${e}</div><div class="emean" style="font-size:30px">${L==="X" ? `bo<b style="color:var(--main-d)">x</b>` : `<b style="color:var(--main-d)">${w[0]}</b>${w.slice(1)}`}</div>
+        <div class="row" style="justify-content:center"><button class="btn spk" data-say="${L}">🔤 글자 이름</button>${spk(w)}${spk(w,true)}</div></div>
+        <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "끝!"}</button></div>`;
+      say(w);
+      $("#eprev").onclick = () => { i--; show(); };
+      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
+    };
+  }
+  else if(act==="first"){
+    qs = shuffle(PHONICS.filter(p => p[0]!=="X")).slice(0, 10);
+    show = () => {
+      const [L, w, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const opts = shuffle([L, ...pickN(PHONICS.map(p => p[0]).filter(c => c!=="X"), 3, L)]);
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="emean">잘 듣고, 어떤 글자로 시작할까?</div><div class="row" style="justify-content:center">${spk(w)}${spk(w,true)}</div></div>
+        <div class="eopts four">${opts.map(o => `<button class="eopt big2" data-o="${o}">${o} ${o.toLowerCase()}</button>`).join("")}</div>`;
+      say(w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${L}"]`).classList.add("ok");
+        feedback(ok, `${w} → ${L}`); nextQ(ok, w);
+      });
+    };
+  }
+  else if(act==="vowel"){
+    qs = shuffle(CVC).slice(0, 10);
+    show = () => {
+      const [w, v, e] = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const masked = w.replace(v, "_");
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="eword" style="letter-spacing:6px">${masked}</div><div class="emean">가운데 들어갈 소리는?</div><div class="row" style="justify-content:center">${spk(w)}${spk(w,true)}</div></div>
+        <div class="eopts five">${["a","e","i","o","u"].map(o => `<button class="eopt big2" data-o="${o}">${o}</button>`).join("")}</div>`;
+      say(w);
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        const ok = b.dataset.o===v; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${v}"]`).classList.add("ok");
+        box.querySelector(".eword").textContent = w; feedback(ok, w); nextQ(ok, w);
+      });
+    };
+  }
+  show();
+}
+
+// ───────── 영어 실력 테스트 (수준 알아보기) ─────────
+// lv: 3 = 3학년, 4 = 4학년, 5 = 5학년, 6 = 6학년 수준 (직접 만든 문항)
+const ETEST = [
+  {id:"ph", name:"파닉스", icon:"🔠", items:[
+    {lv:3, t:"first", w:"bear", e:"🐻", a:"B", o:["B","D","P","R"]},
+    {lv:3, t:"first", w:"milk", e:"🥛", a:"M", o:["N","M","W","H"]},
+    {lv:4, t:"first", w:"van", e:"🚐", a:"V", o:["B","F","V","W"]},
+    {lv:4, t:"vowel", w:"bed", e:"🛏️", a:"e", o:["a","e","i","o","u"]},
+    {lv:5, t:"vowel", w:"cup", e:"🥤", a:"u", o:["a","e","i","o","u"]},
+    {lv:5, t:"vowel", w:"fish", e:"🐟", a:"i", o:["a","e","i","o","u"]},
+    {lv:6, t:"first", w:"ship", e:"🚢", a:"sh", o:["s","sh","ch","th"]},
+    {lv:6, t:"first", w:"three", e:"3️⃣", a:"th", o:["t","th","sh","f"]},
+  ]},
+  {id:"voc", name:"단어 뜻", icon:"📚", items:[
+    {lv:3, w:"cat", a:"고양이", o:["고양이","강아지","토끼","곰"]},
+    {lv:3, w:"apple", a:"사과", o:["바나나","사과","우유","빵"]},
+    {lv:3, w:"run", a:"달리다", o:["먹다","자다","달리다","읽다"]},
+    {lv:4, w:"kitchen", a:"부엌", o:["거실","부엌","욕실","침실"]},
+    {lv:4, w:"Wednesday", a:"수요일", o:["월요일","화요일","수요일","목요일"]},
+    {lv:4, w:"hungry", a:"배고픈", o:["졸린","배고픈","아픈","행복한"]},
+    {lv:5, w:"museum", a:"박물관", o:["도서관","박물관","병원","극장"]},
+    {lv:5, w:"weekend", a:"주말", o:["주말","방학","내일","아침"]},
+    {lv:5, w:"delicious", a:"맛있는", o:["예쁜","무서운","맛있는","시끄러운"]},
+    {lv:6, w:"future", a:"미래", o:["과거","미래","오늘","계절"]},
+    {lv:6, w:"borrow", a:"빌리다", o:["사다","팔다","빌리다","잃어버리다"]},
+    {lv:6, w:"environment", a:"환경", o:["환경","날씨","나라","건강"]},
+  ]},
+  {id:"lis", name:"듣기", icon:"🎧", items:[
+    {lv:3, s:"I like bananas.", a:"나는 바나나를 좋아해요.", o:["나는 바나나를 좋아해요.","나는 사과를 좋아해요.","나는 바나나가 싫어요.","바나나가 있어요."]},
+    {lv:3, s:"It is a big dog.", a:"큰 개예요.", o:["작은 개예요.","큰 개예요.","큰 고양이예요.","개가 없어요."]},
+    {lv:4, s:"It is rainy today.", a:"오늘은 비가 와요.", o:["오늘은 맑아요.","내일은 비가 와요.","오늘은 비가 와요.","오늘은 눈이 와요."]},
+    {lv:4, s:"What time is it? It's seven o'clock.", a:"지금 7시예요.", o:["지금 7시예요.","지금 11시예요.","7살이에요.","7개 있어요."]},
+    {lv:4, s:"Where is my bag? It's under the desk.", a:"가방은 책상 밑에 있어요.", o:["가방은 책상 위에 있어요.","가방은 책상 밑에 있어요.","가방은 의자 옆에 있어요.","가방이 없어요."]},
+    {lv:5, s:"I went to the zoo yesterday.", a:"나는 어제 동물원에 갔어요.", o:["나는 내일 동물원에 갈 거예요.","나는 어제 공원에 갔어요.","나는 어제 동물원에 갔어요.","나는 지금 동물원에 있어요."]},
+    {lv:5, s:"How much is this cap? It's five thousand won.", a:"모자는 5,000원이에요.", o:["모자는 500원이에요.","모자는 5,000원이에요.","가방은 5,000원이에요.","모자가 다섯 개예요."]},
+    {lv:6, s:"I'm going to visit my grandma this weekend.", a:"이번 주말에 할머니 댁에 갈 거예요.", o:["지난 주말에 할머니 댁에 갔어요.","이번 주말에 할머니 댁에 갈 거예요.","할머니가 이번 주말에 오세요.","오늘 할머니 댁에 있어요."]},
+    {lv:6, s:"You should wear a helmet when you ride a bike.", a:"자전거 탈 때 헬멧을 써야 해요.", o:["자전거를 타면 안 돼요.","헬멧을 사러 가요.","자전거 탈 때 헬멧을 써야 해요.","헬멧이 자전거 옆에 있어요."]},
+  ]},
+  {id:"sen", name:"문장 만들기", icon:"🧩", items:[
+    {lv:3, s:"I have a cat.", k:"나는 고양이가 있어요."},
+    {lv:3, s:"This is my book.", k:"이건 내 책이에요."},
+    {lv:4, s:"What time is it?", k:"몇 시예요?"},
+    {lv:4, s:"Can you swim?", k:"너는 수영할 수 있니?"},
+    {lv:5, s:"I want to go to the park.", k:"나는 공원에 가고 싶어요."},
+    {lv:5, s:"What did you do yesterday?", k:"너는 어제 뭐 했니?"},
+    {lv:6, s:"I will visit my uncle next week.", k:"나는 다음 주에 삼촌 댁에 갈 거예요."},
+  ]},
+  {id:"dic", name:"받아쓰기", icon:"✍️", items:[
+    {lv:3, w:"cat", e:"🐱"}, {lv:3, w:"red", e:"🔴"},
+    {lv:4, w:"school", e:"🏫"}, {lv:4, w:"Friday", e:"📅"},
+    {lv:5, w:"weekend", e:"🗓️"}, {lv:5, w:"favorite", e:"💖"},
+    {lv:6, w:"beautiful", e:"🌸"}, {lv:6, w:"tomorrow", e:"➡️"},
+  ]},
+  {id:"spk", name:"말하기", icon:"🎤", items:[
+    {lv:3, t:"word", s:"map", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:3, t:"word", s:"pet", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:4, t:"word", s:"jump", tip:"처음 보는 단어예요. 글자 소리대로 읽어 봐요!"},
+    {lv:3, t:"read", s:"I like apples.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:4, t:"read", s:"Where is my cap? It's on the desk.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:5, t:"read", s:"I went to the park with my family yesterday.", tip:"큰 소리로 읽어 봐요!"},
+    {lv:4, t:"ans", s:"What's your name?", keys:["name is","i'm","i am","im "], hint:"My name is ○○.", tip:"질문을 듣고 영어로 대답해요!"},
+    {lv:4, t:"ans", s:"What can you do?", keys:["i can"], hint:"I can swim.", tip:"질문을 듣고 영어로 대답해요!"},
+  ]},
+];
+// ───────── 녹음 + 듣고 판정 (아이패드 사파리·갤탭 크롬) ─────────
+const normEn = s => String(s||"").toLowerCase().replace(/[’']/g,"'").replace(/[^a-z' ]/g," ").replace(/\s+/g," ").trim();
+function judgeSpeech(it, heard){
+  if(heard==null) return null;
+  const h = " " + normEn(heard) + " ";
+  if(it.t==="word") return h.includes(" " + normEn(it.s) + " ");
+  if(it.t==="ans") return it.keys.some(k => h.includes(k.startsWith(" ") ? k : " " + k)) || it.keys.some(k => h.includes(k));
+  const want = normEn(it.s).split(" "), got = new Set(normEn(heard).split(" "));
+  return want.filter(w => got.has(w)).length / want.length >= 0.7;
+}
+// 녹음하면서 동시에 글자로 알아듣기. 둘 중 하나가 안 되면 되는 것만 해요.
+function recordSpeech(maxMs=7000){
+  let stopFn = null;
+  const p = new Promise(async resolve => {
+    let stream = null, mr = null, chunks = [], heard = null, done = false, recDone = false, srDone = false, mime = "";
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const finish = () => { if(done || !(recDone && srDone)) return; done = true; if(stream) stream.getTracks().forEach(t => t.stop());
+      const blob = chunks.length ? new Blob(chunks, {type: mime || chunks[0].type || "audio/mp4"}) : null; resolve({blob, heard}); };
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mime = ["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+      mr = new MediaRecorder(stream, mime ? {mimeType:mime, audioBitsPerSecond:24000} : undefined);
+      mr.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
+      mr.onstop = () => { recDone = true; finish(); };
+      mr.start();
+    }catch(e){ recDone = true; }
+    let sr = null;
+    if(SR){ try{
+      sr = new SR(); sr.lang = "en-US"; sr.interimResults = false; sr.maxAlternatives = 3;
+      sr.onresult = e => { heard = [...e.results[0]].map(a => a.transcript).join(" / "); };
+      sr.onerror = () => {}; sr.onend = () => { srDone = true; if(mr && mr.state==="recording") setTimeout(() => { try{ mr.stop(); }catch(e){} }, 400); finish(); };
+      sr.start();
+    }catch(e){ sr = null; } }
+    if(!sr) srDone = true;
+    const stopAll = () => { try{ sr && sr.stop(); }catch(e){} if(mr && mr.state==="recording"){ try{ mr.stop(); }catch(e){} } else { recDone = true; } if(!sr){ srDone = true; } finish(); };
+    stopFn = stopAll; setTimeout(stopAll, maxMs);
+    if(!mr && !sr) resolve({blob:null, heard:null});
+  });
+  return {done:p, stop:() => stopFn && stopFn()};
+}
+const blobToURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+async function saveVoice(meta, blob){
+  if(!blob) return "";
+  const data = await blobToURL(blob); if(data.length > 950000) return "";
+  const id = "voice-" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  try{ await DB.saveRec(id, {type:"voice", at:Date.now(), ...meta, data}); return id; }catch(e){ return ""; }
+}
+async function playVoice(id, btn){
+  if(btn) btn.textContent = "⏳";
+  try{ const d = await DB.loadRec(id); if(!d || !d.data){ toast("녹음을 찾을 수 없어요"); return; } const a = new Audio(d.data); await a.play(); }
+  catch(e){ toast("이 기기에서는 재생이 안 돼요"); }
+  finally{ if(btn) btn.textContent = "▶ 듣기"; }
+}
+
+// 영역별 수준: 그 학년 문항을 절반 넘게 맞힌 가장 높은 학년 (아래 학년이 무너지면 거기서 멈춤)
+function etestLevel(res){
+  res = res.filter(r => r.ok!==null && r.ok!==undefined);
+  if(!res.length) return 0;
+  const by = {}; res.forEach(r => { const b = by[r.lv] = by[r.lv] || {ok:0, n:0}; b.n++; if(r.ok) b.ok++; });
+  let lv = 2;
+  for(const g of [3,4,5,6]){ const b = by[g]; if(!b || b.ok*2 <= b.n) break; lv = g; }
+  return lv;
+}
+const etestLabel = lv => lv===0 ? "녹음 들어 보기" : lv<=2 ? "기초부터" : lv===6 ? "6학년 이상" : `${lv}학년 수준`;
+function etestAdvice(L){
+  const tips = [];
+  if(L.ph <= 3) tips.push("파닉스(글자 소리)부터 다지면 좋아요");
+  if(L.voc <= 3) tips.push("3~4학년 기본 단어 단원부터 시작해요");
+  else if(L.voc === 4) tips.push("4학년 단어는 잘 알아요. 4~5학년 표현으로 넘어가도 돼요");
+  else tips.push("단어 실력이 학년보다 높아요. 5~6학년 표현도 괜찮아요");
+  if(L.lis < L.voc) tips.push("단어보다 듣기가 약해요. 듣기·따라 읽기를 많이 해요");
+  if(L.dic < L.voc) tips.push("뜻은 알지만 철자가 약해요. 철자 맞추기·받아쓰기를 늘려요");
+  if(L.sen < L.voc) tips.push("문장 순서 연습(문장 만들기)이 필요해요");
+  if(L.spk && L.spk < L.voc) tips.push("아는 것보다 읽고 말하기가 약해요. 매일 따라 읽기를 꼭 해요");
+  if(L.spk===0) tips.push("말하기는 앱이 판정을 못 했어요. 녹음을 직접 들어 봐 주세요");
+  return tips;
+}
+
+function engTest(){
+  const t0 = Date.now(); engClock(); app.onclick = null;
+  app.innerHTML = `<div class="page"><div class="bar"><h1 style="font-size:26px">📝 영어 실력 알아보기</h1><div class="row"><span class="muted" id="eprog"></span><button class="link" id="eback">그만하기</button></div></div>
+    <div class="card eplay" id="ebox"></div></div>`;
+  $("#eback").onclick = async () => { if(await ask("그만할까요?", "지금까지 한 건 저장되지 않아요.", "그만하기", "계속하기")) go(studentHome); };
+  const box = $("#ebox"), prog = $("#eprog");
+  box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
+  const spk = (t, slow) => `<button class="btn spk" data-say="${esc(t)}" ${slow?'data-slow="1"':""}>${slow ? "🐢 천천히" : "🔊 듣기"}</button>`;
+  const dunno = `<button class="big gray" id="edk" style="margin-top:12px">잘 모르겠어요 🤔</button>`;
+  let si = 0, ii = 0, miss = 0; const results = {}; ETEST.forEach(s => results[s.id] = []);
+  const totalItems = ETEST.reduce((a,s) => a+s.items.length, 0);
+  let doneCount = 0;
+
+  box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+    <div style="font-size:64px">📝</div><div class="jua" style="font-size:28px">영어 실력 알아보기</div>
+    <div style="font-size:18px;line-height:1.7">파닉스 · 단어 · 듣기 · 문장 · 받아쓰기<br>쉬운 문제부터 점점 어려워져요.<br>모르면 <b>"잘 모르겠어요"</b>를 눌러도 괜찮아요!<br>시험이 아니니까 편하게 해요 😊</div>
+    <button class="big" id="estart" style="margin-top:10px">시작하기</button></div>`;
+  $("#estart").onclick = () => show();
+
+  const answer = (ok, ans, extra={}) => {
+    const sec = ETEST[si], it = sec.items[ii];
+    results[sec.id].push({lv:it.lv, ok, q:it.w || it.s, a:ans ?? "", ...extra});
+    doneCount++;
+    miss = sec.id==="spk" ? 0 : ok ? 0 : miss + 1;   // 말하기는 기계 판정이라 중간에 멈추지 않아요
+    const f = document.createElement("div"); f.className = "efb ok"; f.innerHTML = ok ? "좋아요! 👍" : "다음 문제! 💪"; f.style.color = ok ? "var(--ok)" : "var(--blue-d)"; box.appendChild(f);
+    setTimeout(() => {
+      ii++;
+      if(miss >= 2 || ii >= sec.items.length){ si++; ii = 0; miss = 0; if(si < ETEST.length) return interlude(); return finish(); }
+      show();
+    }, 650);
+  };
+  const lock = () => { if(box.dataset.lock==="1") return false; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 700); return true; };
+  const interlude = () => {
+    const sec = ETEST[si];
+    box.innerHTML = `<div class="center" style="min-height:0;padding:30px 0"><div style="font-size:64px">${sec.icon}</div><div class="jua" style="font-size:28px">다음은 ${esc(sec.name)}!</div><button class="big" id="ego">계속하기</button></div>`;
+    $("#ego").onclick = () => show();
+    if(sec.id==="spk") $("#ego").insertAdjacentHTML("beforebegin", `<div style="font-size:17px;line-height:1.6">이번엔 소리 내서 말해요 🎤<br>마이크 허락 창이 뜨면 <b>"허용"</b>을 눌러요.<br>목소리는 선생님이 들을 수 있게 녹음돼요.</div>`);
+  };
+  const show = () => {
+    const sec = ETEST[si], it = sec.items[ii];
+    prog.textContent = `${sec.icon} ${sec.name}`;
+    const bar = `<div style="height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin-bottom:10px"><i style="display:block;height:100%;width:${Math.round(doneCount/totalItems*100)}%;background:var(--main)"></i></div>`;
+    if(sec.id==="ph"){
+      const five = it.o.length===5;
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">${it.e}</div><div class="emean">${it.t==="vowel" ? "가운데 들어갈 소리는?" : "어떤 소리로 시작할까?"}</div>${it.t==="vowel" ? `<div class="eword" style="letter-spacing:6px">${it.w.replace(it.a,"_")}</div>` : ""}<div class="row" style="justify-content:center">${spk(it.w)}${spk(it.w,true)}</div></div>
+        <div class="eopts ${five?"five":"four"}">${it.o.map(o => `<button class="eopt big2" data-o="${o}">${o}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      say(it.w);
+    } else if(sec.id==="voc"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eword">${esc(it.w)}</div><div class="row" style="justify-content:center">${spk(it.w)}</div><div class="emean" style="margin-top:8px">무슨 뜻일까?</div></div>
+        <div class="eopts">${shuffle(it.o).map(o => `<button class="eopt" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      say(it.w);
+    } else if(sec.id==="lis"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">🎧</div><div class="emean">잘 듣고 알맞은 뜻을 골라요</div><div class="row" style="justify-content:center">${spk(it.s)}${spk(it.s,true)}</div></div>
+        <div class="eopts one">${shuffle(it.o).map(o => `<button class="eopt" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div><div style="text-align:center">${dunno}</div>`;
+      setTimeout(() => say(it.s), 300);
+    } else if(sec.id==="sen"){
+      const toks = it.s.split(" "), chips = shuffle(toks.map((t,k) => ({t,k}))); let built = [];
+      box.innerHTML = `${bar}<div class="ecard"><div class="emean">${esc(it.k)}</div><div class="eline"></div></div>
+        <div class="etiles">${chips.map(c => `<button class="echip" data-c="${c.k}">${esc(c.t)}</button>`).join("")}</div>
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big gray" id="eclr">다시 놓기</button><button class="big" id="eok">확인 ✔</button></div><div style="text-align:center">${dunno}</div>`;
+      const paint = () => {
+        box.querySelector(".eline").innerHTML = built.length ? built.map((c,n) => `<button class="echip on" data-b="${n}">${esc(c.t)}</button>`).join("") : `<span class="muted">아래 단어를 순서대로 눌러요</span>`;
+        box.querySelectorAll("[data-c]").forEach(b => b.disabled = built.some(x => x.k===+b.dataset.c));
+        box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { built.splice(+b.dataset.b, 1); paint(); });
+      };
+      paint();
+      box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { built.push(chips.find(c => c.k===+b.dataset.c)); paint(); });
+      $("#eclr").onclick = () => { built = []; paint(); };
+      $("#eok").onclick = () => { if(built.length < toks.length) return toast("단어를 다 놓아 주세요"); const v = built.map(c => c.t).join(" "); if(lock()) answer(v===it.s, v); };
+    } else if(sec.id==="spk"){
+      let tries = 0;
+      box.innerHTML = `${bar}<div class="ecard"><div class="emean">${esc(it.tip)}</div>
+        ${it.t==="ans" ? `<div class="eemo">💬</div><div class="row" style="justify-content:center">${spk(it.s)}${spk(it.s,true)}</div>` : `<div class="eword" style="${it.t==="read" ? "font-size:30px" : "font-size:54px"}">${esc(it.s)}</div>`}
+        <div id="emic" class="muted" style="min-height:48px;margin-top:8px"></div></div>
+        <div class="row" style="justify-content:center;margin-top:8px"><button class="big" id="erecb">🎤 말하기 시작</button>${it.t==="ans" ? `<button class="big gray" id="ehint2">💡 도움말</button>` : ""}</div>
+        <div style="text-align:center"><button class="big gray" id="edk" style="margin-top:12px">못 하겠어요 🤔</button></div>`;
+      if(it.t==="ans") setTimeout(() => say(it.s), 300);
+      if($("#ehint2")) $("#ehint2").onclick = () => { $("#emic").innerHTML = `이렇게 말해도 돼요: <b>${esc(it.hint)}</b>`; say(it.hint.replace("○○","Sua")); };
+      let busy = false;
+      const talk = async () => {
+        if(busy) return; busy = true;
+        const b = $("#erecb"); b.textContent = "⏹ 다 말했어요"; $("#emic").textContent = "듣고 있어요… 말해 봐요 🎤";
+        const r = recordSpeech(it.t==="read" ? 9000 : 6000);
+        b.onclick = () => r.stop();
+        const {blob, heard} = await r.done; tries++;
+        const again = (msg, label) => { busy = false; $("#emic").innerHTML = msg; b.textContent = label; b.onclick = talk; };
+        if(!blob && heard==null){
+          if(tries >= 2){ $("#emic").textContent = "마이크가 안 돼서 다음으로 넘어가요"; if(lock()) answer(null, "(마이크 안 됨)"); return; }
+          return again("마이크를 쓸 수 없어요. 허용을 눌렀는지 확인해 줘요.", "🎤 다시 해 보기");
+        }
+        const ok = judgeSpeech(it, heard);
+        const vid = await saveVoice({ctx:"test", q:it.s, heard:heard||"", ok}, blob);
+        $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 말했어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
+        if(lock()) answer(ok, heard || "", {voice:vid});
+      };
+      $("#erecb").onclick = talk;
+    } else if(sec.id==="dic"){
+      box.innerHTML = `${bar}<div class="ecard"><div class="eemo">🎧</div><div class="emean">잘 듣고 영어로 써요</div><div class="row" style="justify-content:center">${spk(it.w)}${spk(it.w,true)}</div></div>
+        <input class="inp einput" id="ein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 영어로 써요">
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="big" id="eok">확인 ✔</button></div><div style="text-align:center">${dunno}</div>`;
+      setTimeout(() => say(it.w), 300);
+      const check = () => { const v = $("#ein").value.trim(); if(!v) return toast("먼저 써 주세요"); if(lock()) answer(v.toLowerCase()===it.w.toLowerCase(), v); };
+      $("#eok").onclick = check; $("#ein").onkeydown = e => { if(e.key==="Enter") check(); };
+    }
+    box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { if(lock()){ b.classList.add("on2"); answer(b.dataset.o===it.a, b.dataset.o); } });
+    $("#edk").onclick = () => { if(lock()) answer(false, "(모름)"); };
+  };
+  const finish = async () => {
+    const L = {}; ETEST.forEach(s => L[s.id] = etestLevel(results[s.id]));
+    const all = Object.values(results).flat(), judged = all.filter(r => r.ok!==null), ok = judged.filter(r => r.ok).length;
+    const rec = {at:Date.now(), unit:"test", act:"test", score:ok, total:judged.length, wrong:judged.filter(r => !r.ok).map(r => r.q), levels:L, items:results, dur:Date.now()-t0};
+    try{ await DB.addEng(rec); }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
+    confetti(); prog.textContent = "";
+    box.innerHTML = `<div class="center" style="min-height:0;padding:24px 0"><div style="font-size:70px">🏅</div>
+      <div class="jua" style="font-size:32px">끝까지 했어요! 정말 잘했어요!</div>
+      <div style="font-size:18px">결과는 선생님이 보고, 수아한테 딱 맞는 공부를 준비해 줄 거예요 😊</div>
+      <button class="big" id="ehome" style="margin-top:12px">처음으로</button></div>`;
+    $("#ehome").onclick = () => go(studentHome);
+  };
+}
+function etestCopyText(r){
+  const L = r.levels || {}, I = r.items || {}, lines = [];
+  lines.push(`[수아 영어 실력 알아보기] ${fmtFull(r.at)} · 걸린 시간 ${fmtSec(r.dur||0)}`);
+  lines.push("영역별 수준: " + ETEST.map(s => `${s.name} ${etestLabel(L[s.id] ?? 2)}`).join(" / "));
+  ETEST.forEach(s => {
+    const rs = I[s.id] || []; if(!rs.length) return;
+    lines.push(`\n■ ${s.name} (${rs.length}문제 풂${rs.length < s.items.length ? `, ${s.items.length - rs.length}문제는 연달아 틀려서 멈춤` : ""})`);
+    rs.forEach(x => lines.push(`- [${x.lv}학년] ${x.q} → ${x.ok===null ? "판정 없음" : x.ok ? "O" : "X"}${x.a ? ` (답: ${x.a})` : ""}`));
+  });
+  lines.push("\n추천: " + etestAdvice(L).join(" / "));
+  return lines.join("\n");
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); toast("결과를 복사했어요. Claude한테 붙여 넣으면 돼요"); }
+  catch(e){ const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("결과를 복사했어요"); }catch(er){ toast("복사가 안 돼요. 화면을 캡처해 주세요"); } ta.remove(); }
+}
+// 60일 지난 녹음은 선생님 화면을 열 때 지워요 (저장 공간 아끼기)
+async function cleanOldVoices(list){
+  const cut = Date.now() - 60*864e5; let done; try{ done = JSON.parse(localStorage.getItem("sua-voice-clean") || "[]"); }catch(e){ done = []; }
+  const ids = [];
+  list.filter(r => r.at < cut).forEach(r => { (r.voices||[]).forEach(v => v.voice && ids.push(v.voice)); ((r.items||{}).spk||[]).forEach(v => v.voice && ids.push(v.voice)); });
+  const todo = ids.filter(id => !done.includes(id)).slice(0, 30);
+  for(const id of todo){ try{ await DB.delRec(id); done.push(id); }catch(e){} }
+  if(todo.length) try{ localStorage.setItem("sua-voice-clean", JSON.stringify(done.slice(-2000))); }catch(e){}
+}
+const voiceListHTML = (arr, title="🎤 말하기 녹음") => arr && arr.length ? `<div style="margin-top:10px"><div class="ti" style="font-size:16px">${title}</div>${arr.map(x => `<div class="row" style="align-items:center;margin:4px 0;gap:8px;flex-wrap:nowrap">${x.voice ? `<button class="btn" data-voice="${esc(x.voice)}">▶ 듣기</button>` : `<span class="muted">녹음 없음</span>`}<span style="flex:1"><b>${esc(x.q)}</b><br><span class="muted">앱이 들은 말: ${esc(x.a || "-")} · ${x.ok===null || x.ok===undefined ? "판정 없음" : x.ok ? "잘 말했어요" : "다시 연습"}</span></span></div>`).join("")}</div>` : "";
+function etestResultHTML(r, who="teacher"){
+  const L = r.levels || {};
+  const tips = etestAdvice(L);
+  const spHTML = voiceListHTML((r.items && r.items.spk) || []);
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0">${ETEST.map(s => `<div class="card" style="margin:0;padding:10px;text-align:center"><div class="muted">${s.icon} ${s.name}</div><div style="font-size:19px;font-weight:800;color:var(--main-d)">${etestLabel(L[s.id] ?? 2)}</div></div>`).join("")}</div>
+    <div style="font-size:15px;line-height:1.7">${tips.map(t => `· ${esc(t)}`).join("<br>")}</div>${spHTML}
+    ${who==="teacher" ? `<button class="btn" data-ecopy="${r.at}" style="margin-top:10px">📋 결과 복사</button>` : ""}`;
+}
+
+// 선생님·어머님 화면: 영어 기록 카드
+function engReportCard(el, who="teacher"){
+  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="etest"></div><div id="estat"></div><div class="hwlist" id="elist"></div>`;
+  let lastList = [];
+  el.addEventListener("click", e => {
+    const v = e.target.closest("[data-voice]"); if(v){ e.stopPropagation(); playVoice(v.dataset.voice, v); return; }
+    const c = e.target.closest("[data-ecopy]"); if(c){ e.stopPropagation(); const r = lastList.find(x => String(x.at)===c.dataset.ecopy); if(r) copyText(etestCopyText(r)); }
+  });
+  return DB.watchEng(list => {
+    lastList = list;
+    if(who==="teacher") cleanOldVoices(list);
+    const lt = list.find(r => r.act==="test");
+    $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt, who)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
+    list = list.filter(r => r.act!=="test");
+    const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total && r.act!=="test");
+    const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
+    const wc = {}; list.slice(0, 40).forEach(r => (r.wrong||[]).forEach(w => wc[w] = (wc[w]||0)+1));
+    const often = Object.entries(wc).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 ${wl.length}번 공부 · 전체 정답률 ${tot ? Math.round(ok/tot*100) : 0}%${often.length ? `<br>자주 틀린 것: <b>${often.map(([w,n]) => `${esc(w)}(${n})`).join(", ")}</b>` : ""}</div>`;
+    $("#elist", el).innerHTML = list.length ? list.filter(r => r.act!=="test").slice(0, 20).map(r => engRecRow(r, "teacher")).join("") : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
+  });
 }
 
 // ───────── 수아: 문제 풀기 ─────────
@@ -1318,7 +2051,22 @@ function solve(id){
     }));
     built = true;
     startClock();
+    if(hw.test && hw.minutes) startTestClock();
   }
+  let testT = null;
+  async function startTestClock(){
+    let t0 = hw.st && hw.st.t0;
+    if(!t0){ t0 = Date.now(); try{ await DB.updateHW(id, {"st.t0": t0}); }catch(e){} }
+    const chip = document.createElement("span"); chip.className = "chip r2"; chip.id = "xchip"; $(".phead").insertBefore(chip, $("#tchip"));
+    const tick = () => {
+      const left = hw.minutes*60000 - (Date.now() - t0), m = Math.floor(Math.max(0,left)/60000), sec = Math.floor(Math.max(0,left)%60000/1000);
+      chip.textContent = `📝 시험 ${m}:${String(sec).padStart(2,"0")}`;
+      if(left <= 60000 && !chip.dataset.w){ chip.dataset.w = 1; toast("1분 남았어요!"); }
+      if(left <= 0){ clearInterval(testT); submit(true); }
+    };
+    tick(); testT = setInterval(tick, 1000);
+  }
+  cleanups.push(() => clearInterval(testT));
 
   // 하루 사용 시간 재기: 화면이 켜져 있을 때만 1초씩 더해요
   let clockT = null, warned = false, locked = false;
@@ -1344,7 +2092,7 @@ function solve(id){
     $("#ttl").textContent = hw.title;
     const r2 = hw.round===2;
     $("#rinfo").className = "rinfo" + (r2 ? " r2" : "");
-    $("#rinfo").textContent = r2 ? "틀린 문제 다시 풀기 (마지막 기회)" : "문제를 골라서 풀고, 답을 확인해요.";
+    $("#rinfo").textContent = hw.test ? "📝 시험이에요. 다 풀고 제출해요. (한 번만)" : r2 ? "틀린 문제 다시 풀기 (마지막 기회)" : "문제를 골라서 풀고, 답을 확인해요.";
     const att = curAtt(hw);
     $("#items").innerHTML = hw.problems.map((p,i) => {
       const s = stOf(hw,i), ed = editable(hw,i), a = s["a"+att], n = attempts(hw,i);
@@ -1357,6 +2105,7 @@ function solve(id){
     const left = hw.problems.filter((p,i) => editable(hw,i) && !has(stOf(hw,i)["a"+att])).length;
     $("#submit").disabled = left>0;
     $("#submit").textContent = left>0 ? `제출하기 (${left}문제 남음)` : (r2 ? "마지막 제출하기" : "제출하기");
+    if(hw.test){ $("#submit").disabled = false; if(left>0) $("#submit").textContent = `시험 제출 (${left}문제 안 풂)`; else $("#submit").textContent = "시험 제출하기"; }
   }
 
   async function openProb(i){
@@ -1365,7 +2114,7 @@ function solve(id){
     cur = i; const tok = ++loadTok;
     const p = hw.problems[i], ed = editable(hw,i), att = curAtt(hw), s = stOf(hw,i);
     $("#pno").textContent = `${i+1}번`;
-    $("#patt").textContent = ed ? (att===2 ? "2번째 풀이 (마지막)" : "1번째 풀이") : "다 풀었어요";
+    $("#patt").textContent = ed ? (hw.test ? "시험 문제" : att===2 ? "2번째 풀이 (마지막)" : "1번째 풀이") : "다 풀었어요";
     $("#patt").className = "chip" + (ed && att===2 ? " r2" : "");
     $("#pq").innerHTML = richQ(p.q) + (/^[\d.\s+\-−×÷*/()]+$/.test(p.q) ? " =" : "");
     $("#tools").classList.toggle("hide", !ed);
@@ -1399,21 +2148,35 @@ function solve(id){
     }, 500);
   }
 
-  async function submit(){
+  let submitting = false;
+  async function submit(auto=false){
     const r2 = hw.round===2;
-    if(!await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
+    if(submitting) return;
+    if(hw.test && auto!==true){
+      const left = hw.problems.filter((p,i) => !has(stOf(hw,i).a1)).length;
+      if(!await ask("시험을 제출할까요?", (left ? `아직 안 푼 문제가 <b>${left}개</b> 있어요.<br>` : "") + "제출하면 고칠 수 없어요.", "제출하기", "더 볼래요")) return;
+    } else if(!hw.test && !await ask(r2 ? "마지막으로 제출할까요?" : "제출할까요?", r2 ? "이번이 마지막 기회예요." : "틀린 문제가 있으면 한 번 더 풀 수 있어요.", "제출하기", "더 볼래요")) return;
+    submitting = true;
     await flush();
     const att = curAtt(hw), patch = {}; let wrong = 0;
     hw.problems.forEach((p,i) => { if(!editable(hw,i)) return; const ok = has(p.ans) ? checkAns(stOf(hw,i)["a"+att], p.ans, p.kind, p.simp, p.form) : null; patch[`st.${i}.ok${att}`] = ok; if(ok===false) wrong++; });
-    if(att===1 && wrong>0){ patch.status = "round2"; patch.round = 2; }
+    if(att===1 && wrong>0 && !hw.test){ patch.status = "round2"; patch.round = 2; }
     else { patch.status = "submitted"; patch.submittedAt = Date.now(); }
-    try{ await DB.updateHW(id, patch); }catch(e){ toast("제출 실패: 인터넷을 확인해 주세요"); return; }
+    try{ await DB.updateHW(id, patch); }catch(e){ submitting = false; toast("제출 실패: 인터넷을 확인해 주세요"); return; }
+    if(hw.test){
+      confetti();
+      await tell(auto===true ? "시간이 끝났어요! ⏰" : "시험 끝! 🎉", "수고했어요! 쓴 답은 다 제출됐어요.<br>끝낸 시험에서 결과를 볼 수 있어요.");
+      await plannerNudge();
+      go(studentHome); return;
+    }
+    submitting = false;
     if(patch.status==="round2"){
       await tell("한 번 더 풀어 봐요! 💪", `틀린 문제가 <b>${wrong}개</b> 있어요.<br>빨간 느낌표(!) 문제를 다시 풀어요. 이번이 마지막 기회예요.`, "다시 풀기");
       cur = -1; const first = hw.problems.findIndex((p,i) => editable(hw,i)); if(first>=0) openProb(first);
     } else {
       confetti();
       await tell("제출 완료! 🎉", "수고했어요! 선생님이 채점하면 끝낸 숙제에서 볼 수 있어요.");
+      await plannerNudge();
       go(studentHome);
     }
   }
@@ -1489,7 +2252,8 @@ function readAns(p){
 
 // ───────── 자동 숙제 ─────────
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-const nextNum = list => { const nums = list.map(h => +(/(\d+)\s*$/.exec(h.title)||[])[1]).filter(Boolean); return (nums.length ? Math.max(...nums) : 0) + 1; };
+const hwKind = h => h.subj==="eng" ? "eng" : h.test ? "test" : "math";
+const nextNum = (list, kind="math") => { const nums = list.filter(h => hwKind(h)===kind).map(h => +(/(\d+)\s*$/.exec(h.title)||[])[1]).filter(Boolean); return (nums.length ? Math.max(...nums) : 0) + 1; };
 let autoTried = "";
 async function ensureAuto(list, force=false){
   const d = new Date(), key = dayKey(d);
@@ -1497,9 +2261,32 @@ async function ensureAuto(list, force=false){
   let c; try{ c = await DB.getConfig(); }catch(e){ return; }
   if(!c || !c.on || !(c.stages||[]).length || !(c.days||[]).includes(d.getDay())) return;
   const id = "auto-"+key; if(list.some(h => h.id===id)) return;
-  const ok = c.stages.filter(id => STAGE[id]); if(!ok.length) return; const sid = ok[list.filter(h => h.auto).length % ok.length];
+  const ok = c.stages.filter(id => STAGE[id]); if(!ok.length) return; const sid = ok[list.filter(h => h.auto && hwKind(h)==="math").length % ok.length];
   try{ await DB.createHWId(id, {title:`${STUDENT} 수학과제${nextNum(list)}`, problems:makeProblems(sid, c.count||10), createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", auto:true, stage:sid}); }catch(e){}
 }
+// 영어 자동 과제: 정한 요일에 (단원 + 공부 방법) 순서대로 하나씩
+let autoTriedE = "";
+async function ensureAutoEng(list, force=false){
+  const d = new Date(), key = dayKey(d);
+  if(autoTriedE===key && !force) return; autoTriedE = key;
+  let c; try{ c = await DB.getConfig(); }catch(e){ return; }
+  if(!c || !c.eOn || !(c.eSeq||[]).length || !(c.eDays||[]).includes(d.getDay())) return;
+  const id = "auto-e-"+key; if(list.some(h => h.id===id)) return;
+  const seq = c.eSeq.filter(x => engUnit(x.u)); if(!seq.length) return;
+  const x = seq[list.filter(h => h.auto && hwKind(h)==="eng").length % seq.length];
+  try{ await DB.createHWId(id, engHWDoc(`${STUDENT} 영어과제${nextNum(list,"eng")}`, x.u, x.a, true)); }catch(e){}
+}
+// 오늘 스터디플래너 사진을 올렸는지
+const plannerToday = ps => ps.some(p => p.type==="planner" && dayKey(new Date(p.at))===dayKey(new Date()));
+async function plannerNudge(){
+  let ps = [];
+  try{ ps = await new Promise(res => { let u = null, got = false; u = DB.watchPhotos(list => { if(got) return; got = true; res(list); setTimeout(() => u && u(), 0); }, 10); setTimeout(() => { if(!got){ got = true; res(null); } }, 4000); }); }catch(e){ ps = null; }
+  if(!ps || plannerToday(ps)) return;
+  await tell("📒 하나 더!", "오늘 <b>스터디플래너 사진</b>을 아직 안 올렸어요.<br>숙제방 아래 <b>📸 사진 제출 → 스터디플래너</b>로 꼭 올려요!", "알겠어요");
+}
+const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
+const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name} · ${engActName(a)}` : ""; };
+const engHWScore = h => { const r = h.st && h.st.r; return r ? (r.total ? `${r.score}/${r.total}` : "다 봤어요") : ""; };
 
 // ───────── 하루 사용 시간 ─────────
 // 선생님이 정한 시간(분)만큼만 문제를 풀 수 있어요. 쓴 시간은 수아 기기에 날짜별로 저장돼요.
@@ -1689,10 +2476,13 @@ async function parentHome(){
     }
   }
   app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 학습 리포트`, "어머님")}<div id="rep"></div>
+    <div class="card" id="engc"></div>
     <div class="card" id="ph"><h2>📸 스터디플래너·숙제 사진</h2><div class="hwlist" data-list></div></div></div>`;
   bindOut();
   unsubs.push(photoList($("#ph"), "parent"));
+  unsubs.push(engReportCard($("#engc"), "parent"));
   unsubs.push(DB.watchHWList(list => {
+    list = list.filter(h => hwKind(h)!=="eng");
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
     let tot = 0, fin = 0, first = 0; const byStage = {};
     done.forEach(h => h.problems.forEach((p,i) => {
@@ -1723,7 +2513,7 @@ async function parentHome(){
         }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`}
       </div></div>`;
   }));
-  app.onclick = e => { const b = e.target.closest(".hw"); if(b) go(studentResult, b.dataset.id, true); };
+  app.onclick = e => { const b = e.target.closest(".hw[data-id]"); if(b) go(studentResult, b.dataset.id, true); };
 }
 
 // ───────── 선생님: 숙제 목록 ─────────
@@ -1741,6 +2531,7 @@ function teacherHome(){
       <button class="big blue" id="asave">자동 숙제 저장</button>
     </div>
     <div class="card" id="ph"><h2>📸 사진 제출 <span class="muted" data-cnt style="font-size:15px"></span></h2><div class="hwlist" data-list></div></div>
+    <div class="card" id="engc"></div>
     <div class="card" id="pin"><h2>🔒 어머님 보기 비밀번호</h2>
       <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 어머님 화면에 못 들어가게 숫자 4자리를 정해요. 어머님께만 알려 드리세요.</div>
       <div class="row"><input class="inp" id="pinv" inputmode="numeric" maxlength="4" placeholder="예) 1234" style="max-width:140px"><button class="btn" id="pins">저장</button><span class="muted" id="pinst"></span></div>
@@ -1749,10 +2540,73 @@ function teacherHome(){
       <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 하루에 문제를 풀 수 있는 시간이에요. 시간이 끝나면 화면이 잠기고, 쓴 답과 풀이는 저장돼요.</div>
       <div class="row">${[0,20,30,40,60].map(n => `<button class="btn" data-tl="${n}">${n ? n+"분" : "제한 없음"}</button>`).join("")}</div>
     </div>
-    <button class="big" id="new">+ 직접 숙제 내기</button>
-    <div class="card" style="margin-top:14px"><h2>낸 숙제</h2><div class="hwlist" id="list"></div></div></div>`;
+    <div class="card" id="eauto"><h2>🤖 영어 자동 과제</h2>
+      <label class="row" style="font-size:17px;font-weight:700"><input type="checkbox" id="eon" style="width:22px;height:22px"> 자동으로 영어 과제 내기</label>
+      <div class="muted" style="margin:6px 0 4px">넣은 순서대로 돌아가며, 고른 요일에 하루 한 과제씩 나가요.</div>
+      <div class="ugrp"><div class="muted">단원 + 공부 방법</div><div class="row"><select class="inp" id="eu" style="flex:1;min-width:140px"></select><select class="inp" id="ea" style="flex:1;min-width:140px"></select></div><button class="btn" id="eadd" style="margin-top:8px">+ 넣기</button></div>
+      <div class="ugrp"><div class="muted">돌아가는 순서</div><div id="eseq"></div></div>
+      <div class="ugrp"><div class="muted">요일</div><div class="row">${[1,2,3,4,5,6,0].map(d => `<button class="btn" data-ed="${d}">${days[d]}</button>`).join("")}</div></div>
+      <div class="muted" id="enext" style="margin:8px 0"></div>
+      <button class="big blue" id="esave">영어 자동 과제 저장</button>
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button></div>
+    <div class="card" style="margin-top:14px"><h2>낸 숙제 · 과제 · 시험</h2><div class="hwlist" id="list"></div></div></div>`;
   bindOut();
   $("#new").onclick = () => go(teacherCreate);
+  $("#newt").onclick = () => go(teacherCreate, "test");
+  const unitOpts = sel => ENG.map(u => `<option value="${u.id}" ${u.id===sel?"selected":""}>${u.icon} ${esc(u.name)}</option>`).join("") + `<option value="phonics" ${sel==="phonics"?"selected":""}>🔠 파닉스</option>`;
+  const actOpts = (u, sel) => (u==="phonics" ? PH_ACTS : ENG_ACTS).map(a => `<option value="${a.id}" ${a.id===sel?"selected":""}>${a.icon} ${esc(a.name)}</option>`).join("");
+  $("#newe").onclick = () => {
+    const m = modal(`<h3>🔤 영어 과제 내기</h3><div class="muted">제목</div><input class="inp" id="mt" value="${esc(`${STUDENT} 영어과제${nextNum(curList,"eng")}`)}">
+      <div class="muted" style="margin-top:8px">단원</div><select class="inp" id="mu">${unitOpts("animal")}</select>
+      <div class="muted" style="margin-top:8px">공부 방법</div><select class="inp" id="ma">${actOpts("animal","mean")}</select>
+      <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
+    $("#mu", m).onchange = () => $("#ma", m).innerHTML = actOpts($("#mu", m).value);
+    m.onclick = async ev => {
+      if(ev.target.closest("[data-x]")) return m.remove();
+      if(!ev.target.closest("[data-ok]")) return;
+      const t = $("#mt", m).value.trim(); if(!t) return toast("제목을 써 주세요");
+      try{ await DB.createHW(engHWDoc(t, $("#mu", m).value, $("#ma", m).value)); m.remove(); toast("영어 과제를 냈어요!"); }catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+    };
+  };
+  // 영어 자동 과제
+  let ecfg = {eOn:false, eSeq:[], eDays:[1,2,3,4,5]};
+  $("#eu").innerHTML = unitOpts("animal"); $("#ea").innerHTML = actOpts("animal", "learn");
+  $("#eu").onchange = () => $("#ea").innerHTML = actOpts($("#eu").value);
+  const paintE = () => {
+    $("#eon").checked = !!ecfg.eOn;
+    ecfg.eSeq = (ecfg.eSeq||[]).filter(x => engUnit(x.u));
+    $("#eseq").innerHTML = ecfg.eSeq.length ? ecfg.eSeq.map((x,k) => `<div class="row" style="margin:4px 0;align-items:center"><b style="min-width:24px">${k+1}.</b><span style="flex:1">${engPairName(x.u, x.a)}</span><button class="btn" data-eup="${k}" ${k?"":"disabled"}>▲</button><button class="btn" data-erm="${k}">✕</button></div>`).join("") : `<div class="muted">아직 없어요. 위에서 골라 넣어 주세요.</div>`;
+    document.querySelectorAll("[data-ed]").forEach(b => b.classList.toggle("on", ecfg.eDays.includes(+b.dataset.ed)));
+    let t = "";
+    if(!ecfg.eOn) t = "지금은 꺼져 있어요.";
+    else if(!ecfg.eSeq.length) t = "하나 이상 넣어 주세요.";
+    else if(!ecfg.eDays.length) t = "요일을 하나 이상 골라 주세요.";
+    else {
+      let d = new Date(); const todayDone = curList.some(h => h.id==="auto-e-"+dayKey(d));
+      if(todayDone || !ecfg.eDays.includes(d.getDay())){ for(let k=0;k<7;k++){ d = new Date(d.getTime()+864e5); if(ecfg.eDays.includes(d.getDay())) break; } }
+      const x = ecfg.eSeq[curList.filter(h => h.auto && hwKind(h)==="eng").length % ecfg.eSeq.length];
+      t = `다음 과제: ${fmtD(d.getTime())} · ${engPairName(x.u, x.a)}`;
+    }
+    $("#enext").textContent = t;
+  };
+  DB.getConfig().then(c => { if(c) ecfg = {...ecfg, eOn:!!c.eOn, eSeq:c.eSeq||[], eDays:c.eDays||[1,2,3,4,5]}; paintE(); }).catch(paintE);
+  $("#eon").onchange = () => { ecfg.eOn = $("#eon").checked; paintE(); };
+  $("#eauto").onclick = e => {
+    const b = e.target.closest("button"); if(!b) return;
+    if(b.id==="eadd"){ const x = {u:$("#eu").value, a:$("#ea").value}; if(ecfg.eSeq.some(y => y.u===x.u && y.a===x.a)) return toast("이미 들어 있어요"); ecfg.eSeq.push(x); toast("넣었어요. 저장을 눌러야 적용돼요"); }
+    else if(b.dataset.erm) ecfg.eSeq.splice(+b.dataset.erm, 1);
+    else if(b.dataset.eup){ const k = +b.dataset.eup; [ecfg.eSeq[k-1], ecfg.eSeq[k]] = [ecfg.eSeq[k], ecfg.eSeq[k-1]]; }
+    else if(b.dataset.ed){ const d = +b.dataset.ed, k = ecfg.eDays.indexOf(d); k>=0 ? ecfg.eDays.splice(k,1) : ecfg.eDays.push(d); }
+    else if(b.id==="esave"){
+      ecfg.eOn = $("#eon").checked;
+      DB.getConfig().then(c => DB.setConfig({...(c||{on:false, stages:[], count:10, days:[1,2,3,4,5]}), eOn:ecfg.eOn, eSeq:ecfg.eSeq, eDays:ecfg.eDays}))
+        .then(() => { cfg.eOn = ecfg.eOn; cfg.eSeq = ecfg.eSeq; cfg.eDays = ecfg.eDays; toast("영어 자동 과제를 저장했어요"); ensureAutoEng(curList, true); paintE(); })
+        .catch(() => toast("저장 실패: 인터넷을 확인해 주세요"));
+      return;
+    }
+    paintE();
+  };
   let cfg = {on:false, stages:[], count:10, days:[1,2,3,4,5]}, curList = [];
   const pickAuto = stagePicker($("#apick"), "c41_1_1");
   const paint = () => {
@@ -1774,6 +2628,7 @@ function teacherHome(){
     $("#anext").textContent = t;
   };
   unsubs.push(photoList($("#ph"), "teacher"));
+  unsubs.push(engReportCard($("#engc")));
   DB.getConfig().then(c => { $("#pinst").textContent = c && c.ppin ? "비밀번호가 정해져 있어요" : "아직 없어요"; }).catch(() => {});
   $("#pins").onclick = async () => {
     const v = $("#pinv").value.trim(); if(!/^\d{4}$/.test(v)) return toast("숫자 4자리로 써 주세요");
@@ -1805,25 +2660,43 @@ function teacherHome(){
   };
   $("#aon").onchange = () => { cfg.on = $("#aon").checked; paint(); };
   unsubs.push(DB.watchHWList(list => {
-    curList = list; paint();
+    curList = list; paint(); paintE();
     $("#list").innerHTML = list.length ? list.map(h => {
       const [lab,cls] = statusOf(h), n = h.problems.length;
+      if(hwKind(h)==="eng"){ const done = ["submitted","graded"].includes(h.status);
+        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : "안 함"}</span></button>`; }
       let sc = "";
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }).join("") : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
-  app.onclick = e => { const b = e.target.closest(".hw"); if(b) go(teacherGrade, b.dataset.id); };
+  app.onclick = e => {
+    const b = e.target.closest(".hw[data-id]"); if(!b) return;
+    if(b.dataset.k!=="eng") return go(teacherGrade, b.dataset.id);
+    const h = curList.find(x => x.id===b.dataset.id); if(!h) return;
+    const r = h.st && h.st.r;
+    const m = modal(`<h3>🔤 ${esc(h.title)}</h3><div style="font-size:17px">${engPairName(h.unit, h.act)}</div>
+      <div class="muted" style="margin:6px 0">낸 날 ${fmtFull(h.createdAt)}${h.submittedAt ? `<br>제출 ${fmtFull(h.submittedAt)}` : ""}</div>
+      ${r ? `<div style="font-size:18px">${r.total ? `점수 <b>${r.score}/${r.total}</b>` : "끝까지 다 봤어요"} · ${fmtSec(r.dur||0)}</div>${(r.wrong||[]).length ? `<div class="muted">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : ""}` : `<div class="muted">아직 안 했어요.</div>`}
+      <div class="mbtns"><button class="big gray" data-del style="color:var(--bad)">과제 지우기</button><button class="big" data-x>닫기</button></div>`);
+    m.onclick = async ev => {
+      if(ev.target.closest("[data-x]")) return m.remove();
+      if(ev.target.closest("[data-del]")){ m.remove(); if(await ask("이 과제를 지울까요?", "지우면 되돌릴 수 없어요.", "지우기", "취소")){ try{ await DB.deleteHW(h.id); toast("지웠어요"); }catch(e){ toast("지우기 실패"); } } }
+    };
+  };
 }
 
 // ───────── 선생님: 숙제 만들기 ─────────
-function teacherCreate(){
+function teacherCreate(mode){
+  const T = mode==="test";
   app.onclick = null;
   app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div>
     <div class="card" id="memoCard" style="display:none;background:var(--yel)"><h2>📌 지난 숙제 메모 (나만 보기)</h2><div id="lastMemo" style="white-space:pre-wrap"></div></div>
-    <div class="card"><h2>숙제 제목</h2><input class="inp" id="title"></div>
+    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">
+      ${T ? `<div class="row" style="margin-top:10px;align-items:center"><span class="muted">시험 시간</span><select class="inp" id="mins" style="max-width:150px">${[0,10,15,20,30,40,50].map(n => `<option value="${n}" ${n===20?"selected":""}>${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></div>
+      <div class="muted" style="margin-top:6px">시험은 다시 풀기 없이 한 번만 풀고, 제출할 때까지 정답이 안 보여요. 시간이 끝나면 자동으로 제출돼요.</div>` : ""}</div>
     <div class="card"><h2>단원 골라서 문제 넣기</h2>
       <div class="row">
         <div id="stage" style="flex:1 1 100%"></div>
@@ -1837,7 +2710,7 @@ function teacherCreate(){
       <div id="rows"></div>
       <div class="row" style="margin-top:8px"><button class="btn" id="add">+ 직접 문제 추가</button><button class="btn" id="clr">모두 지우기</button></div>
     </div>
-    <button class="big" id="send">숙제 내기</button></div>`;
+    <button class="big" id="send">${T ? "시험 내기" : "숙제 내기"}</button></div>`;
   $("#back").onclick = () => go(teacherHome);
   const pickStage = stagePicker($("#stage"), "c41_1_1");
   const rows = $("#rows");
@@ -1850,7 +2723,7 @@ function teacherCreate(){
   renum();
   const u = DB.watchHWList(async list => {
     if($("#title").dataset.set) return; $("#title").dataset.set = 1;
-    $("#title").value = `${STUDENT} 수학과제${nextNum(list)}`;
+    $("#title").value = T ? `${STUDENT} 수학시험${nextNum(list,"test")}` : `${STUDENT} 수학과제${nextNum(list)}`;
     const g = list.find(h => h.status==="graded");
     if(g){ const t = await DB.getNote(g.id); if(has(t)){ $("#memoCard").style.display = ""; $("#lastMemo").textContent = `[${g.title}] ${t}`; } }
   });
@@ -1860,8 +2733,9 @@ function teacherCreate(){
     const title = $("#title").value.trim();
     if(!title) return toast("제목을 써 주세요");
     if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
-    if(!await ask("숙제를 낼까요?", `${esc(title)} · ${problems.length}문제`, "숙제 내기", "취소")) return;
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:""}); toast("숙제를 냈어요!"); go(teacherHome); }
+    const minutes = T ? +$("#mins").value : 0;
+    if(!await ask(T ? "시험을 낼까요?" : "숙제를 낼까요?", `${esc(title)} · ${problems.length}문제${T ? ` · ${minutes ? minutes+"분" : "시간 제한 없음"}` : ""}`, T ? "시험 내기" : "숙제 내기", "취소")) return;
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {})}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }

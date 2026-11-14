@@ -173,6 +173,12 @@ textarea.inp{min-height:80px;resize:vertical}
 .pq,.it .q,.ansrow .inp,.inp.sm,.gq .qq,.prow .inp,.att b,.fr{font-family:Pretendard,"Noto Sans KR",sans-serif}
 .banner{background:var(--lav);color:var(--blue-d);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 
+/* 플래너 알림 */
+.pnote{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 12px;padding:14px 16px;border:3px dashed var(--main);border-radius:18px;background:#fff0f6;color:var(--main-d);font-family:var(--disp);font-size:20px;cursor:pointer;text-align:left;animation:pnb 1.6s ease-in-out infinite}
+.pnote .pt{flex:1;min-width:0}.pnote .go{font-size:16px;white-space:nowrap;background:var(--main);color:#fff;border-radius:99px;padding:4px 12px}
+@media (max-width:520px){.pnote{font-size:17px}}
+@keyframes pnb{50%{transform:scale(1.015)}}
+.card.glow{box-shadow:0 0 0 4px var(--main),0 8px 26px #ff7eb655;transition:box-shadow .3s}
 /* 영어공부 */
 .stabs{display:flex;gap:8px;margin:0 0 14px}
 .stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
@@ -265,6 +271,7 @@ async function makeFirebase(){
     updateHW:(id,p) => F.updateDoc(F.doc(fs,"hw",id), p),
     deleteHW:id => F.deleteDoc(F.doc(fs,"hw",id)),
     saveRec:(k,o) => F.setDoc(F.doc(fs,"rec",k), o),
+    delRec:k => F.deleteDoc(F.doc(fs,"rec",k)),
     async loadRec(k){ const d = await F.getDoc(F.doc(fs,"rec",k)); return d.exists() ? d.data() : null; },
     watchMsgs(id, cb){ return F.onSnapshot(F.query(F.collection(fs,"hw",id,"msgs"), F.orderBy("at")), s => cb(s.docs.map(d => d.data()))); },
     addMsg:(id,m) => F.addDoc(F.collection(fs,"hw",id,"msgs"), m),
@@ -309,6 +316,7 @@ function makeLocal(){
     async updateHW(id, p){ for(const [k,v] of Object.entries(p)) setPath(D.hw[id], k, v); save(); },
     async deleteHW(id){ delete D.hw[id]; delete D.msgs[id]; save(); },
     async saveRec(k, o){ D.rec[k] = o; save(true); },
+    async delRec(k){ delete D.rec[k]; save(true); },
     async loadRec(k){ return D.rec[k] ? clone(D.rec[k]) : null; },
     watchMsgs(id, cb){ return sub(() => cb(clone(D.msgs[id] || []))); },
     async addMsg(id, m){ (D.msgs[id] = D.msgs[id] || []).push(m); save(); },
@@ -1271,6 +1279,7 @@ function studentHome(){
   const T = (k, lab) => `<button class="stab ${tab===k?"on":""}" data-tab="${k}">${lab}<span class="nb hide" data-nb="${k}"></span></button>`;
   app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 공부방`, "")}
     <div class="banner hide" id="tleft"></div>
+    <button class="pnote hide" id="pnote"><span class="pt">📒 오늘 <b>스터디플래너 사진</b> 꼭 올리기!</span><span class="go">올리기 ›</span></button>
     <div class="stabs">${T("math", "📐 수학숙제")}${T("eng", "🔤 영어공부")}${T("test", "📝 시험")}</div>
     <div id="tab-eng" class="${tab==="eng"?"":"hide"}">${engHomeHTML()}</div>
     <div id="tab-test" class="${tab==="test"?"":"hide"}">${testHomeHTML()}</div>
@@ -1284,6 +1293,15 @@ function studentHome(){
     </div></div></div>`;
   photoUpload($("#ph")); unsubs.push(photoList($("#ph"), "student"));
   bindOut();
+  unsubs.push(DB.watchPhotos(ps => { const n = $("#pnote"); if(n) n.classList.toggle("hide", plannerToday(ps)); }, 10));
+  $("#pnote").onclick = e => {
+    e.stopPropagation();
+    try{ localStorage.setItem("sua-tab", "math"); }catch(er){}
+    document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x.dataset.tab==="math"));
+    ["math","eng","test"].forEach(k => $("#tab-"+k).classList.toggle("hide", k!=="math"));
+    $("#ph").scrollIntoView({behavior:"smooth", block:"center"});
+    $("#ph").classList.add("glow"); setTimeout(() => $("#ph") && $("#ph").classList.remove("glow"), 2400);
+  };
   const isDone = h => ["submitted","graded"].includes(h.status);
   unsubs.push(DB.watchHWList(list => {
     ensureAuto(list); ensureAutoEng(list);
@@ -1425,7 +1443,8 @@ function engRecRow(r, who="student"){
     : `<div class="hw" style="cursor:default;display:block"><div class="ti">📝 영어 실력 알아보기 <span class="muted" style="font-size:14px">${fmtFull(r.at)} · ${fmtSec(r.dur||0)} · ${r.score}/${r.total} 맞힘</span></div>${etestResultHTML(r)}</div>`;
   const sc = r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
   const wrong = (r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "";
-  return `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}</div>`;
+  const vs = who!=="student" && (r.voices||[]).length ? voiceListHTML(r.voices, "🎤 따라 읽기 녹음") : "";
+  return `<div class="hw" style="cursor:default;${vs ? "flex-wrap:wrap" : ""}"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}${vs ? `<div style="flex-basis:100%">${vs}</div>` : ""}</div>`;
 }
 function bindEngHome(limitRef){
   unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.filter(r => !r.hw).slice(0,10).map(r => engRecRow(r)).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
@@ -1451,12 +1470,12 @@ function engPlay(unitId, act, only, hwId){
   $("#eback").onclick = async () => { if(await ask("그만할까요?", "지금 한 건 저장되지 않아요.", "그만하기", "계속하기")) go(studentHome); };
   const box = $("#ebox"), prog = $("#eprog");
   const words = u.words ? u.words.map(([w,k,e]) => ({w,k,e})) : [];
-  let qs = [], i = 0, score = 0, wrong = [];
+  let qs = [], i = 0, score = 0, wrong = []; const vlog = [];
   const spk = (t, slow) => `<button class="btn spk" data-say="${esc(t)}" ${slow?'data-slow="1"':""}>${slow ? "🐢 천천히" : "🔊 듣기"}</button>`;
   box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
 
   const finish = async (total) => {
-    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {})};
+    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {}), ...(vlog.length ? {voices:vlog} : {})};
     try{
       await DB.addEng(rec);
       if(hwId) await DB.updateHW(hwId, {"st.r": {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at}, status:"submitted", submittedAt:Date.now()});
@@ -1473,7 +1492,7 @@ function engPlay(unitId, act, only, hwId){
         ${rec.wrong.length && words.length ? `<button class="big" id="eagain">틀린 것만 다시</button>` : ""}
         <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">${hwId ? "목록으로" : "다른 공부 하기"}</button></div></div>`;
     prog.textContent = "";
-    $("#ehome").onclick = () => go(studentHome);
+    $("#ehome").onclick = async () => { if(hwId) await plannerNudge(); go(studentHome); };
     $("#eredo").onclick = () => go(engPlay, unitId, act);
     if($("#eagain")) $("#eagain").onclick = () => go(engPlay, unitId, act, rec.wrong);
   };
@@ -1585,17 +1604,19 @@ function engPlay(unitId, act, only, hwId){
         // 맞히면 따라 읽기
         box.innerHTML = `<div class="ecard"><div class="eemo">🎉</div><div class="eword" style="font-size:30px">${esc(q.s)}</div><div class="emean">${esc(q.k)}</div>
           <div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="muted" style="margin-top:8px">듣고 큰 소리로 따라 읽어 봐요!</div><div id="emic" class="muted"></div></div>
-          <div class="row" style="justify-content:center;margin-top:12px">${SR ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx">${i<qs.length-1 ? "따라 읽었어요 · 다음 ▶" : "따라 읽었어요 · 끝!"}</button></div>`;
+          <div class="row" style="justify-content:center;margin-top:12px">${(SR || (navigator.mediaDevices && window.MediaRecorder)) ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx">${i<qs.length-1 ? "따라 읽었어요 · 다음 ▶" : "따라 읽었어요 · 끝!"}</button></div>`;
         say(q.s);
         $("#enx").onclick = () => { i++; i < qs.length ? show() : finish(qs.length); };
-        if(SR) $("#erec2").onclick = () => {
-          const r = new SR(); r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 3;
-          const norm = s => s.toLowerCase().replace(/[^a-z' ]/g,"").trim();
-          $("#emic").textContent = "듣고 있어요… 말해 봐요 🎤";
-          r.onresult = ev => { const alts = [...ev.results[0]].map(a => norm(a.transcript)); const good = alts.some(a => a===norm(q.s));
-            $("#emic").innerHTML = good ? `<b style="color:var(--ok)">완벽해요! 👏</b>` : `이렇게 들렸어요: "${esc(ev.results[0][0].transcript)}"<br>한 번 더 해 볼까?`; };
-          r.onerror = () => { $("#emic").textContent = "마이크를 쓸 수 없어요. 그냥 소리 내서 읽어 봐요!"; };
-          try{ r.start(); }catch(e){}
+        if($("#erec2")) $("#erec2").onclick = async () => {
+          const btn = $("#erec2"); if(btn.dataset.busy) return; btn.dataset.busy = 1;
+          btn.textContent = "⏹ 다 읽었어요"; $("#emic").textContent = "듣고 있어요… 읽어 봐요 🎤";
+          const r = recordSpeech(9000); btn.onclick = () => r.stop();
+          const {blob, heard} = await r.done;
+          const ok = judgeSpeech({t:"read", s:q.s}, heard);
+          const vid = await saveVoice({ctx:"practice", q:q.s, heard:heard||"", ok}, blob);
+          if(vid || heard!=null) vlog.push({voice:vid, q:q.s, a:heard||"", ok});
+          $("#emic").innerHTML = !blob && heard==null ? "마이크를 쓸 수 없어요. 그냥 소리 내서 읽어 봐요!" : ok ? `<b style="color:var(--ok)">잘 읽었어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
+          btn.remove();
         };
       };
     };
@@ -1879,8 +1900,7 @@ function engTest(){
         }
         const ok = judgeSpeech(it, heard);
         const vid = await saveVoice({ctx:"test", q:it.s, heard:heard||"", ok}, blob);
-        if(ok===false && tries < 2) return again(`이렇게 들렸어요: "${esc(heard||"")}"<br>한 번만 더 해 볼까?`, "🎤 한 번 더");
-        $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 말했어요! 👏</b>` : ok===null ? "녹음했어요 ✔" : "괜찮아요! 다음으로 가요";
+        $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 말했어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
         if(lock()) answer(ok, heard || "", {voice:vid});
       };
       $("#erecb").onclick = talk;
@@ -1924,18 +1944,27 @@ async function copyText(t){
   try{ await navigator.clipboard.writeText(t); toast("결과를 복사했어요. Claude한테 붙여 넣으면 돼요"); }
   catch(e){ const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("결과를 복사했어요"); }catch(er){ toast("복사가 안 돼요. 화면을 캡처해 주세요"); } ta.remove(); }
 }
-function etestResultHTML(r){
+// 60일 지난 녹음은 선생님 화면을 열 때 지워요 (저장 공간 아끼기)
+async function cleanOldVoices(list){
+  const cut = Date.now() - 60*864e5; let done; try{ done = JSON.parse(localStorage.getItem("sua-voice-clean") || "[]"); }catch(e){ done = []; }
+  const ids = [];
+  list.filter(r => r.at < cut).forEach(r => { (r.voices||[]).forEach(v => v.voice && ids.push(v.voice)); ((r.items||{}).spk||[]).forEach(v => v.voice && ids.push(v.voice)); });
+  const todo = ids.filter(id => !done.includes(id)).slice(0, 30);
+  for(const id of todo){ try{ await DB.delRec(id); done.push(id); }catch(e){} }
+  if(todo.length) try{ localStorage.setItem("sua-voice-clean", JSON.stringify(done.slice(-2000))); }catch(e){}
+}
+const voiceListHTML = (arr, title="🎤 말하기 녹음") => arr && arr.length ? `<div style="margin-top:10px"><div class="ti" style="font-size:16px">${title}</div>${arr.map(x => `<div class="row" style="align-items:center;margin:4px 0;gap:8px;flex-wrap:nowrap">${x.voice ? `<button class="btn" data-voice="${esc(x.voice)}">▶ 듣기</button>` : `<span class="muted">녹음 없음</span>`}<span style="flex:1"><b>${esc(x.q)}</b><br><span class="muted">앱이 들은 말: ${esc(x.a || "-")} · ${x.ok===null || x.ok===undefined ? "판정 없음" : x.ok ? "잘 말했어요" : "다시 연습"}</span></span></div>`).join("")}</div>` : "";
+function etestResultHTML(r, who="teacher"){
   const L = r.levels || {};
   const tips = etestAdvice(L);
-  const sp = (r.items && r.items.spk) || [];
-  const spHTML = sp.length ? `<div style="margin-top:10px"><div class="ti" style="font-size:16px">🎤 말하기 녹음</div>${sp.map(x => `<div class="row" style="align-items:center;margin:4px 0;gap:8px">${x.voice ? `<button class="btn" data-voice="${esc(x.voice)}">▶ 듣기</button>` : `<span class="muted">녹음 없음</span>`}<span style="flex:1"><b>${esc(x.q)}</b><br><span class="muted">앱이 들은 말: ${esc(x.a || "-")} · ${x.ok===null ? "판정 없음" : x.ok ? "잘 말했어요" : "다시 연습"}</span></span></div>`).join("")}</div>` : "";
+  const spHTML = voiceListHTML((r.items && r.items.spk) || []);
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0">${ETEST.map(s => `<div class="card" style="margin:0;padding:10px;text-align:center"><div class="muted">${s.icon} ${s.name}</div><div style="font-size:19px;font-weight:800;color:var(--main-d)">${etestLabel(L[s.id] ?? 2)}</div></div>`).join("")}</div>
     <div style="font-size:15px;line-height:1.7">${tips.map(t => `· ${esc(t)}`).join("<br>")}</div>${spHTML}
-    <button class="btn" data-ecopy="${r.at}" style="margin-top:10px">📋 결과 복사</button>`;
+    ${who==="teacher" ? `<button class="btn" data-ecopy="${r.at}" style="margin-top:10px">📋 결과 복사</button>` : ""}`;
 }
 
 // 선생님·어머님 화면: 영어 기록 카드
-function engReportCard(el){
+function engReportCard(el, who="teacher"){
   el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="etest"></div><div id="estat"></div><div class="hwlist" id="elist"></div>`;
   let lastList = [];
   el.addEventListener("click", e => {
@@ -1944,8 +1973,9 @@ function engReportCard(el){
   });
   return DB.watchEng(list => {
     lastList = list;
+    if(who==="teacher") cleanOldVoices(list);
     const lt = list.find(r => r.act==="test");
-    $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
+    $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt, who)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
     list = list.filter(r => r.act!=="test");
     const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total && r.act!=="test");
     const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
@@ -2136,6 +2166,7 @@ function solve(id){
     if(hw.test){
       confetti();
       await tell(auto===true ? "시간이 끝났어요! ⏰" : "시험 끝! 🎉", "수고했어요! 쓴 답은 다 제출됐어요.<br>끝낸 시험에서 결과를 볼 수 있어요.");
+      await plannerNudge();
       go(studentHome); return;
     }
     submitting = false;
@@ -2145,6 +2176,7 @@ function solve(id){
     } else {
       confetti();
       await tell("제출 완료! 🎉", "수고했어요! 선생님이 채점하면 끝낸 숙제에서 볼 수 있어요.");
+      await plannerNudge();
       go(studentHome);
     }
   }
@@ -2243,6 +2275,14 @@ async function ensureAutoEng(list, force=false){
   const seq = c.eSeq.filter(x => engUnit(x.u)); if(!seq.length) return;
   const x = seq[list.filter(h => h.auto && hwKind(h)==="eng").length % seq.length];
   try{ await DB.createHWId(id, engHWDoc(`${STUDENT} 영어과제${nextNum(list,"eng")}`, x.u, x.a, true)); }catch(e){}
+}
+// 오늘 스터디플래너 사진을 올렸는지
+const plannerToday = ps => ps.some(p => p.type==="planner" && dayKey(new Date(p.at))===dayKey(new Date()));
+async function plannerNudge(){
+  let ps = [];
+  try{ ps = await new Promise(res => { let u = null, got = false; u = DB.watchPhotos(list => { if(got) return; got = true; res(list); setTimeout(() => u && u(), 0); }, 10); setTimeout(() => { if(!got){ got = true; res(null); } }, 4000); }); }catch(e){ ps = null; }
+  if(!ps || plannerToday(ps)) return;
+  await tell("📒 하나 더!", "오늘 <b>스터디플래너 사진</b>을 아직 안 올렸어요.<br>숙제방 아래 <b>📸 사진 제출 → 스터디플래너</b>로 꼭 올려요!", "알겠어요");
 }
 const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
 const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name} · ${engActName(a)}` : ""; };
@@ -2440,7 +2480,7 @@ async function parentHome(){
     <div class="card" id="ph"><h2>📸 스터디플래너·숙제 사진</h2><div class="hwlist" data-list></div></div></div>`;
   bindOut();
   unsubs.push(photoList($("#ph"), "parent"));
-  unsubs.push(engReportCard($("#engc")));
+  unsubs.push(engReportCard($("#engc"), "parent"));
   unsubs.push(DB.watchHWList(list => {
     list = list.filter(h => hwKind(h)!=="eng");
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
