@@ -1441,7 +1441,7 @@ function engClock(){
 function engHomeHTML(){
   return `<div class="card"><h2>해야 할 영어 과제</h2><div class="hwlist" id="etodo"></div></div>
     <div class="card"><h2>🔤 혼자 더 공부하기</h2><div class="muted" style="margin:-4px 0 10px">단원을 고르면 공부 방법이 나와요</div>
-    ${ENG_GROUPS.map(([g,lab]) => `<details class="egrp" ${g==="week"?"open":""}><summary>${lab}</summary><div class="egrid">${ENG.filter(u => u.g===g).map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${esc(u.name)}</span>${u.desc ? `<span class="edesc">${esc(u.desc)}</span>` : ""}</button>`).join("")}</div></details>`).join("")}
+    ${ENG_GROUPS.filter(([g]) => g!=="week").map(([g,lab]) => `<details class="egrp" ${g==="alpha"?"open":""}><summary>${lab}</summary><div class="egrid">${ENG.filter(u => u.g===g).map(u => `<button class="eunit" data-eu="${u.id}"><span class="eic">${u.icon}</span><span>${esc(u.name)}</span>${u.desc ? `<span class="edesc">${esc(u.desc)}</span>` : ""}</button>`).join("")}</div></details>`).join("")}
     <div class="egrid" style="margin-top:10px">
     <button class="eunit ph" data-eu="phonics"><span class="eic">🔠</span><span>파닉스</span></button></div></div>
     <div class="card"><h2>끝낸 영어 과제</h2><div class="hwlist" id="edone"></div></div>
@@ -2142,7 +2142,7 @@ function etestResultHTML(r, who="teacher"){
 
 // 선생님·어머님 화면: 영어 기록 카드
 function engReportCard(el, who="teacher"){
-  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="etest"></div><div id="estat"></div><div class="hwlist" id="elist"></div>`;
+  el.innerHTML = `<h2>🔤 영어공부 기록</h2><div id="estat"></div><div class="hwlist" id="elist"></div>`;
   let lastList = [];
   el.addEventListener("click", e => {
     const v = e.target.closest("[data-voice]"); if(v){ e.stopPropagation(); playVoice(v.dataset.voice, v); return; }
@@ -2151,8 +2151,6 @@ function engReportCard(el, who="teacher"){
   return DB.watchEng(list => {
     lastList = list;
     if(who==="teacher") cleanOldVoices(list);
-    const lt = list.find(r => r.act==="test");
-    $("#etest", el).innerHTML = lt ? `<div class="card" style="background:var(--lav);margin:0 0 12px"><div class="ti" style="font-size:18px">📝 최근 실력 알아보기 결과 <span class="muted" style="font-size:14px">${fmtFull(lt.at)}</span></div>${etestResultHTML(lt, who)}</div>` : `<div class="muted" style="margin-bottom:8px">아직 실력 알아보기를 안 했어요. 수아 화면 영어공부 탭에서 할 수 있어요.</div>`;
     list = list.filter(r => r.act!=="test");
     const week = Date.now() - 7*864e5, wl = list.filter(r => r.at >= week), q = list.filter(r => r.total && r.act!=="test");
     const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
@@ -2160,6 +2158,21 @@ function engReportCard(el, who="teacher"){
     const often = Object.entries(wc).sort((a,b) => b[1]-a[1]).slice(0, 8);
     $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 ${wl.length}번 공부 · 전체 정답률 ${tot ? Math.round(ok/tot*100) : 0}%${often.length ? `<br>자주 틀린 것: <b>${often.map(([w,n]) => `${esc(w)}(${n})`).join(", ")}</b>` : ""}</div>`;
     $("#elist", el).innerHTML = list.length ? list.filter(r => r.act!=="test").slice(0, 20).map(r => engRecRow(r, "teacher")).join("") : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
+  });
+}
+
+// 테스트 기록: 영어 실력 알아보기 결과만 모아서 (기본은 접혀 있음)
+function testReportCard(el, who="teacher"){
+  el.innerHTML = `<details id="tdet"><summary style="cursor:pointer"><h2 style="display:inline">📝 테스트 기록</h2> <span class="muted" id="tcnt"></span></summary><div id="tlist" style="margin-top:10px"></div></details>`;
+  let lastList = [];
+  el.addEventListener("click", e => {
+    const v = e.target.closest("[data-voice]"); if(v){ e.stopPropagation(); playVoice(v.dataset.voice, v); return; }
+    const c = e.target.closest("[data-ecopy]"); if(c){ e.stopPropagation(); const r = lastList.find(x => String(x.at)===c.dataset.ecopy); if(r) copyText(etestCopyText(r)); }
+  });
+  return DB.watchEng(list => {
+    const ts = list.filter(r => r.act==="test"); lastList = ts;
+    $("#tcnt", el).textContent = ts.length ? `영어 실력 알아보기 ${ts.length}번 · 눌러서 보기` : "아직 없어요";
+    $("#tlist", el).innerHTML = ts.length ? ts.map(r => `<details class="card" style="background:var(--lav);margin:0 0 10px"><summary style="cursor:pointer" class="ti">📝 영어 실력 알아보기 <span class="muted" style="font-size:14px">${fmtFull(r.at)} · ${fmtSec(r.dur||0)}</span></summary>${etestResultHTML(r, who)}</details>`).join("") : `<div class="empty">아직 테스트 기록이 없어요.</div>`;
   });
 }
 
@@ -2713,10 +2726,12 @@ async function parentHome(){
   }
   app.innerHTML = `<div class="page">${topBar(`${esc(STUDENT)} 학습 리포트`, "어머님")}<div id="rep"></div>
     <div class="card" id="engc"></div>
+    <div class="card" id="testc"></div>
     <div class="card" id="ph"><h2>📸 스터디플래너·숙제 사진</h2><div class="hwlist" data-list></div></div></div>`;
   bindOut();
   unsubs.push(photoList($("#ph"), "parent"));
   unsubs.push(engReportCard($("#engc"), "parent"));
+  unsubs.push(testReportCard($("#testc"), "parent"));
   unsubs.push(DB.watchHWList(list => {
     list = list.filter(h => hwKind(h)!=="eng");
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
@@ -2768,6 +2783,7 @@ function teacherHome(){
     </div>
     <div class="card" id="ph"><h2>📸 사진 제출 <span class="muted" data-cnt style="font-size:15px"></span></h2><div class="hwlist" data-list></div></div>
     <div class="card" id="engc"></div>
+    <div class="card" id="testc"></div>
     <div class="card" id="pin"><h2>🔒 어머님 보기 비밀번호</h2>
       <div class="muted" style="margin-bottom:8px">${esc(STUDENT)}가 어머님 화면에 못 들어가게 숫자 4자리를 정해요. 어머님께만 알려 드리세요.</div>
       <div class="row"><input class="inp" id="pinv" inputmode="numeric" maxlength="4" placeholder="예) 1234" style="max-width:140px"><button class="btn" id="pins">저장</button><span class="muted" id="pinst"></span></div>
@@ -2887,6 +2903,7 @@ function teacherHome(){
   };
   unsubs.push(photoList($("#ph"), "teacher"));
   unsubs.push(engReportCard($("#engc")));
+  unsubs.push(testReportCard($("#testc")));
   DB.getConfig().then(c => { $("#pinst").textContent = c && c.ppin ? "비밀번호가 정해져 있어요" : "아직 없어요"; }).catch(() => {});
   $("#pins").onclick = async () => {
     const v = $("#pinv").value.trim(); if(!/^\d{4}$/.test(v)) return toast("숫자 4자리로 써 주세요");
