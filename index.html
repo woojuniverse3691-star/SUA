@@ -1303,12 +1303,13 @@ function studentHome(){
     $("#ph").classList.add("glow"); setTimeout(() => $("#ph") && $("#ph").classList.remove("glow"), 2400);
   };
   const isDone = h => ["submitted","graded"].includes(h.status);
+  let sList = [];
   unsubs.push(DB.watchHWList(list => {
-    ensureAuto(list); ensureAutoEng(list);
+    ensureAuto(list); ensureAutoEng(list); sList = list;
     const card = h => {
       const [lab,cls] = statusOf(h), k = hwKind(h);
       if(k==="eng"){ const sc = isDone(h) ? `<div class="jua" style="font-size:20px">${engHWScore(h)}</div>` : "";
-        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : "새 과제"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 했어요` : "새 과제"}</span></button>`; }
       const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
       const sub = k==="test" ? `${h.problems.length}문제${h.minutes ? ` · ${h.minutes}분` : ""}` : `${h.problems.length}문제`;
       return `<button class="hw" data-id="${h.id}" data-k="${k}"><div class="grow"><div class="ti">${k==="test"?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${sub}</div></div>${s}<span class="chip ${cls}">${k==="test" && !isDone(h) ? (cls==="new" ? "새 시험" : "보는 중") : lab}</span></button>`;
@@ -1333,6 +1334,8 @@ function studentHome(){
     const b = e.target.closest(".hw[data-id]"); if(!b) return;
     const done = !!b.closest("#done,#edone,#tdone");
     if(b.dataset.k==="eng"){
+      const mh = sList.find(x => x.id===b.dataset.id);
+      if(mh && engParts(mh).length > 1){ if(done || !over()) engPartsModal(mh, done); return; }
       if(done){ go(engPlay, b.dataset.u, b.dataset.a); return; }   // 끝낸 과제는 연습으로 다시
       if(!over()) go(engPlay, b.dataset.u, b.dataset.a, null, b.dataset.id);
       return;
@@ -1387,6 +1390,8 @@ const PH_ACTS = [
   {id:"abc", name:"알파벳 소리", icon:"🔊", desc:"글자랑 단어 소리 듣기"},
   {id:"first", name:"첫 글자 맞히기", icon:"🅰️", desc:"듣고 첫 글자 고르기"},
   {id:"vowel", name:"가운데 모음", icon:"🎯", desc:"듣고 a e i o u 고르기"},
+  {id:"speed", name:"빨리 맞히기", icon:"⚡", desc:"60초 동안 듣고 글자 고르기"},
+  {id:"rain", name:"단어 비", icon:"🌧️", desc:"내려오는 단어를 타자로 쳐요"},
 ];
 const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
 const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
@@ -1461,7 +1466,21 @@ function bindEngHome(limitRef){
 }
 
 // ───────── 영어: 공부 화면 ─────────
-function engPlay(unitId, act, only, hwId){
+// 공부 여러 개짜리 과제: 무엇을 할지 고르는 창
+function engPartsModal(h, practice){
+  const ps = engParts(h);
+  const m = modal(`<h3>🔤 ${esc(h.title)}</h3><div class="muted" style="margin-bottom:8px">${practice ? "다시 연습하고 싶은 걸 골라요." : "하나씩 다 하면 과제가 제출돼요!"}</div>
+    ${ps.map((x,k) => { const r = engPartRes(h,k); return `<button class="hw" data-pk="${k}" style="width:100%;margin:6px 0"><div class="grow"><div class="ti">${engPairName(x.u, x.a)}</div></div>${r ? `<div class="jua" style="font-size:18px">${engResText(r)}</div><span class="chip sub">했어요 ✔</span>` : `<span class="chip new">하기 ▶</span>`}</button>`; }).join("")}
+    <div class="mbtns"><button class="big gray" data-x>닫기</button></div>`);
+  m.onclick = ev => {
+    if(ev.target.closest("[data-x]")) return m.remove();
+    const b = ev.target.closest("[data-pk]"); if(!b) return;
+    const k = +b.dataset.pk, x = ps[k]; m.remove();
+    if(practice || engPartRes(h,k)) go(engPlay, x.u, x.a);   // 이미 한 건 연습으로 다시
+    else go(engPlay, x.u, x.a, null, h.id, {k, h});
+  };
+}
+function engPlay(unitId, act, only, hwId, part){
   const u = engUnit(unitId), t0 = Date.now();
   engClock();
   app.onclick = null;
@@ -1475,10 +1494,20 @@ function engPlay(unitId, act, only, hwId){
   box.addEventListener("click", e => { const s = e.target.closest("[data-say]"); if(s) say(s.dataset.say, !!s.dataset.slow); });
 
   const finish = async (total) => {
+    let left = 0;
     const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {}), ...(vlog.length ? {voices:vlog} : {})};
     try{
       await DB.addEng(rec);
-      if(hwId) await DB.updateHW(hwId, {"st.r": {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at}, status:"submitted", submittedAt:Date.now()});
+      const res = {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at};
+      if(hwId && part){
+        const all = engParts(part.h).map((_,k) => k===part.k ? res : engPartRes(part.h, k));
+        left = all.filter(x => !x).length;
+        const up = {["st.p"+part.k]: res};
+        if(!left) Object.assign(up, {"st.r": {score:all.reduce((n,x) => n+x.score, 0), total:all.reduce((n,x) => n+x.total, 0), wrong:[...new Set(all.flatMap(x => x.wrong||[]))], dur:all.reduce((n,x) => n+(x.dur||0), 0), at:rec.at}, status:"submitted", submittedAt:Date.now()});
+        await DB.updateHW(hwId, up);
+        part.h = {...part.h, st:{...(part.h.st||{}), ["p"+part.k]:res}};
+      }
+      else if(hwId) await DB.updateHW(hwId, {"st.r": res, status:"submitted", submittedAt:Date.now()});
     }catch(e){ toast("기록 저장 실패: 인터넷을 확인해 주세요"); }
     if(total && score===total) confetti();
     if(hwId) prog.textContent = "";
@@ -1487,12 +1516,13 @@ function engPlay(unitId, act, only, hwId){
       <div class="jua" style="font-size:30px">${msg}</div>
       ${total ? `<div class="jua" style="font-size:54px;color:var(--main-d)">${score} / ${total}</div>` : ""}
       ${rec.wrong.length ? `<div class="muted" style="font-size:17px">틀린 것: <b>${rec.wrong.map(esc).join(", ")}</b></div>` : ""}
-      ${hwId ? `<div class="chip ok" style="font-size:16px">✔ 과제 제출 완료!</div>` : ""}
+      ${hwId ? (left ? `<div class="chip new" style="font-size:16px">이 과제에서 남은 공부 ${left}개</div>` : `<div class="chip ok" style="font-size:16px">✔ 과제 제출 완료!</div>`) : ""}
       <div class="row" style="justify-content:center;margin-top:10px">
         ${rec.wrong.length && words.length ? `<button class="big" id="eagain">틀린 것만 다시</button>` : ""}
-        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button><button class="big gray" id="ehome">${hwId ? "목록으로" : "다른 공부 하기"}</button></div></div>`;
+        <button class="big ${rec.wrong.length?"gray":""}" id="eredo">처음부터 다시</button>${left ? `<button class="big" id="epnext">다음 공부 하기 ▶</button>` : ""}<button class="big gray" id="ehome">${hwId ? "목록으로" : "다른 공부 하기"}</button></div></div>`;
     prog.textContent = "";
-    $("#ehome").onclick = async () => { if(hwId) await plannerNudge(); go(studentHome); };
+    $("#ehome").onclick = async () => { if(hwId && !left) await plannerNudge(); go(studentHome); };
+    if($("#epnext")) $("#epnext").onclick = () => { const ps = engParts(part.h), nk = ps.findIndex((_,k) => !engPartRes(part.h, k)); if(nk < 0) return go(studentHome); go(engPlay, ps[nk].u, ps[nk].a, null, hwId, {k:nk, h:part.h}); };
     $("#eredo").onclick = () => go(engPlay, unitId, act);
     if($("#eagain")) $("#eagain").onclick = () => go(engPlay, unitId, act, rec.wrong);
   };
@@ -1646,6 +1676,142 @@ function engPlay(unitId, act, only, hwId){
         const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${L}"]`).classList.add("ok");
         feedback(ok, `${w} → ${L}`); nextQ(ok, w);
       });
+    };
+  }
+  else if(act==="speed"){
+    // ⚡ 빨리 맞히기: 60초 동안 소리 듣고 첫 글자 고르기 (시간 재기 게임)
+    const LIM = 60, letters = PHONICS.filter(p => p[0]!=="X");
+    let left = LIM, n = 0, combo = 0, timer = null, on = false, cur = null, best = 0;
+    try{ best = +localStorage.getItem("sua-speed-best") || 0; }catch(e){}
+    const stop = () => { if(timer){ clearInterval(timer); timer = null; } };
+    cleanups.push(stop);
+    const paint = () => { prog.textContent = `⏱ ${left}초 · ⭐ ${score}개`; };
+    const end = () => {
+      stop(); on = false; prog.style.cssText = "";
+      if(score > best){ try{ localStorage.setItem("sua-speed-best", score); }catch(e){} toast(`🎉 새 기록! ${score}개`); }
+      finish(n);
+    };
+    const ask1 = () => {
+      if(!on) return;
+      cur = shuffle(letters.filter(p => !cur || p[0]!==cur[0]))[0];
+      const [L, w, e] = cur, opts = shuffle([L, ...pickN(letters.map(p => p[0]), 3, L)]);
+      box.innerHTML = `<div class="ecard"><div class="eemo">${e}</div><div class="emean">${combo >= 3 ? `🔥 ${combo}개 연속!` : "어떤 글자로 시작할까?"}</div><div class="row" style="justify-content:center">${spk(w)}</div></div>
+        <div class="eopts four">${opts.map(o => `<button class="eopt big2" data-o="${o}">${o} ${o.toLowerCase()}</button>`).join("")}</div>`;
+      say(w);
+      let done = false;
+      box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+        if(done || !on) return; done = true; n++;
+        const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad");
+        if(ok){ score++; combo++; } else { combo = 0; wrong.push(w); box.querySelector(`[data-o="${L}"]`).classList.add("ok"); }
+        paint(); setTimeout(ask1, ok ? 350 : 1000);
+      });
+    };
+    show = () => {
+      prog.textContent = "";
+      box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+        <div style="font-size:64px">⚡</div><div class="jua" style="font-size:28px">빨리 맞히기</div>
+        <div style="font-size:18px;line-height:1.7">${LIM}초 동안 소리를 듣고<br>시작하는 글자를 빨리 골라요!${best ? `<br>내 최고 기록: <b>${best}개</b>` : ""}</div>
+        <button class="big" id="sgo" style="margin-top:10px">시작!</button></div>`;
+      $("#sgo").onclick = () => {
+        on = true; left = LIM; prog.style.cssText = "font-size:22px;font-weight:800;color:var(--main-d)"; paint(); ask1();
+        timer = setInterval(() => { left--; if(left <= 0){ left = 0; paint(); end(); } else paint(); }, 1000);
+      };
+    };
+  }
+  else if(act==="rain"){
+    // 🌧️ 단어 비: 하늘에서 내려오는 짧은 단어를 타자로 쳐서 없애기. 맞히면 위 전광판에 뜻이 떠요.
+    const KO = {cat:"고양이", bag:"가방", hat:"모자", map:"지도", bed:"침대", pen:"펜", red:"빨간색", ten:"열", pig:"돼지", six:"여섯", fish:"물고기", lip:"입술", dog:"개", box:"상자", fox:"여우", sock:"양말", bus:"버스", sun:"해", cup:"컵", duck:"오리"};
+    const TINT = [["#ffe3ef","#ffc2dc"],["#e9e3ff","#cdc3ff"],["#dff6e9","#b3e6c8"],["#fff4cc","#ffe08a"],["#dcefff","#b6d9ff"]];
+    const LIVES = 5, LIM = 90, pool = shuffle(CVC.map(c => ({w:c[0], e:c[2]})));
+    let lives = LIVES, left = LIM, n = 0, on = false, raf = 0, timer = null, drops = [], last = 0, born = 0, nextSpawn = 0, pi = 0, best = 0, sky = null, inp = null, board = null;
+    try{ best = +localStorage.getItem("sua-rain-best") || 0; }catch(e){}
+    const stop = () => { on = false; cancelAnimationFrame(raf); if(timer){ clearInterval(timer); timer = null; } };
+    cleanups.push(stop);
+    const paint = () => { prog.textContent = `${"❤️".repeat(Math.max(lives, 0))}${"🤍".repeat(LIVES - Math.max(lives, 0))} · ⏱ ${left}초 · ⭐ ${score}개`; };
+    const sign = (html, cls) => { board.className = cls || ""; board.innerHTML = html; void board.offsetWidth; board.classList.add("flash"); };
+    const end = () => {
+      if(!on) return; stop(); prog.style.cssText = "";
+      if(score > best){ try{ localStorage.setItem("sua-rain-best", score); }catch(e){} toast(`🎉 새 기록! ${score}개`); }
+      finish(n);
+    };
+    const label = (d, typed) => typed && d.w.startsWith(typed) ? `<b>${esc(typed)}</b>${esc(d.w.slice(typed.length))}` : esc(d.w);
+    const spawn = () => {
+      let d = null; for(let k = 0; k < pool.length && !d; k++){ const c = pool[pi++ % pool.length]; if(!drops.some(x => x.w===c.w)) d = c; }
+      if(!d) return;
+      const [c1, c2] = TINT[Math.floor(Math.random() * TINT.length)];
+      const el = document.createElement("div"); el.className = "rd";
+      el.innerHTML = `<i style="--c:${c1};--s:${c2};animation-delay:-${(Math.random()*2).toFixed(2)}s"><span class="e">${d.e}</span><span class="w">${esc(d.w)}</span></i>`;
+      sky.appendChild(el);
+      el.style.left = (10 + Math.random() * Math.max(0, sky.clientWidth - el.offsetWidth - 20)) + "px";
+      const h = el.offsetHeight; el.style.transform = `translateY(${-h}px)`;
+      drops.push({w:d.w, e:d.e, el, y:-h, h});
+    };
+    const tick = ts => {
+      if(!on) return;
+      if(!last){ last = ts; born = ts; }
+      const dt = Math.min(ts - last, 50) / 1000, age = (ts - born) / 1000; last = ts;
+      if(ts >= nextSpawn){ spawn(); nextSpawn = ts + Math.max(1800, 3600 - age * 20); }
+      const H = sky.clientHeight, speed = 26 + age * 0.45;
+      for(const d of drops.slice()){
+        d.y += speed * dt; d.el.style.transform = `translateY(${d.y}px)`;
+        if(d.y > H - d.h + 6){
+          drops.splice(drops.indexOf(d), 1); d.el.remove(); n++; wrong.push(d.w); lives--; paint();
+          sign(`<span class="x">놓쳤어요</span><span>${d.e}</span><span class="k">${esc(d.w)}</span><span class="m">${esc(KO[d.w] || "")}</span>`, "miss");
+          if(lives <= 0) return end();
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    const onType = () => {
+      if(!on) return;
+      const v = inp.value.trim().toLowerCase();
+      drops.forEach(d => { d.el.classList.toggle("aim", !!v && d.w.startsWith(v)); d.el.querySelector(".w").innerHTML = label(d, v); });
+      const hit = drops.find(d => d.w===v); if(!hit) return;
+      drops.splice(drops.indexOf(hit), 1); hit.el.classList.remove("aim"); hit.el.classList.add("pop"); setTimeout(() => hit.el.remove(), 300);
+      score++; n++; inp.value = ""; say(hit.w); paint();
+      drops.forEach(d => { d.el.classList.remove("aim"); d.el.querySelector(".w").innerHTML = esc(d.w); });
+      sign(`<span>${hit.e}</span><span class="k">${esc(hit.w)}</span><span class="m">${esc(KO[hit.w] || "")}</span>`);
+    };
+    show = () => {
+      prog.textContent = "";
+      box.innerHTML = `<div class="center" style="min-height:0;padding:16px 0">
+        <div style="font-size:64px">🌧️</div><div class="jua" style="font-size:28px">단어 비</div>
+        <div style="font-size:18px;line-height:1.7">하늘에서 단어가 내려와요.<br>땅에 닿기 전에 똑같이 타자로 쳐요!<br>맞히면 위 전광판에 뜻이 나와요.<br>${LIVES}번 놓치면 끝나요.${best ? `<br>내 최고 기록: <b>${best}개</b>` : ""}</div>
+        <button class="big" id="sgo" style="margin-top:10px">시작!</button></div>`;
+      $("#sgo").onclick = () => {
+        box.innerHTML = `<style>
+          #rgame{border-radius:24px;overflow:hidden;border:3px solid #fff;box-shadow:0 6px 0 #f3cfe0,0 12px 26px #ff7eb622}
+          #rboard{display:flex;align-items:center;justify-content:center;gap:12px;min-height:72px;padding:10px 16px;background-color:#342a4d;background-image:radial-gradient(#ffffff1c 1px,transparent 1.3px);background-size:7px 7px;color:#ffe27a;font-size:30px;text-shadow:0 0 12px #ffd54a88;white-space:nowrap}
+          #rboard .k{color:#fff;letter-spacing:2px;text-shadow:0 0 12px #ffffff88}
+          #rboard .m{color:#9cf0cc;text-shadow:0 0 12px #6fe3b788}
+          #rboard .x{font-size:20px;color:#ffb0c2;text-shadow:none}
+          #rboard.miss .k,#rboard.miss .m{color:#ffc9d5;text-shadow:none}
+          #rboard.flash{animation:rflash .45s}
+          #rsky{position:relative;height:min(46vh,400px);overflow:hidden;background:linear-gradient(#bfe3ff 0%,#e3f1ff 55%,#fff1f7 100%)}
+          #rsky .cl{position:absolute;font-size:60px;opacity:.6;filter:saturate(.6)}
+          #rgrass{height:30px;background:linear-gradient(#bdeeb0,#8fd98b);border-top:3px solid #fff;font-size:18px;line-height:20px;letter-spacing:22px;white-space:nowrap;overflow:hidden;padding-left:10px}
+          .rd{position:absolute;top:0;left:0;will-change:transform}
+          .rd i{display:flex;flex-direction:column;align-items:center;padding:8px 18px 9px;border-radius:26px;background:var(--c);border:3px solid #fff;box-shadow:0 6px 0 var(--s),0 12px 18px #0000001a;font-style:normal;animation:rwob 2.6s ease-in-out infinite}
+          .rd .e{font-size:36px;line-height:1.15}
+          .rd .w{font-size:30px;line-height:1.1;letter-spacing:2px;color:#4a3f55}
+          .rd .w b{font-weight:400;color:var(--main-d)}
+          .rd.aim i{border-color:var(--main);box-shadow:0 6px 0 var(--main),0 0 0 5px #ff7eb633,0 12px 18px #0000001a}
+          .rd.pop i{animation:rpop .3s forwards}
+          #rinp{margin-top:14px;font-size:30px;text-align:center;letter-spacing:3px;border-radius:20px;border:3px solid var(--line);padding:12px}
+          #rinp:focus{border-color:var(--main);outline:none;box-shadow:0 0 0 5px #ff7eb622}
+          @keyframes rwob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) translateX(4px)}}
+          @keyframes rpop{to{transform:scale(1.5);opacity:0}}
+          @keyframes rflash{0%{filter:brightness(1.9)}}
+        </style>
+        <div id="rgame"><div id="rboard">🌧️ 내려오는 단어를 쳐 봐요</div>
+          <div id="rsky"><span class="cl" style="left:6%;top:8%">☁️</span><span class="cl" style="right:10%;top:22%;font-size:46px">☁️</span><span class="cl" style="left:42%;top:3%;font-size:40px">☁️</span></div>
+          <div id="rgrass">🌷🌼🌷🌼🌷🌼🌷🌼🌷🌼🌷🌼🌷🌼🌷🌼</div></div>
+        <input class="inp" id="rinp" placeholder="여기에 쳐요" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text">`;
+        sky = $("#rsky"); inp = $("#rinp"); board = $("#rboard"); inp.oninput = onType; inp.focus();
+        on = true; lives = LIVES; left = LIM; prog.style.cssText = "font-size:20px;font-weight:800;color:var(--main-d)"; paint();
+        timer = setInterval(() => { left--; if(left <= 0){ left = 0; paint(); end(); } else paint(); }, 1000);
+        raf = requestAnimationFrame(tick);
+      };
     };
   }
   else if(act==="vowel"){
@@ -2338,6 +2504,12 @@ async function plannerNudge(){
 }
 const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
 const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name} · ${engActName(a)}` : ""; };
+// 한 과제 안에 공부 여러 개 (parts). 예전 과제는 unit/act 하나짜리.
+const engParts = h => h.parts && h.parts.length ? h.parts : [{u:h.unit, a:h.act}];
+const engPartRes = (h, k) => (h.st || {})["p"+k] || null;
+const engPartsDone = h => engParts(h).filter((_,k) => engPartRes(h,k)).length;
+const engHWName = h => { const ps = engParts(h); return ps.length===1 ? engPairName(ps[0].u, ps[0].a) : `공부 ${ps.length}개 · ${ps.map(x => engActName(x.a)).join(", ")}`; };
+const engResText = r => r ? (r.total ? `${r.score}/${r.total}` : "다 봤어요") : "";
 const engHWScore = h => { const r = h.st && h.st.r; return r ? (r.total ? `${r.score}/${r.total}` : "다 봤어요") : ""; };
 
 // ───────── 하루 사용 시간 ─────────
@@ -2611,16 +2783,37 @@ function teacherHome(){
   const unitOpts = sel => ENG.map(u => `<option value="${u.id}" ${u.id===sel?"selected":""}>${u.icon} ${esc(u.name)}</option>`).join("") + `<option value="phonics" ${sel==="phonics"?"selected":""}>🔠 파닉스</option>`;
   const actOpts = (u, sel) => (u==="phonics" ? PH_ACTS : ENG_ACTS).map(a => `<option value="${a.id}" ${a.id===sel?"selected":""}>${a.icon} ${esc(a.name)}</option>`).join("");
   $("#newe").onclick = () => {
-    const m = modal(`<h3>🔤 영어 과제 내기</h3><div class="muted">제목</div><input class="inp" id="mt" value="${esc(`${STUDENT} 영어과제${nextNum(curList,"eng")}`)}">
+    const defT = `${STUDENT} 영어과제${nextNum(curList,"eng")}`;
+    let picks = [];
+    const actBtns = u => (u==="phonics" ? PH_ACTS : ENG_ACTS).map(a => `<button class="btn" data-ma="${a.id}">${a.icon} ${esc(a.name)}</button>`).join("");
+    const m = modal(`<h3>🔤 영어 과제 내기</h3><div class="muted">제목</div><input class="inp" id="mt" value="${esc(defT)}">
       <div class="muted" style="margin-top:8px">단원</div><select class="inp" id="mu">${unitOpts("animal")}</select>
-      <div class="muted" style="margin-top:8px">공부 방법</div><select class="inp" id="ma">${actOpts("animal","mean")}</select>
+      <div class="muted" style="margin-top:8px">공부 방법 (여러 개 고르면 한 과제로 묶여요)</div><div id="mas" style="display:flex;flex-wrap:wrap;gap:6px">${actBtns("animal")}</div>
+      <button class="btn" id="madd" style="margin-top:10px">+ 담고 다른 단원도 고르기</button>
+      <div id="mpk" style="margin-top:8px"></div>
       <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
-    $("#mu", m).onchange = () => $("#ma", m).innerHTML = actOpts($("#mu", m).value);
+    const checked = () => [...m.querySelectorAll("[data-ma].on")].map(x => ({u:$("#mu", m).value, a:x.dataset.ma}));
+    const merge = (list, add) => { add.forEach(x => { if(!list.some(y => y.u===x.u && y.a===x.a)) list.push(x); }); return list; };
+    const drawPicks = () => { $("#mpk", m).innerHTML = picks.length ? `<div class="muted">담은 공부 ${picks.length}개</div>` + picks.map((x,k) => `<div class="row" style="margin:4px 0;align-items:center"><span style="flex:1">${engPairName(x.u, x.a)}</span><button class="btn" data-prm="${k}">✕</button></div>`).join("") : ""; };
+    $("#mu", m).onchange = () => $("#mas", m).innerHTML = actBtns($("#mu", m).value);
+    let busy = false;
     m.onclick = async ev => {
       if(ev.target.closest("[data-x]")) return m.remove();
-      if(!ev.target.closest("[data-ok]")) return;
+      const ab = ev.target.closest("[data-ma]"); if(ab) return ab.classList.toggle("on");
+      const rm = ev.target.closest("[data-prm]"); if(rm){ picks.splice(+rm.dataset.prm, 1); return drawPicks(); }
+      if(ev.target.closest("#madd")){
+        const c = checked(); if(!c.length) return toast("공부 방법을 먼저 골라 주세요");
+        merge(picks, c); m.querySelectorAll("[data-ma].on").forEach(x => x.classList.remove("on")); return drawPicks();
+      }
+      if(!ev.target.closest("[data-ok]") || busy) return;
       const t = $("#mt", m).value.trim(); if(!t) return toast("제목을 써 주세요");
-      try{ await DB.createHW(engHWDoc(t, $("#mu", m).value, $("#ma", m).value)); m.remove(); toast("영어 과제를 냈어요!"); }catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+      const all = merge(picks.slice(), checked()); if(!all.length) return toast("공부 방법을 골라 주세요");
+      busy = true;
+      try{
+        const doc = engHWDoc(t, all[0].u, all[0].a); if(all.length > 1) doc.parts = all;
+        await DB.createHW(doc);
+        m.remove(); toast(all.length===1 ? "영어 과제를 냈어요!" : `공부 ${all.length}개를 한 과제로 냈어요!`);
+      }catch(e){ busy = false; toast("저장 실패: 인터넷을 확인해 주세요"); }
     };
   };
   // 영어 자동 과제
@@ -2718,7 +2911,7 @@ function teacherHome(){
     $("#list").innerHTML = list.length ? list.map(h => {
       const [lab,cls] = statusOf(h), n = h.problems.length;
       if(hwKind(h)==="eng"){ const done = ["submitted","graded"].includes(h.status);
-        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engPairName(h.unit, h.act)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : "안 함"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 함` : "안 함"}</span></button>`; }
       let sc = "";
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
@@ -2731,9 +2924,9 @@ function teacherHome(){
     if(b.dataset.k!=="eng") return go(teacherGrade, b.dataset.id);
     const h = curList.find(x => x.id===b.dataset.id); if(!h) return;
     const r = h.st && h.st.r;
-    const m = modal(`<h3>🔤 ${esc(h.title)}</h3><div style="font-size:17px">${engPairName(h.unit, h.act)}</div>
+    const m = modal(`<h3>🔤 ${esc(h.title)}</h3>${engParts(h).length > 1 ? engParts(h).map((x,k) => { const pr = engPartRes(h,k); return `<div style="font-size:16px;margin:3px 0">${engPairName(x.u, x.a)} — ${pr ? `<b>${engResText(pr)}</b>${(pr.wrong||[]).length ? ` <span class="muted">(틀린 것: ${pr.wrong.map(esc).join(", ")})</span>` : ""}` : `<span class="muted">아직</span>`}</div>`; }).join("") : `<div style="font-size:17px">${engPairName(h.unit, h.act)}</div>`}
       <div class="muted" style="margin:6px 0">낸 날 ${fmtFull(h.createdAt)}${h.submittedAt ? `<br>제출 ${fmtFull(h.submittedAt)}` : ""}</div>
-      ${r ? `<div style="font-size:18px">${r.total ? `점수 <b>${r.score}/${r.total}</b>` : "끝까지 다 봤어요"} · ${fmtSec(r.dur||0)}</div>${(r.wrong||[]).length ? `<div class="muted">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : ""}` : `<div class="muted">아직 안 했어요.</div>`}
+      ${r ? `<div style="font-size:18px">${r.total ? `점수 <b>${r.score}/${r.total}</b>` : "끝까지 다 봤어요"} · ${fmtSec(r.dur||0)}</div>${(r.wrong||[]).length && engParts(h).length===1 ? `<div class="muted">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : ""}` : `<div class="muted">${engPartsDone(h) ? `아직 하는 중이에요. (${engPartsDone(h)}/${engParts(h).length})` : "아직 안 했어요."}</div>`}
       <div class="mbtns"><button class="big gray" data-del style="color:var(--bad)">과제 지우기</button><button class="big" data-x>닫기</button></div>`);
     m.onclick = async ev => {
       if(ev.target.closest("[data-x]")) return m.remove();
@@ -2900,7 +3093,7 @@ function teacherGrade(id){
 }
 
 // 앱 설치(홈 화면에 추가)용
-if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
 
 // ───────── 시작 ─────────
 (async () => {
