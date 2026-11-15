@@ -2400,6 +2400,14 @@ const inp = (id, v, cls="inp sm", mode="numeric", ph="") => `<input class="${cls
 const fracBox = (pre, w, n, d, whole=true) => `${whole ? inp(pre+"w", w) : ""}<span class="fin">${inp(pre+"n", n)}<span class="fl"></span>${inp(pre+"d", d)}</span>`;
 function ansUI(p, val){
   const box = $("#ansin"), kind = p.kind; val = val || "";
+  const chk = $("#chk"); if(chk) chk.textContent = kind==="hand" ? "다 썼어요 ✔" : "답 확인 ✔";
+  if(kind==="hand"){
+    box.innerHTML = `${p.nosay ? "" : `<button class="btn spk" type="button" data-hsay="${esc(p.w)}">🔊 다시 듣기</button>`}<span class="muted" style="font-size:16px">위 칸에 펜으로 영어 단어를 써요 ✍️</span>`;
+    box.onclick = e => { const b = e.target.closest("[data-hsay]"); if(b) say(b.dataset.hsay); };
+    if(!p.nosay) setTimeout(() => say(p.w), 350);
+    return;
+  }
+  box.onclick = null;
   if(kind==="frac"){
     const m = /^(?:(\d+)(?:\s+|$))?(?:(\d+)\/(\d+))?$/.exec(val) || [];
     box.innerHTML = fracBox("a", m[1], m[2], m[3], p.form!=="improper");
@@ -2427,6 +2435,7 @@ function ansUI(p, val){
   }
 }
 function readAns(p){
+  if(p.kind==="hand") return {v:"✍️ 손글씨"};
   const kind = p.kind, g = id => ($("#"+id)?.value || "").trim();
   if(kind==="frac"){
     const w = g("aw"), n = g("an"), d = g("ad");
@@ -2668,7 +2677,7 @@ function studentResult(id, parent=false){
         return `<div class="gq"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span>${fo===true ? `<span class="okc">⭕</span>` : fo===false ? `<span class="badc">❌</span>` : ""}</div>
           <div class="att"><span class="lb">1번째 답</span><b>${esc(s.a1 ?? "-")}</b> ${s.ok1===true ? `<span class="okc">맞음</span>` : s.ok1===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,1)}" data-t="${i+1}번 · 1번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>
           ${has(s.a2) ? `<div class="att"><span class="lb">2번째 답</span><b>${esc(s.a2)}</b> ${s.ok2===true ? `<span class="okc">맞음</span>` : s.ok2===false ? `<span class="badc">틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,2)}" data-t="${i+1}번 · 2번째 풀이">${parent ? esc(STUDENT)+" 풀이 보기" : "내 풀이 보기"}</button></div>` : ""}
-          ${g && fo===false && has(p.ans) ? `<div class="att"><span class="lb">정답</span><b style="color:var(--ok)">${esc(p.ans)}</b></div>` : ""}
+          ${g && fo===false && (has(p.ans) || p.w) ? `<div class="att"><span class="lb">정답</span><b style="color:var(--ok)">${esc(p.ans || p.w)}</b></div>` : ""}
           ${g && gr && has(gr.memo) ? `<div class="att"><span class="lb">선생님</span><span>${esc(gr.memo)}</span></div>` : ""}</div>`;
       }).join("")}</div>`;
   }));
@@ -2765,11 +2774,12 @@ function teacherHome(){
       <div class="muted" id="enext" style="margin:8px 0"></div>
       <button class="big blue" id="esave">영어 자동 과제 저장</button>
     </div>
-    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button><button class="big gray" id="neww" style="flex:1">+ 영어 단어 쓰기 시험</button></div>
     <div class="card" style="margin-top:14px"><h2>낸 숙제 · 과제 · 시험</h2><div class="hwlist" id="list"></div></div></div>`;
   bindOut();
   $("#new").onclick = () => go(teacherCreate);
   $("#newt").onclick = () => go(teacherCreate, "test");
+  $("#neww").onclick = () => wordTestModal();
   const unitOpts = sel => ENG.map(u => `<option value="${u.id}" ${u.id===sel?"selected":""}>${u.icon} ${esc(u.name)}</option>`).join("") + `<option value="phonics" ${sel==="phonics"?"selected":""}>🔠 파닉스</option>`;
   const actOpts = (u, sel) => (u==="phonics" ? PH_ACTS : ENG_ACTS).map(a => `<option value="${a.id}" ${a.id===sel?"selected":""}>${a.icon} ${esc(a.name)}</option>`).join("");
   $("#newe").onclick = () => {
@@ -2925,6 +2935,48 @@ function teacherHome(){
   };
 }
 
+// ───────── 선생님: 영어 단어 쓰기 시험 ─────────
+// 한 줄에 하나: "dog 개 🐶" (영어 → 뜻 → 그림은 있어도 되고 없어도 돼요)
+const WT_SETS = [
+  {name:"세 글자 단어 (파닉스 1단계)", text:"cat 고양이 🐱\ndog 개 🐶\npig 돼지 🐷\nsun 해 ☀️\nmap 지도 🗺️\nred 빨간색 🔴\nbed 침대 🛏️\ncup 컵 🥤\nhat 모자 🧢\nbox 상자 📦"},
+  ...ENG.map(u => ({name:`${u.icon} ${u.name}`, text:u.words.map(([w,k,e]) => `${w} ${k} ${e}`).join("\n")})),
+];
+function parseWordLines(t){
+  return t.split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const m = /^([A-Za-z][A-Za-z' -]*?)\s+(.+)$/.exec(l); if(!m) return null;
+    let rest = m[2].trim(), emo = "";
+    const em = /\s*((?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u20E3\uFE0F\u200D])+)\s*$/u.exec(rest);
+    if(em){ emo = em[1]; rest = rest.slice(0, em.index).trim(); }
+    return {w:m[1].trim(), k:rest, e:emo};
+  }).filter(Boolean);
+}
+function wordTestModal(){
+  const d = new Date();
+  const m = modal(`<h3>✍️ 영어 단어 쓰기 시험</h3>
+    <div class="muted">수아가 뜻을 보고(소리도 듣고) 펜으로 영어 단어를 써요. 채점은 선생님이 녹화 보고 ⭕❌로 해요.</div>
+    <div class="muted" style="margin-top:8px">제목</div><input class="inp" id="wt" value="${esc(`${STUDENT} 영어 단어 쓰기 (${d.getMonth()+1}/${d.getDate()})`)}">
+    <div class="muted" style="margin-top:8px">단어 묶음 불러오기</div><select class="inp" id="wset">${WT_SETS.map((x,k) => `<option value="${k}">${esc(x.name)}</option>`).join("")}</select>
+    <div class="muted" style="margin-top:8px">단어 (한 줄에 하나: 영어 뜻 그림)</div><textarea class="inp" id="wl" style="min-height:190px;font-family:Pretendard,sans-serif;font-size:16px">${esc(WT_SETS[0].text)}</textarea>
+    <div class="row" style="margin-top:8px;gap:14px;flex-wrap:wrap">
+      <label class="row" style="gap:6px;font-weight:700"><input type="checkbox" id="wsay" checked style="width:20px;height:20px"> 소리도 들려주기</label>
+      <label class="row" style="gap:6px;font-weight:700"><input type="checkbox" id="wmix" checked style="width:20px;height:20px"> 순서 섞기</label>
+      <label class="row" style="gap:6px;font-weight:700">시간 <select class="inp" id="wmin" style="width:auto">${[0,5,10,15,20].map(n => `<option value="${n}">${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></label>
+    </div>
+    <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>시험 내기</button></div>`);
+  $("#wset", m).onchange = () => $("#wl", m).value = WT_SETS[+$("#wset", m).value].text;
+  m.onclick = async ev => {
+    if(ev.target.closest("[data-x]")) return m.remove();
+    if(!ev.target.closest("[data-ok]")) return;
+    const title = $("#wt", m).value.trim(); if(!title) return toast("제목을 써 주세요");
+    let ws = parseWordLines($("#wl", m).value); if(!ws.length) return toast("단어를 한 줄에 하나씩 써 주세요 (예: dog 개 🐶)");
+    if($("#wmix", m).checked) ws = shuffle(ws);
+    const nosay = !$("#wsay", m).checked, minutes = +$("#wmin", m).value;
+    const problems = ws.map(x => ({q:`${x.e ? x.e+" " : ""}${x.k}`, ans:"", kind:"hand", w:x.w, ...(nosay ? {nosay:true} : {})}));
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", test:true, minutes, word:true}); m.remove(); toast(`단어 ${problems.length}개 시험을 냈어요!`); }
+    catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
+  };
+}
+
 // ───────── 선생님: 숙제 만들기 ─────────
 function teacherCreate(mode){
   const T = mode==="test";
@@ -3000,12 +3052,12 @@ function teacherGrade(id){
         <div class="muted" style="margin-top:4px">낸 날 ${fmtD(h.createdAt)}${h.submittedAt ? ` · 제출한 날 ${fmtD(h.submittedAt)}` : ""}</div>
         ${h.st && h.st.tm ? `<div style="margin-top:4px;font-size:17px">⏱ 푸는 데 걸린 시간 <b>${fmtSec(h.st.tm)}</b> <span class="muted">(화면 켜고 푼 시간만)</span></div>` : ""}
         ${evLine(h) ? `<details style="margin-top:4px;font-size:16px"><summary style="cursor:pointer">${evLine(h)}</summary><div class="muted" style="margin-top:4px;line-height:1.7">${evSum(h).ev.slice().sort((a,b) => a.s-b.s).map(e => `${hm(e.s)} · ${e.i>=0 ? `${e.i+1}번 문제에서 ` : ""}${e.k==="out" ? "🚪 나갔다 옴" : "💤 멈춤"} ${fmtSec(e.d)}`).join("<br>")}</div></details>` : ""}
-        ${canGrade ? `<div class="sum" style="margin-top:8px">1번째 ${ok1N}/${n} 맞음 → 최종 ${finN}/${n} 맞음 <span class="muted">(자동 채점)</span></div>` : `<div class="muted" style="margin-top:8px">${esc(STUDENT)}가 아직 제출하지 않았어요. 풀고 있는 녹화는 지금도 볼 수 있어요.</div>`}
+        ${canGrade ? (h.problems.every(p => p.kind==="hand") ? `<div class="sum" style="margin-top:8px">✍️ 손글씨 시험 · 지금까지 ⭕ ${finN}/${n} <span class="muted">(녹화 보고 ⭕❌ 눌러 주세요)</span></div>` : `<div class="sum" style="margin-top:8px">1번째 ${ok1N}/${n} 맞음 → 최종 ${finN}/${n} 맞음 <span class="muted">(자동 채점)</span></div>`) : `<div class="muted" style="margin-top:8px">${esc(STUDENT)}가 아직 제출하지 않았어요. 풀고 있는 녹화는 지금도 볼 수 있어요.</div>`}
       </div>
       <div class="card"><h2>문제별 채점</h2>${h.problems.map((p,i) => {
         const s = stOf(h,i), gr = (h.grade && h.grade[i]) || {}, ok = gradeOk(h,i);
         const line = (k) => { const a = s["a"+k], o = s["ok"+k]; if(!has(a) && k===2) return ""; return `<div class="att"><span class="lb">${k}번째 답</span><b>${esc(a ?? "-")}</b> ${o===true ? `<span class="okc">✔ 맞음</span>` : o===false ? `<span class="badc">✗ 틀림</span>` : ""} <button class="btn" data-q="${p.kind==="div" ? esc(p.q) : ""}" data-k="${recKey(id,i,k)}" data-t="${i+1}번 ${esc(p.q)} · ${k}번째 풀이">▶ 풀이 보기</button></div>`; };
-        return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span>${s.t ? `<span class="muted">· ⏱ ${fmtSec(s.t)}</span>` : ""}</div>
+        return `<div class="gq" data-i="${i}"><div class="top"><span class="no">${i+1}번</span><span class="qq">${richQ(p.q)}</span><span class="muted">정답 ${has(p.ans) ? esc(p.ans) : p.w ? `<b style="font-size:20px;color:var(--ink)">${esc(p.w)}</b> (직접 채점)` : "(직접 채점)"}</span><span class="muted">· 풀이 ${attempts(h,i)}회</span>${s.t ? `<span class="muted">· ⏱ ${fmtSec(s.t)}</span>` : ""}</div>
           ${line(1)}${line(2)}
           <div class="att"><span class="lb">채점</span><button class="btn ok ${ok===true?"on":""}" data-g="1" ${canGrade?"":"disabled"}>⭕ 맞음</button><button class="btn bad ${ok===false?"on":""}" data-g="0" ${canGrade?"":"disabled"}>❌ 틀림</button></div>
           <div class="att"><span class="lb">메모</span><input class="inp" data-m style="flex:1" placeholder="이 문제에 대한 말 (${esc(STUDENT)}에게 보여요)" value="${esc(gr.memo || "")}"></div></div>`;
