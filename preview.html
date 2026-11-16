@@ -189,6 +189,8 @@ textarea.inp{min-height:80px;resize:vertical}
 .hshow img{max-width:100%;max-height:150px;border:2px solid var(--line);border-radius:14px;background:#fff;margin-top:8px}
 .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-height:60vh;overflow:auto}
 .hcell{border:2px solid var(--line);border-radius:14px;padding:8px}.hcell img{width:100%;border-radius:10px;margin-top:6px}
+details.fold>summary{cursor:pointer;list-style:none}details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸ ";color:var(--main-d)}details.fold[open]>summary::before{content:"▾ "}
 /* 영어공부 */
 .stabs{display:flex;gap:8px;margin:0 0 14px}
 .stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
@@ -2780,6 +2782,7 @@ async function parentHome(){
   unsubs.push(DB.watchHWList(list => {
     list = list.filter(h => hwKind(h)!=="eng");
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
+    const stageOpen = !!(document.getElementById("bystage") && document.getElementById("bystage").open);
     let tot = 0, fin = 0, first = 0; const byStage = {};
     done.forEach(h => h.problems.forEach((p,i) => {
       const ok = h.status==="graded" ? gradeOk(h,i) : finalOk(h,i); if(ok==null) return;
@@ -2798,9 +2801,9 @@ async function parentHome(){
         ${stat("한 번에 맞힌 비율", `${pct(first,tot)}%`, "1번째 풀이에서")}
         ${stat("이번 주", `${weekN}개`, "최근 7일 제출")}
       </div>
-      <div class="card"><h2>유형별 정답률</h2>
+      <details class="card fold" id="bystage" ${stageOpen ? "open" : ""}><summary><h2 style="display:inline">유형별 정답률</h2> <span class="muted" style="font-size:14px">${stages.length ? `${stages.length}개 유형 · 제일 약한 것: ${esc(STAGE[stages[0].sid].name)} ${stages[0].r}%` : "아직 없어요"}</span></summary>
         ${stages.length ? stages.map(x => `<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><div style="width:44%;font-size:14px">${esc(STAGE[x.sid].unit.replace(/^\d학년 · /,""))} · <b>${esc(STAGE[x.sid].name)}</b></div>${bar(x.r)}<div style="width:86px;text-align:right;font-size:14px"><b>${x.r}%</b> <span class="muted">(${x.ok}/${x.n})</span></div></div>`).join("") + `<div class="muted" style="margin-top:6px">빨간색·주황색 유형은 더 연습하면 좋아요.</div>` : `<div class="empty">아직 끝낸 숙제가 없어요.</div>`}
-      </div>
+      </details>
       <div class="card"><h2>숙제 기록</h2><div class="hwlist">
         ${list.length ? list.map(h => {
           const [lab,cls] = statusOf(h), n = h.problems.length, g = h.status==="graded", d = ["submitted","graded"].includes(h.status);
