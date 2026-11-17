@@ -1605,17 +1605,45 @@ function engPlay(unitId, act, only, hwId, part){
       feedback(ok, q.k); nextQ(ok, q.w);
     });
   };
-  let quizAfter = false;
+  let quizAfter = false; const said = new Set();
   const pool = only ? words.filter(x => only.includes(x.w)) : words;
 
   if(act==="learn"){
     qs = shuffle(words).slice(0, 20);
     show = () => {
       const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      const canRec = !!((window.SpeechRecognition || window.webkitSpeechRecognition) || (navigator.mediaDevices && window.MediaRecorder));
+      const done = said.has(q.w);
       box.innerHTML = `<div class="ecard"><div class="eemo">${q.e}</div><div class="eword">${esc(q.w)}</div><div class="emean">${esc(q.k)}</div>
-        <div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div></div>
-        <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "다 외웠어요!"}</button></div>`;
+        <div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div>
+        ${canRec ? `<div class="row" style="justify-content:center;margin-top:8px">${done ? `<span class="chip ok">✔ 따라 읽었어요</span>` : `<button class="big" id="lrec" style="width:auto;padding:12px 26px">🎤 따라 읽기</button>`}</div><div id="emic" class="muted" style="text-align:center;min-height:22px"></div>` : ""}</div>
+        <div class="row" style="justify-content:space-between;margin-top:12px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "다 외웠어요!"}</button></div>`;
       say(q.w); holdNext($("#enext"));
+      // 따라 읽기 녹음해야 다음으로 (마이크가 안 되면 두 번째엔 그냥 넘어가요)
+      if(canRec && !done){
+        const nx = $("#enext"), gate = () => { if(!said.has(q.w) && !nx.disabled) nx.disabled = true; };
+        const mo = new MutationObserver(gate); mo.observe(nx, {attributes:true, attributeFilter:["disabled"]}); gate();
+        $("#emic").innerHTML = "🎤 <b>따라 읽기</b>를 눌러서 소리 내 읽어야 넘어가요";
+        let tries = 0, busy = false;
+        const go1 = async () => {
+          if(busy) return; busy = true; const b = $("#lrec"); b.textContent = "⏹ 다 읽었어요"; $("#emic").textContent = "듣고 있어요… 읽어 봐요 🎤";
+          const r = recordSpeech(5000); b.onclick = () => r.stop();
+          const {blob, heard} = await r.done; tries++; busy = false;
+          if(!blob && heard==null){
+            if(tries < 2){ b.textContent = "🎤 다시 따라 읽기"; b.onclick = go1; $("#emic").textContent = "마이크를 쓸 수 없어요. 허용을 눌렀는지 보고 다시 눌러 봐요!"; return; }
+            $("#emic").textContent = "마이크가 안 돼요. 소리 내서 읽고 넘어가요!";
+          } else {
+            const ok = judgeSpeech({t:"word", s:q.w}, heard);
+            const vid = await saveVoice({ctx:"practice", q:q.w, heard:heard||"", ok}, blob);
+            if(vid || heard!=null) vlog.push({voice:vid, q:q.w, a:heard||"", ok});
+            $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 읽었어요! 👏</b>` : "녹음했어요 ✔";
+          }
+          said.add(q.w); mo.disconnect(); b.remove();
+          if(!nx.textContent.includes("(")) nx.disabled = false;
+          else { const t = setInterval(() => { if(!nx.textContent.includes("(")){ nx.disabled = false; clearInterval(t); } }, 300); cleanups.push(() => clearInterval(t)); }
+        };
+        $("#lrec").onclick = go1;
+      }
       $("#eprev").onclick = () => { i--; show(); };
       $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else { quizAfter = true; qs = shuffle(qs).slice(0, 5); i = 0; show = meanShow; show(); } };
     };
