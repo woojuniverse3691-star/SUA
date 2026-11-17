@@ -191,6 +191,10 @@ textarea.inp{min-height:80px;resize:vertical}
 .hcell{border:2px solid var(--line);border-radius:14px;padding:8px}.hcell img{width:100%;border-radius:10px;margin-top:6px}
 details.fold>summary{cursor:pointer;list-style:none}details.fold>summary::-webkit-details-marker{display:none}
 details.fold>summary::before{content:"▸ ";color:var(--main-d)}details.fold[open]>summary::before{content:"▾ "}
+.tpad{height:240px;background:#fff repeating-linear-gradient(transparent 0 78px,#f3dbe6 78px 80px)}
+.tguide{position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none}.tguide div{height:80px;display:flex;align-items:center;padding-left:18px;font-family:Pretendard,sans-serif;font-weight:700;font-size:54px;color:#3a2f4a;letter-spacing:4px}
+.eplay.slow .eopt{opacity:.45}
+.tpad canvas{position:relative;z-index:1}
 /* 영어공부 */
 .stabs{display:flex;gap:8px;margin:0 0 14px}
 .stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
@@ -1401,6 +1405,7 @@ const ENG_ACTS = [
   {id:"spell", name:"철자 맞추기", icon:"🔤", desc:"뜻 보고 글자 골라 쓰기"},
   {id:"dict", name:"듣고 받아쓰기", icon:"🎧", desc:"듣고 펜으로 직접 써요"},
   {id:"sent", name:"문장 만들기", icon:"🧩", desc:"단어 순서 맞추고 따라 읽기"},
+  {id:"trace", name:"따라 쓰기 (깜지)", icon:"✏️", desc:"단어를 보고 3번씩 펜으로 따라 써요"},
 ];
 const PH_ACTS = [
   {id:"abc", name:"알파벳 소리", icon:"🔊", desc:"글자랑 단어 소리 듣기"},
@@ -1466,8 +1471,8 @@ function engRecRow(r, who="student"){
   if(r.act==="test") return who==="student"
     ? `<div class="hw" style="cursor:default"><div class="grow"><div class="ti">📝 영어 실력 알아보기</div><div class="muted">${fmtFull(r.at)}</div></div><span class="chip ok">다 했어요 🏅</span></div>`
     : `<div class="hw" style="cursor:default;display:block"><div class="ti">📝 영어 실력 알아보기 <span class="muted" style="font-size:14px">${fmtFull(r.at)} · ${fmtSec(r.dur||0)} · ${r.score}/${r.total} 맞힘</span></div>${etestResultHTML(r)}</div>`;
-  const sc = r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
-  const wrong = (r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "";
+  const sc = r.tooFast ? `<span class="chip r2">🐢 너무 빨라서 다시</span>` : r.total ? `<div class="jua" style="font-size:20px">${r.score}/${r.total}</div>` : `<span class="chip ok">다 봤어요</span>`;
+  const wrong = ((r.wrong||[]).length ? `<div class="muted" style="font-size:13px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "") + (who!=="student" && r.fast ? `<div style="font-size:13px;color:var(--bad)">⚡ 빨리 찍음 ${r.fast}번</div>` : "");
   const vs = (who!=="student" && (r.voices||[]).length ? voiceListHTML(r.voices, "🎤 따라 읽기 녹음") : "") + (who!=="student" && (r.hands||[]).length ? `<button class="btn" data-hands="${r.at}" style="margin-top:6px">✍️ 손글씨 보기 (${r.hands.length}개)</button>` : "");
   return `<div class="hw" style="cursor:default;${vs ? "flex-wrap:wrap" : ""}"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}${vs ? `<div style="flex-basis:100%">${vs}</div>` : ""}</div>`;
 }
@@ -1515,7 +1520,19 @@ function engPlay(unitId, act, only, hwId, part){
 
   const finish = async (total) => {
     let left = 0;
-    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {}), ...(vlog.length ? {voices:vlog} : {}), ...(hlog.length ? {hands:hlog} : {})};
+    // 과제를 너무 빨리 끝내면 제출 안 하고 다시 (항목당 최소 초)
+    const per = {learn:4, mean:2.5, spell:4, dict:6, sent:5, abc:3, first:2.5, vowel:2.5, trace:6}[act] || 0;
+    const minMs = per * 1000 * (n0 || 0) * 0.8;
+    if(hwId && per && Date.now() - t0 < minMs){
+      try{ await DB.addEng({at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, hw:hwId, tooFast:true, fast}); }catch(e){}
+      prog.textContent = "";
+      box.innerHTML = `<div class="center" style="min-height:0;padding:24px 0"><div style="font-size:60px">🐢</div><div class="jua" style="font-size:28px">너무 빨랐어요!</div>
+        <div style="font-size:18px">천천히 보고 다시 한 번 해요.<br>이번 건 아직 제출 안 됐어요.</div>
+        <button class="big" id="eagain2" style="margin-top:10px">다시 하기</button></div>`;
+      $("#eagain2").onclick = () => go(engPlay, unitId, act, only, hwId, part);
+      return;
+    }
+    const rec = {at:Date.now(), unit:unitId, act, score, total, wrong:[...new Set(wrong)], dur:Date.now()-t0, ...(hwId ? {hw:hwId} : {}), ...(vlog.length ? {voices:vlog} : {}), ...(hlog.length ? {hands:hlog} : {}), ...(fast ? {fast} : {})};
     try{
       await DB.addEng(rec);
       const res = {score, total, wrong:rec.wrong, dur:rec.dur, at:rec.at};
@@ -1546,9 +1563,16 @@ function engPlay(unitId, act, only, hwId, part){
     $("#eredo").onclick = () => go(engPlay, unitId, act);
     if($("#eagain")) $("#eagain").onclick = () => go(engPlay, unitId, act, rec.wrong);
   };
+  // 틀린 문제는 뒤에 다시 나와요 (파닉스는 맞힐 때까지 최대 3번). 점수는 처음 푼 것만.
+  const seen = new Set(), again = {}, REPEAT = {first:3, vowel:3, mean:1, spell:1};
   const nextQ = (ok, label) => {
-    if(ok) score++; else wrong.push(label);
-    i++; setTimeout(() => i < qs.length ? show() : finish(qs.length), ok ? 700 : 1500);
+    const firstTry = !seen.has(label); seen.add(label);
+    if(firstTry){ if(ok) score++; else wrong.push(label); }
+    if(!ok && REPEAT[act] && (again[label]||0) < REPEAT[act]){
+      again[label] = (again[label]||0) + 1; qs.splice(Math.min(qs.length, i + 3), 0, qs[i]);
+      const f = box.querySelector(".efb"); if(f) f.insertAdjacentHTML("beforeend", `<div style="font-size:16px;color:var(--sub)">🔁 조금 있다 다시 나와요!</div>`);
+    }
+    i++; setTimeout(() => i < qs.length ? show() : finish(seen.size), ok ? 700 : 1800);
   };
   const feedback = (ok, right) => {
     const f = document.createElement("div"); f.className = "efb " + (ok ? "ok" : "bad");
@@ -1556,6 +1580,32 @@ function engPlay(unitId, act, only, hwId, part){
     box.appendChild(f);
   };
   let show = () => {};
+  // ⚡ 찍기 감지: 문제가 뜨고 1초 안에 누르면 막고 2초 쉬게
+  let shownAt = Date.now(), fast = 0;
+  new MutationObserver(() => { if(!box.querySelector(".efb")) shownAt = Date.now(); }).observe(box, {childList:true});
+  const tooFast = () => {
+    if(Date.now() - shownAt >= 1000) return false;
+    fast++; toast("천천히 읽고 골라요! 🐢"); box.dataset.lock = "1"; box.classList.add("slow");
+    setTimeout(() => { box.dataset.lock = ""; box.classList.remove("slow"); }, 2000); return true;
+  };
+  // 카드 넘기기 잠금: 3초 지나야 "다음"
+  const holdNext = (btn, ms=3000) => { if(!btn) return; const lab = btn.textContent; btn.disabled = true; let left = Math.ceil(ms/1000);
+    btn.textContent = `${lab} (${left})`; const t = setInterval(() => { left--; if(left<=0){ clearInterval(t); btn.disabled = false; btn.textContent = lab; } else btn.textContent = `${lab} (${left})`; }, 1000); cleanups.push(() => clearInterval(t)); };
+  // 뜻 고르기 화면 (외우기 끝 확인 퀴즈에도 씀)
+  const meanShow = () => {
+    const q = qs[i]; prog.textContent = `${quizAfter ? "확인 퀴즈 " : ""}${i+1} / ${qs.length}`;
+    const opts = shuffle([q, ...pickN(words, 3, q)]);
+    box.innerHTML = `${quizAfter && i===0 ? `<div class="chip new" style="font-size:16px;margin-bottom:6px">✅ 잘 외웠는지 확인해요!</div>` : ""}<div class="ecard"><div class="eword">${esc(q.w)}</div><div class="row" style="justify-content:center">${spk(q.w)}</div></div>
+      <div class="eopts">${opts.map(o => `<button class="eopt" data-o="${esc(o.w)}">${o.e} ${esc(o.k)}</button>`).join("")}</div>`;
+    say(q.w);
+    box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
+      if(box.dataset.lock==="1") return; if(tooFast()) return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+      const ok = b.dataset.o===q.w; b.classList.add(ok ? "ok" : "bad");
+      if(!ok) box.querySelector(`[data-o="${CSS.escape(q.w)}"]`).classList.add("ok");
+      feedback(ok, q.k); nextQ(ok, q.w);
+    });
+  };
+  let quizAfter = false;
   const pool = only ? words.filter(x => only.includes(x.w)) : words;
 
   if(act==="learn"){
@@ -1565,9 +1615,9 @@ function engPlay(unitId, act, only, hwId, part){
       box.innerHTML = `<div class="ecard"><div class="eemo">${q.e}</div><div class="eword">${esc(q.w)}</div><div class="emean">${esc(q.k)}</div>
         <div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div></div>
         <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "다 외웠어요!"}</button></div>`;
-      say(q.w);
+      say(q.w); holdNext($("#enext"));
       $("#eprev").onclick = () => { i--; show(); };
-      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
+      $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else { quizAfter = true; qs = shuffle(qs).slice(0, 5); i = 0; show = meanShow; show(); } };
     };
   }
   else if(act==="mean"){
@@ -1579,7 +1629,7 @@ function engPlay(unitId, act, only, hwId, part){
         <div class="eopts">${opts.map(o => `<button class="eopt" data-o="${esc(o.w)}">${o.e} ${esc(o.k)}</button>`).join("")}</div>`;
       say(q.w);
       box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
-        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        if(box.dataset.lock==="1") return; if(tooFast()) return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
         const ok = b.dataset.o===q.w; b.classList.add(ok ? "ok" : "bad");
         if(!ok) box.querySelector(`[data-o="${CSS.escape(q.w)}"]`).classList.add("ok");
         feedback(ok, q.k); nextQ(ok, q.w);
@@ -1681,6 +1731,25 @@ function engPlay(unitId, act, only, hwId, part){
       };
     };
   }
+  else if(act==="trace"){
+    qs = shuffle(pool).slice(0, 10);
+    show = () => {
+      const q = qs[i]; prog.textContent = `${i+1} / ${qs.length}`;
+      box.innerHTML = `<div class="ecard" style="padding-bottom:0"><div class="eword">${esc(q.w)}</div><div class="emean">${esc(q.k)}</div><div class="row" style="justify-content:center">${spk(q.w)}${spk(q.w,true)}</div></div>
+        <div class="hpad tpad"><div class="tguide">${[0,1,2].map(r => `<div style="opacity:${r ? 0 : .22}">${esc(q.w)}</div>`).join("")}</div><canvas id="hcv"></canvas></div>
+        <div class="muted" style="text-align:center;margin-top:4px">첫 줄은 흐린 글씨 위에, 아래 두 줄은 보고 따라 써요 ✏️</div>
+        <div class="row" style="justify-content:center;margin-top:8px"><button class="big gray" id="eclr2">🧽 지우기</button><button class="big" id="eok">다 썼어요 ✔</button></div>`;
+      say(q.w);
+      const pad = handPad($("#hcv"), null); holdNext($("#eok"), 5000);
+      $("#eclr2").onclick = () => pad.clear();
+      $("#eok").onclick = async () => {
+        if(!pad.used()) return toast("먼저 펜으로 써 주세요");
+        if(box.dataset.lock==="1") return; box.dataset.lock = "1";
+        const hid = await saveHand({q:q.w, k:q.k}, pad.png()); hlog.push({hand:hid, q:q.w, k:q.k, ok:null});
+        box.dataset.lock = ""; i++; i < qs.length ? show() : finish(0);
+      };
+    };
+  }
   else if(act==="abc"){
     qs = PHONICS;
     show = () => {
@@ -1688,7 +1757,7 @@ function engPlay(unitId, act, only, hwId, part){
       box.innerHTML = `<div class="ecard"><div class="eword" style="font-size:84px">${L} ${L.toLowerCase()}</div><div class="eemo">${e}</div><div class="emean" style="font-size:30px">${L==="X" ? `bo<b style="color:var(--main-d)">x</b>` : `<b style="color:var(--main-d)">${w[0]}</b>${w.slice(1)}`}</div>
         <div class="row" style="justify-content:center"><button class="btn spk" data-say="${L}">🔤 글자 이름</button>${spk(w)}${spk(w,true)}</div></div>
         <div class="row" style="justify-content:space-between;margin-top:16px"><button class="big gray" id="eprev" ${i?"":"disabled"}>◀ 앞</button><button class="big" id="enext">${i<qs.length-1 ? "다음 ▶" : "끝!"}</button></div>`;
-      say(w);
+      say(w); holdNext($("#enext"));
       $("#eprev").onclick = () => { i--; show(); };
       $("#enext").onclick = () => { if(i < qs.length-1){ i++; show(); } else finish(0); };
     };
@@ -1702,7 +1771,7 @@ function engPlay(unitId, act, only, hwId, part){
         <div class="eopts four">${opts.map(o => `<button class="eopt big2" data-o="${o}">${o} ${o.toLowerCase()}</button>`).join("")}</div>`;
       say(w);
       box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
-        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        if(box.dataset.lock==="1") return; if(tooFast()) return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
         const ok = b.dataset.o===L; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${L}"]`).classList.add("ok");
         feedback(ok, `${w} → ${L}`); nextQ(ok, w);
       });
@@ -1853,12 +1922,13 @@ function engPlay(unitId, act, only, hwId, part){
         <div class="eopts five">${["a","e","i","o","u"].map(o => `<button class="eopt big2" data-o="${o}">${o}</button>`).join("")}</div>`;
       say(w);
       box.querySelectorAll("[data-o]").forEach(b => b.onclick = () => {
-        if(box.dataset.lock==="1") return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
+        if(box.dataset.lock==="1") return; if(tooFast()) return; box.dataset.lock = "1"; setTimeout(() => box.dataset.lock = "", 900);
         const ok = b.dataset.o===v; b.classList.add(ok ? "ok" : "bad"); if(!ok) box.querySelector(`[data-o="${v}"]`).classList.add("ok");
         box.querySelector(".eword").textContent = w; feedback(ok, w); nextQ(ok, w);
       });
     };
   }
+  const n0 = qs.length;
   show();
 }
 
@@ -2172,7 +2242,7 @@ async function saveHand(meta, data){
   try{ await DB.saveRec(id, {type:"hand", at:Date.now(), ...meta, data}); return id; }catch(e){ return ""; }
 }
 async function showHands(arr){
-  const m = modal(`<h3>✍️ 받아쓰기 손글씨</h3><div class="hgrid">${arr.map((x,k) => `<div class="hcell"><div class="hw2"><b>${esc(x.q)}</b> <span class="muted">${esc(x.k||"")}</span> ${x.ok ? `<span class="okc">⭕ 수아: 맞음</span>` : `<span class="badc">❌ 수아: 틀림</span>`}</div><div class="himg" data-hk="${k}">불러오는 중…</div></div>`).join("")}</div><div class="mbtns one"><button class="big" data-x>닫기</button></div>`);
+  const m = modal(`<h3>✍️ 손글씨</h3><div class="hgrid">${arr.map((x,k) => `<div class="hcell"><div class="hw2"><b>${esc(x.q)}</b> <span class="muted">${esc(x.k||"")}</span> ${x.ok===true ? `<span class="okc">⭕ 수아: 맞음</span>` : x.ok===false ? `<span class="badc">❌ 수아: 틀림</span>` : `<span class="muted">✏️ 따라 쓰기</span>`}</div><div class="himg" data-hk="${k}">불러오는 중…</div></div>`).join("")}</div><div class="mbtns one"><button class="big" data-x>닫기</button></div>`);
   m.onclick = e => { if(e.target.closest("[data-x]")) m.remove(); };
   arr.forEach(async (x,k) => { const el = m.querySelector(`[data-hk="${k}"]`); try{ const d = x.hand && await DB.loadRec(x.hand); el.innerHTML = d && d.data ? `<img src="${d.data}" alt="">` : "손글씨 없음"; }catch(er){ el.textContent = "불러오기 실패"; } });
 }
