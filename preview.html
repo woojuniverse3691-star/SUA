@@ -201,6 +201,17 @@ details.dayg>summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-
 details.dayg>summary::-webkit-details-marker{display:none}
 details.dayg>summary::before{content:"▸";color:var(--main-d)}details.dayg[open]>summary::before{content:"▾"}
 details.dayg>.hwlist{padding:0 10px 10px}
+details.dayg>summary b{white-space:nowrap}details.dayg>summary .muted{font-size:14px}
+/* 영어 기록 한 줄 */
+.eline2{border-bottom:1px dashed var(--line)}.eline2:last-child{border-bottom:0}
+.eline2>summary,.eline2 .sum2{display:flex;align-items:center;gap:8px;padding:9px 4px;cursor:pointer;list-style:none;font-size:15px}
+.eline2.flat .sum2{cursor:default}
+.eline2>summary::-webkit-details-marker{display:none}
+.eh1{flex:1;min-width:0}.ename{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.eh2{font-size:13px;color:var(--sub);margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.eline2 .chip,.eline2 .esc{flex:none}
+.etag{font-size:12px;background:var(--soft);border-radius:99px;padding:2px 7px}.etag.bad{background:#ffe1e8;color:var(--bad)}
+.esc{font-size:17px}.esc.good{color:var(--ok)}.esc.bad{color:var(--bad)}
+.emore{padding:2px 6px 10px 6px}
 /* 영어공부 */
 .stabs{display:flex;gap:8px;margin:0 0 14px}
 .stab{flex:1;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 8px;font-size:21px;cursor:pointer;font-family:var(--disp);color:var(--sub)}
@@ -1484,6 +1495,19 @@ function engRecRow(r, who="student"){
   const vs = (who!=="student" && (r.voices||[]).length ? voiceListHTML(r.voices, "🎤 따라 읽기 녹음") : "") + (who!=="student" && (r.hands||[]).length ? `<button class="btn" data-hands="${r.at}" style="margin-top:6px">✍️ 손글씨 보기 (${r.hands.length}개)</button>` : "");
   return `<div class="hw" style="cursor:default;${vs ? "flex-wrap:wrap" : ""}"><div class="grow"><div class="ti">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</div><div class="muted">${fmtFull(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""}</div>${wrong}</div>${sc}${vs ? `<div style="flex-basis:100%">${vs}</div>` : ""}</div>`;
 }
+// 선생님·어머님용: 한 줄로 접힌 기록 (누르면 틀린 것·녹음·손글씨)
+function engRecLine(r){
+  if(r.act==="test") return engRecRow(r, "teacher");
+  const u = engUnit(r.unit) || {name:r.unit, icon:"🔤"};
+  const sc = r.tooFast ? `<span class="chip r2">🐢 너무 빨라서 다시</span>` : r.total ? `<b class="esc ${r.score/r.total >= .8 ? "good" : r.score/r.total >= .5 ? "" : "bad"}">${r.score}/${r.total}</b>` : `<span class="chip ok">다 함</span>`;
+  const tags = [r.fast ? `<span class="etag bad">⚡${r.fast}</span>` : "", (r.voices||[]).length ? `<span class="etag">🎤${r.voices.length}</span>` : "", (r.hands||[]).length ? `<span class="etag">✍️${r.hands.length}</span>` : ""].join("");
+  const more = ((r.wrong||[]).length ? `<div class="muted" style="font-size:14px">틀린 것: ${r.wrong.map(esc).join(", ")}</div>` : "")
+    + (r.fast ? `<div style="font-size:14px;color:var(--bad)">⚡ 빨리 찍음 ${r.fast}번</div>` : "")
+    + ((r.voices||[]).length ? voiceListHTML(r.voices, "🎤 따라 읽기 녹음") : "")
+    + ((r.hands||[]).length ? `<button class="btn" data-hands="${r.at}" style="margin-top:6px">✍️ 손글씨 보기 (${r.hands.length}개)</button>` : "");
+  const head = `<div class="eh1"><span class="ename">${u.icon} ${esc(u.name)} · ${esc(engActName(r.act))}</span><div class="eh2">${hm(r.at)}${r.dur ? ` · ${fmtSec(r.dur)}` : ""} ${tags}</div></div>${sc}`;
+  return more ? `<details class="eline2"><summary>${head}</summary><div class="emore">${more}</div></details>` : `<div class="eline2 flat"><div class="sum2">${head}</div></div>`;
+}
 function bindEngHome(limitRef){
   unsubs.push(DB.watchEng(list => { const el = $("#erec"); if(el) el.innerHTML = list.length ? list.filter(r => !r.hw).slice(0,10).map(r => engRecRow(r)).join("") : `<div class="empty">아직 없어요. 하나 해 볼까? ✨</div>`; }));
   return e => {
@@ -2318,8 +2342,9 @@ function engReportCard(el, who="teacher"){
     const tot = q.reduce((a,r) => a+r.total, 0), ok = q.reduce((a,r) => a+r.score, 0);
     const wc = {}; list.slice(0, 40).forEach(r => (r.wrong||[]).forEach(w => wc[w] = (wc[w]||0)+1));
     const often = Object.entries(wc).sort((a,b) => b[1]-a[1]).slice(0, 8);
-    $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 ${wl.length}번 공부 · 전체 정답률 ${tot ? Math.round(ok/tot*100) : 0}%${often.length ? `<br>자주 틀린 것: <b>${often.map(([w,n]) => `${esc(w)}(${n})`).join(", ")}</b>` : ""}</div>`;
-    $("#elist", el).innerHTML = list.length ? dayGroups("elist-"+who, list.filter(r => r.act!=="test").slice(0, 200), r => r.at, r => engRecRow(r, "teacher"), xs => `영어 공부 ${xs.length}번`) : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
+    $("#estat", el).innerHTML = `<div class="muted" style="margin-bottom:8px">최근 7일 <b>${wl.length}번</b> · 정답률 <b>${tot ? Math.round(ok/tot*100) : 0}%</b>${often.length ? ` · 자주 틀림: ${often.slice(0,5).map(([w]) => esc(w)).join(", ")}` : ""}</div>`;
+    $("#elist", el).innerHTML = list.length ? dayGroups("elist-"+who, list.filter(r => r.act!=="test").slice(0, 200), r => r.at, r => engRecLine(r), xs => { const q = xs.filter(r => r.total && !r.tooFast), t = q.reduce((a,r) => a+r.total, 0), o = q.reduce((a,r) => a+r.score, 0), m = xs.reduce((a,r) => a+(r.dur||0), 0);
+      return `영어 ${xs.length}번${t ? ` · 정답률 ${Math.round(o/t*100)}%` : ""} · ${fmtSec(m)}${xs.some(r => r.fast || r.tooFast) ? " · ⚡" : ""}`; }) : `<div class="empty">아직 영어공부 기록이 없어요.</div>`;
   });
 }
 
