@@ -1710,23 +1710,32 @@ function engPlay(unitId, act, only, hwId, part){
         if(built.length < toks.length) return toast("단어를 다 놓아 주세요");
         const ok = built.map(c => c.t).join(" ")===q.s;
         if(!ok){ feedback(false, q.s); say(q.s); return nextQ(false, q.s); }
-        score++;
+        seen.add(q.s); score++;
         // 맞히면 따라 읽기
         box.innerHTML = `<div class="ecard"><div class="eemo">🎉</div><div class="eword" style="font-size:30px">${esc(q.s)}</div><div class="emean">${esc(q.k)}</div>
           <div class="row" style="justify-content:center">${spk(q.s)}${spk(q.s,true)}</div><div class="muted" style="margin-top:8px">듣고 큰 소리로 따라 읽어 봐요!</div><div id="emic" class="muted"></div></div>
-          <div class="row" style="justify-content:center;margin-top:12px">${(SR || (navigator.mediaDevices && window.MediaRecorder)) ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx">${i<qs.length-1 ? "따라 읽었어요 · 다음 ▶" : "따라 읽었어요 · 끝!"}</button></div>`;
+          <div class="row" style="justify-content:center;margin-top:12px">${(SR || (navigator.mediaDevices && window.MediaRecorder)) ? `<button class="big gray" id="erec2">🎤 읽어 보기</button>` : ""}<button class="big" id="enx" ${(SR || (navigator.mediaDevices && window.MediaRecorder)) ? "disabled" : ""}>${i<qs.length-1 ? "다음 ▶" : "끝!"}</button></div>`;
         say(q.s);
-        $("#enx").onclick = () => { i++; i < qs.length ? show() : finish(qs.length); };
-        if($("#erec2")) $("#erec2").onclick = async () => {
+        $("#enx").onclick = () => { i++; i < qs.length ? show() : finish(seen.size); };
+        if($("#enx").disabled) $("#emic").innerHTML = `<b>🎤 읽어 보기</b>를 눌러서 녹음해야 다음으로 가요`;
+        let micTry = 0;
+        if($("#erec2")) $("#erec2").onclick = $("#erec2").__go = async () => {
           const btn = $("#erec2"); if(btn.dataset.busy) return; btn.dataset.busy = 1;
           btn.textContent = "⏹ 다 읽었어요"; $("#emic").textContent = "듣고 있어요… 읽어 봐요 🎤";
           const r = recordSpeech(9000); btn.onclick = () => r.stop();
-          const {blob, heard} = await r.done;
+          const {blob, heard} = await r.done; micTry++;
+          if(!blob && heard==null){
+            // 마이크가 안 되면 한 번 더 기회, 두 번째도 안 되면 넘어갈 수 있게
+            $("#emic").innerHTML = micTry < 2 ? "마이크를 쓸 수 없어요. 허용을 눌렀는지 보고 다시 눌러 봐요!" : "마이크가 안 돼요. 소리 내서 읽고 다음으로 가요!";
+            if(micTry >= 2){ btn.remove(); $("#enx").disabled = false; }
+            else { delete btn.dataset.busy; btn.textContent = "🎤 다시 읽어 보기"; btn.onclick = $("#erec2").__go; }
+            return;
+          }
           const ok = judgeSpeech({t:"read", s:q.s}, heard);
           const vid = await saveVoice({ctx:"practice", q:q.s, heard:heard||"", ok}, blob);
           if(vid || heard!=null) vlog.push({voice:vid, q:q.s, a:heard||"", ok});
-          $("#emic").innerHTML = !blob && heard==null ? "마이크를 쓸 수 없어요. 그냥 소리 내서 읽어 봐요!" : ok ? `<b style="color:var(--ok)">잘 읽었어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
-          btn.remove();
+          $("#emic").innerHTML = ok ? `<b style="color:var(--ok)">잘 읽었어요! 👏</b>` : "녹음했어요 ✔ 다음으로 가요!";
+          btn.remove(); $("#enx").disabled = false;
         };
       };
     };
