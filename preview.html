@@ -2737,7 +2737,7 @@ const oatHTML = () => { const d = new Date(), p = n => String(n).padStart(2,"0")
   return `<div class="muted" style="margin-top:10px">📅 언제부터 보이게 할까요? <span style="font-size:13px">(비워 두면 바로)</span></div><div class="row" style="gap:6px;align-items:center"><input type="date" class="inp" data-oat min="${t}" style="flex:1"><button class="btn" type="button" data-oatclr>바로</button></div>`; };
 document.addEventListener("click", e => { const b = e.target.closest("[data-oatclr]"); if(b){ const i = b.parentNode.querySelector("[data-oat]"); if(i) i.value = ""; } });
 const oatFields = root => { const el = root.querySelector("[data-oat]"); if(!el || !el.value) return {}; const [y,mo,d] = el.value.split("-").map(Number), t = new Date(y, mo-1, d, 0, 0, 1).getTime(); return t > Date.now() ? {openAt:t, createdAt:t} : {}; };
-const schedTag = h => openNow(h) ? "" : `<b style="color:#8a6ff0">📅 예약</b> · `;
+const schedTag = h => "";
 const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name}${x.desc ? `(${x.desc})` : ""} · ${engActName(a)}` : ""; };
 // 한 과제 안에 공부 여러 개 (parts). 예전 과제는 unit/act 하나짜리.
 const engParts = h => h.parts && h.parts.length ? h.parts : [{u:h.unit, a:h.act}];
