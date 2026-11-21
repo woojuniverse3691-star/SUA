@@ -1338,11 +1338,11 @@ function studentHome(){
   const isDone = h => ["submitted","graded"].includes(h.status);
   let sList = [];
   unsubs.push(DB.watchHWList(list => {
-    ensureAuto(list); ensureAutoEng(list); sList = list;
+    ensureAuto(list); ensureAutoEng(list); list = list.filter(openNow); sList = list;
     const card = h => {
       const [lab,cls] = statusOf(h), k = hwKind(h);
       if(k==="eng"){ const sc = isDone(h) ? `<div class="jua" style="font-size:20px">${engHWScore(h)}</div>` : "";
-        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 했어요` : "새 과제"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)} · ${engHWName(h)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 했어요` : "새 과제"}</span></button>`; }
       const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
       const sub = k==="test" ? `${h.problems.length}문제${h.minutes ? ` · ${h.minutes}분` : ""}` : `${h.problems.length}문제`;
       return `<button class="hw" data-id="${h.id}" data-k="${k}"><div class="grow"><div class="ti">${k==="test"?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${sub}</div></div>${s}<span class="chip ${cls}">${k==="test" && !isDone(h) ? (cls==="new" ? "새 시험" : "보는 중") : lab}</span></button>`;
@@ -2731,6 +2731,13 @@ async function plannerNudge(){
   await tell("📒 하나 더!", "오늘 <b>스터디플래너 사진</b>을 아직 안 올렸어요.<br>숙제방 아래 <b>📸 사진 제출 → 스터디플래너</b>로 꼭 올려요!", "알겠어요");
 }
 const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
+// 날짜 예약: openAt(그날 0시)이 되기 전엔 수아·어머님 화면에 안 보여요
+const openNow = h => !h.openAt || h.openAt <= Date.now();
+const oatHTML = () => { const d = new Date(), p = n => String(n).padStart(2,"0"); const t = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  return `<div class="muted" style="margin-top:10px">📅 언제부터 보이게 할까요? <span style="font-size:13px">(비워 두면 바로)</span></div><div class="row" style="gap:6px;align-items:center"><input type="date" class="inp" data-oat min="${t}" style="flex:1"><button class="btn" type="button" data-oatclr>바로</button></div>`; };
+document.addEventListener("click", e => { const b = e.target.closest("[data-oatclr]"); if(b){ const i = b.parentNode.querySelector("[data-oat]"); if(i) i.value = ""; } });
+const oatFields = root => { const el = root.querySelector("[data-oat]"); if(!el || !el.value) return {}; const [y,mo,d] = el.value.split("-").map(Number), t = new Date(y, mo-1, d, 0, 0, 1).getTime(); return t > Date.now() ? {openAt:t, createdAt:t} : {}; };
+const schedTag = h => openNow(h) ? "" : `<b style="color:#8a6ff0">📅 예약</b> · `;
 const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name}${x.desc ? `(${x.desc})` : ""} · ${engActName(a)}` : ""; };
 // 한 과제 안에 공부 여러 개 (parts). 예전 과제는 unit/act 하나짜리.
 const engParts = h => h.parts && h.parts.length ? h.parts : [{u:h.unit, a:h.act}];
@@ -2937,7 +2944,7 @@ async function parentHome(){
   unsubs.push(engReportCard($("#engc"), "parent"));
   unsubs.push(testReportCard($("#testc"), "parent"));
   unsubs.push(DB.watchHWList(list => {
-    list = list.filter(h => hwKind(h)!=="eng");
+    list = list.filter(h => hwKind(h)!=="eng" && openNow(h));
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
     const stageOpen = !!(document.getElementById("bystage") && document.getElementById("bystage").open);
     let tot = 0, fin = 0, first = 0; const byStage = {};
@@ -3024,6 +3031,7 @@ function teacherHome(){
       <div class="muted" style="margin-top:8px">공부 방법 (여러 개 고르면 한 과제로 묶여요)</div><div id="mas" style="display:flex;flex-wrap:wrap;gap:6px">${actBtns("animal")}</div>
       <button class="btn" id="madd" style="margin-top:10px">+ 담고 다른 단원도 고르기</button>
       <div id="mpk" style="margin-top:8px"></div>
+      ${oatHTML()}
       <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
     const checked = () => [...m.querySelectorAll("[data-ma].on")].map(x => ({u:$("#mu", m).value, a:x.dataset.ma}));
     const merge = (list, add) => { add.forEach(x => { if(!list.some(y => y.u===x.u && y.a===x.a)) list.push(x); }); return list; };
@@ -3044,7 +3052,7 @@ function teacherHome(){
       busy = true;
       try{
         const doc = engHWDoc(t, all[0].u, all[0].a); if(all.length > 1) doc.parts = all;
-        await DB.createHW(doc);
+        await DB.createHW(Object.assign(doc, oatFields(m)));
         m.remove(); toast(all.length===1 ? "영어 과제를 냈어요!" : `공부 ${all.length}개를 한 과제로 냈어요!`);
       }catch(e){ busy = false; toast("저장 실패: 인터넷을 확인해 주세요"); }
     };
@@ -3145,12 +3153,12 @@ function teacherHome(){
     $("#list").innerHTML = list.length ? dayGroups("tlist", list, h => h.createdAt, h => {
       const [lab,cls] = statusOf(h), n = h.problems.length;
       if(hwKind(h)==="eng"){ const done = ["submitted","graded"].includes(h.status);
-        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 함` : "안 함"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)} · ${engHWName(h)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 함` : "안 함"}</span></button>`; }
       let sc = "";
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }, hwCountLabel) : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
   app.onclick = e => {
@@ -3196,6 +3204,7 @@ function wrongTraceModal(hwList){
     <div id="kw" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow:auto;margin-top:6px"><div class="empty">불러오는 중…</div></div>
     <div class="muted" style="margin-top:10px">공부 방법 (여러 개 고르면 한 과제로 묶여요)</div>
     <div id="ka" style="display:flex;flex-wrap:wrap;gap:6px">${["trace","learn","spell","dict","mean"].map(a => { const x = ENG_ACTS.find(y => y.id===a); return x ? `<button class="btn ${a==="trace"?"on":""}" data-ka="${a}">${x.icon} ${esc(x.name)}</button>` : ""; }).join("")}</div>
+    ${oatHTML()}
     <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
   const paintN = () => $("#kn", m).textContent = m.querySelectorAll("[data-kw].on").length;
   let un = null, done = false;
@@ -3225,7 +3234,7 @@ function wrongTraceModal(hwList){
     busy = true;
     try{
       const doc = engHWDoc(t, u, acts[0]); if(all.length > 1) doc.parts = all;
-      await DB.createHW(doc); m.remove(); toast(`틀린 단어 ${ws.length}개로 과제를 냈어요!`);
+      await DB.createHW(Object.assign(doc, oatFields(m))); m.remove(); toast(`틀린 단어 ${ws.length}개로 과제를 냈어요!`);
     }catch(e){ busy = false; toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
@@ -3241,6 +3250,7 @@ function wordTestModal(){
       <label class="row" style="gap:6px;font-weight:700"><input type="checkbox" id="wmix" checked style="width:20px;height:20px"> 순서 섞기</label>
       <label class="row" style="gap:6px;font-weight:700">시간 <select class="inp" id="wmin" style="width:auto">${[0,5,10,15,20].map(n => `<option value="${n}">${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></label>
     </div>
+    ${oatHTML()}
     <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>시험 내기</button></div>`);
   $("#wset", m).onchange = () => $("#wl", m).value = WT_SETS[+$("#wset", m).value].text;
   m.onclick = async ev => {
@@ -3251,7 +3261,7 @@ function wordTestModal(){
     if($("#wmix", m).checked) ws = shuffle(ws);
     const nosay = !$("#wsay", m).checked, minutes = +$("#wmin", m).value;
     const problems = ws.map(x => ({q:`${x.e ? x.e+" " : ""}${x.k}`, ans:"", kind:"hand", w:x.w, ...(nosay ? {nosay:true} : {})}));
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", test:true, minutes, word:true}); m.remove(); toast(`단어 ${problems.length}개 시험을 냈어요!`); }
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", test:true, minutes, word:true, ...oatFields(m)}); m.remove(); toast(`단어 ${problems.length}개 시험을 냈어요!`); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
@@ -3262,7 +3272,7 @@ function teacherCreate(mode){
   app.onclick = null;
   app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div>
     <div class="card" id="memoCard" style="display:none;background:var(--yel)"><h2>📌 지난 숙제 메모 (나만 보기)</h2><div id="lastMemo" style="white-space:pre-wrap"></div></div>
-    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">
+    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">${oatHTML()}
       ${T ? `<div class="row" style="margin-top:10px;align-items:center"><span class="muted">시험 시간</span><select class="inp" id="mins" style="max-width:150px">${[0,10,15,20,30,40,50].map(n => `<option value="${n}" ${n===20?"selected":""}>${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></div>
       <div class="muted" style="margin-top:6px">시험은 다시 풀기 없이 한 번만 풀고, 제출할 때까지 정답이 안 보여요. 시간이 끝나면 자동으로 제출돼요.</div>` : ""}</div>
     <div class="card"><h2>단원 골라서 문제 넣기</h2>
@@ -3303,7 +3313,7 @@ function teacherCreate(mode){
     if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
     const minutes = T ? +$("#mins").value : 0;
     if(!await ask(T ? "시험을 낼까요?" : "숙제를 낼까요?", `${esc(title)} · ${problems.length}문제${T ? ` · ${minutes ? minutes+"분" : "시간 제한 없음"}` : ""}`, T ? "시험 내기" : "숙제 내기", "취소")) return;
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {})}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {}), ...oatFields(document)}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
