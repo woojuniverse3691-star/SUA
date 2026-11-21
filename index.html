@@ -1338,11 +1338,11 @@ function studentHome(){
   const isDone = h => ["submitted","graded"].includes(h.status);
   let sList = [];
   unsubs.push(DB.watchHWList(list => {
-    ensureAuto(list); ensureAutoEng(list); sList = list;
+    ensureAuto(list); ensureAutoEng(list); list = list.filter(openNow); sList = list;
     const card = h => {
       const [lab,cls] = statusOf(h), k = hwKind(h);
       if(k==="eng"){ const sc = isDone(h) ? `<div class="jua" style="font-size:20px">${engHWScore(h)}</div>` : "";
-        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 했어요` : "새 과제"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng" data-u="${esc(h.unit)}" data-a="${esc(h.act)}"><div class="grow"><div class="ti">${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)} · ${engHWName(h)}</div></div>${sc}<span class="chip ${isDone(h)?"sub":"new"}">${isDone(h) ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 했어요` : "새 과제"}</span></button>`; }
       const s = h.status==="graded" ? `<div class="jua" style="font-size:20px">${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${h.problems.length}</div>` : "";
       const sub = k==="test" ? `${h.problems.length}문제${h.minutes ? ` · ${h.minutes}분` : ""}` : `${h.problems.length}문제`;
       return `<button class="hw" data-id="${h.id}" data-k="${k}"><div class="grow"><div class="ti">${k==="test"?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${sub}</div></div>${s}<span class="chip ${cls}">${k==="test" && !isDone(h) ? (cls==="new" ? "새 시험" : "보는 중") : lab}</span></button>`;
@@ -1436,7 +1436,11 @@ const PH_ACTS = [
 const actsFor = u => (u && u.id==="phonics") || u==="phonics" ? PH_ACTS : ENG_ACTS.filter(a => a.id!=="sent" || ((typeof u==="string" ? engUnit(u) : u) || {}).sents);
 const unitLabel = u => `${u.icon} ${u.name}${u.desc ? ` · ${u.desc}` : ""}`;
 const engUnitOpts = sel => ENG_GROUPS.map(([g,lab]) => `<optgroup label="${lab}">${ENG.filter(u => u.g===g).map(u => `<option value="${u.id}" ${u.id===sel?"selected":""}>${esc(unitLabel(u))}</option>`).join("")}</optgroup>`).join("") + `<optgroup label="🔠 파닉스"><option value="phonics" ${sel==="phonics"?"selected":""}>🔠 파닉스</option></optgroup>`;
-const engUnit = id => id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
+let ENG_DICT = null;
+const engDict = () => ENG_DICT || (ENG_DICT = ENG.reduce((m,u) => { (u.words||[]).forEach(x => { if(!m[x[0]]) m[x[0]] = x; }); return m; }, {}));
+// 자주 틀린 단어 묶음: 단원 id가 "w:dog|cat|bed" 꼴
+const mixUnit = id => { const ws = id.slice(2).split("|").filter(Boolean); return {id, g:"mine", name:"자주 틀린 단어", icon:"🔁", desc:`${ws.length}개`, words: ws.map(w => engDict()[w] || [w,"",""])}; };
+const engUnit = id => id && id.startsWith("w:") ? mixUnit(id) : id==="phonics" ? {id:"phonics", name:"파닉스", icon:"🔠"} : id==="test" ? {id:"test", name:"영어 실력 알아보기", icon:"📝"} : ENG.find(u => u.id===id);
 const engActName = id => (ENG_ACTS.concat(PH_ACTS).find(a => a.id===id) || {}).name || id;
 const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
 const pickN = (a, n, not) => shuffle(a.filter(x => x!==not)).slice(0, n);
@@ -2727,6 +2731,13 @@ async function plannerNudge(){
   await tell("📒 하나 더!", "오늘 <b>스터디플래너 사진</b>을 아직 안 올렸어요.<br>숙제방 아래 <b>📸 사진 제출 → 스터디플래너</b>로 꼭 올려요!", "알겠어요");
 }
 const engHWDoc = (title, u, a, auto=false) => ({title, subj:"eng", unit:u, act:a, problems:[], createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(auto ? {auto:true} : {})});
+// 날짜 예약: openAt(그날 0시)이 되기 전엔 수아·어머님 화면에 안 보여요
+const openNow = h => !h.openAt || h.openAt <= Date.now();
+const oatHTML = () => { const d = new Date(), p = n => String(n).padStart(2,"0"); const t = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  return `<div class="muted" style="margin-top:10px">📅 언제부터 보이게 할까요? <span style="font-size:13px">(비워 두면 바로)</span></div><div class="row" style="gap:6px;align-items:center"><input type="date" class="inp" data-oat min="${t}" style="flex:1"><button class="btn" type="button" data-oatclr>바로</button></div>`; };
+document.addEventListener("click", e => { const b = e.target.closest("[data-oatclr]"); if(b){ const i = b.parentNode.querySelector("[data-oat]"); if(i) i.value = ""; } });
+const oatFields = root => { const el = root.querySelector("[data-oat]"); if(!el || !el.value) return {}; const [y,mo,d] = el.value.split("-").map(Number), t = new Date(y, mo-1, d, 0, 0, 1).getTime(); return t > Date.now() ? {openAt:t, createdAt:t} : {}; };
+const schedTag = h => "";
 const engPairName = (u, a) => { const x = engUnit(u); return x ? `${x.icon} ${x.name}${x.desc ? `(${x.desc})` : ""} · ${engActName(a)}` : ""; };
 // 한 과제 안에 공부 여러 개 (parts). 예전 과제는 unit/act 하나짜리.
 const engParts = h => h.parts && h.parts.length ? h.parts : [{u:h.unit, a:h.act}];
@@ -2933,7 +2944,7 @@ async function parentHome(){
   unsubs.push(engReportCard($("#engc"), "parent"));
   unsubs.push(testReportCard($("#testc"), "parent"));
   unsubs.push(DB.watchHWList(list => {
-    list = list.filter(h => hwKind(h)!=="eng");
+    list = list.filter(h => hwKind(h)!=="eng" && openNow(h));
     const done = list.filter(h => ["submitted","graded"].includes(h.status));
     const stageOpen = !!(document.getElementById("bystage") && document.getElementById("bystage").open);
     let tot = 0, fin = 0, first = 0; const byStage = {};
@@ -3002,12 +3013,13 @@ function teacherHome(){
       <div class="muted" id="enext" style="margin:8px 0"></div>
       <button class="big blue" id="esave">영어 자동 과제 저장</button>
     </div>
-    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button><button class="big gray" id="neww" style="flex:1">+ 영어 단어 쓰기 시험</button></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px"><button class="big" id="new" style="flex:1">+ 수학 숙제 내기</button><button class="big blue" id="newe" style="flex:1">+ 영어 과제 내기</button><button class="big gray" id="newt" style="flex:1">+ 수학 시험 만들기</button><button class="big gray" id="neww" style="flex:1">+ 영어 단어 쓰기 시험</button><button class="big blue" id="newk" style="flex:1">+ 자주 틀린 단어 깜지</button></div>
     <div class="card" style="margin-top:14px"><h2>낸 숙제 · 과제 · 시험</h2><div class="hwlist" id="list"></div></div></div>`;
   bindOut();
   $("#new").onclick = () => go(teacherCreate);
   $("#newt").onclick = () => go(teacherCreate, "test");
   $("#neww").onclick = () => wordTestModal();
+  $("#newk").onclick = () => wrongTraceModal(curList);
   const unitOpts = sel => engUnitOpts(sel);
   const actOpts = (u, sel) => actsFor(u).map(a => `<option value="${a.id}" ${a.id===sel?"selected":""}>${a.icon} ${esc(a.name)}</option>`).join("");
   $("#newe").onclick = () => {
@@ -3019,6 +3031,7 @@ function teacherHome(){
       <div class="muted" style="margin-top:8px">공부 방법 (여러 개 고르면 한 과제로 묶여요)</div><div id="mas" style="display:flex;flex-wrap:wrap;gap:6px">${actBtns("animal")}</div>
       <button class="btn" id="madd" style="margin-top:10px">+ 담고 다른 단원도 고르기</button>
       <div id="mpk" style="margin-top:8px"></div>
+      ${oatHTML()}
       <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
     const checked = () => [...m.querySelectorAll("[data-ma].on")].map(x => ({u:$("#mu", m).value, a:x.dataset.ma}));
     const merge = (list, add) => { add.forEach(x => { if(!list.some(y => y.u===x.u && y.a===x.a)) list.push(x); }); return list; };
@@ -3039,7 +3052,7 @@ function teacherHome(){
       busy = true;
       try{
         const doc = engHWDoc(t, all[0].u, all[0].a); if(all.length > 1) doc.parts = all;
-        await DB.createHW(doc);
+        await DB.createHW(Object.assign(doc, oatFields(m)));
         m.remove(); toast(all.length===1 ? "영어 과제를 냈어요!" : `공부 ${all.length}개를 한 과제로 냈어요!`);
       }catch(e){ busy = false; toast("저장 실패: 인터넷을 확인해 주세요"); }
     };
@@ -3140,12 +3153,12 @@ function teacherHome(){
     $("#list").innerHTML = list.length ? dayGroups("tlist", list, h => h.createdAt, h => {
       const [lab,cls] = statusOf(h), n = h.problems.length;
       if(hwKind(h)==="eng"){ const done = ["submitted","graded"].includes(h.status);
-        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)} · ${engHWName(h)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 함` : "안 함"}</span></button>`; }
+        return `<button class="hw" data-id="${h.id}" data-k="eng"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}🔤 ${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)} · ${engHWName(h)}${done ? ` · ${engHWScore(h)}` : ""}</div></div><span class="chip ${done?"sub":"new"}">${done ? "제출 완료" : engPartsDone(h) ? `${engPartsDone(h)}/${engParts(h).length} 함` : "안 함"}</span></button>`; }
       let sc = "";
       if(h.status==="graded") sc = `최종 ${h.problems.filter((_,i)=>gradeOk(h,i)===true).length}/${n}`;
       else if(h.status==="submitted") sc = `1번째 ${h.problems.filter((_,i)=>stOf(h,i).ok1===true).length}/${n} → 최종 ${h.problems.filter((_,i)=>finalOk(h,i)===true).length}/${n}`;
       else sc = `답 ${h.problems.filter((_,i)=>attempts(h,i)>0).length}/${n}`;
-      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
+      return `<button class="hw" data-id="${h.id}"><div class="grow"><div class="ti">${h.auto?"🤖 ":""}${h.test?"📝 ":""}${esc(h.title)}</div><div class="muted">${schedTag(h)}${fmtD(h.createdAt)}${h.stage?` · ${STAGE[h.stage]?STAGE[h.stage].name:""}`:""} · ${sc}${h.st && h.st.tm ? ` · ⏱ ${fmtSec(h.st.tm)}` : ""}${evSum(h).o ? ` · 🚪${evSum(h).o}` : ""}${evSum(h).d ? ` · 💤${evSum(h).d}` : ""}</div></div><span class="chip ${cls}">${lab}</span></button>`;
     }, hwCountLabel) : `<div class="empty">아직 낸 숙제가 없어요.</div>`;
   }));
   app.onclick = e => {
@@ -3179,6 +3192,52 @@ function parseWordLines(t){
     return {w:m[1].trim(), k:rest, e:emo};
   }).filter(Boolean);
 }
+// 자주 틀린 단어 → 깜지(따라 쓰기) 과제
+function wrongTraceModal(hwList){
+  const dict = engDict(), cnt = {}, last = {};
+  const add = (w, at) => { if(!dict[w]) return; cnt[w] = (cnt[w]||0) + 1; last[w] = Math.max(last[w]||0, at||0); };
+  const d = new Date();
+  const m = modal(`<h3>🔁 자주 틀린 단어 깜지</h3>
+    <div class="muted">영어 공부·단어 쓰기 시험에서 틀린 단어를 모았어요. 숫자는 틀린 횟수예요. 누르면 빼고 넣을 수 있어요.</div>
+    <div class="muted" style="margin-top:8px">제목</div><input class="inp" id="kt" value="${esc(`${STUDENT} 오답 깜지 (${d.getMonth()+1}/${d.getDate()})`)}">
+    <div class="row" style="margin-top:8px;align-items:center"><span class="muted" style="flex:1">단어 <b id="kn">0</b>개 골랐어요</span><button class="btn" id="kall">전부</button><button class="btn" id="knone">비우기</button></div>
+    <div id="kw" style="display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow:auto;margin-top:6px"><div class="empty">불러오는 중…</div></div>
+    <div class="muted" style="margin-top:10px">공부 방법 (여러 개 고르면 한 과제로 묶여요)</div>
+    <div id="ka" style="display:flex;flex-wrap:wrap;gap:6px">${["trace","learn","spell","dict","mean"].map(a => { const x = ENG_ACTS.find(y => y.id===a); return x ? `<button class="btn ${a==="trace"?"on":""}" data-ka="${a}">${x.icon} ${esc(x.name)}</button>` : ""; }).join("")}</div>
+    ${oatHTML()}
+    <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>과제 내기</button></div>`);
+  const paintN = () => $("#kn", m).textContent = m.querySelectorAll("[data-kw].on").length;
+  let un = null, done = false;
+  un = DB.watchEng(list => {
+    if(done) return; done = true; setTimeout(() => un && un(), 0);
+    list.forEach(r => (r.wrong||[]).forEach(w => add(w, r.at)));
+    (hwList||[]).filter(h => h.word && h.grade).forEach(h => (h.problems||[]).forEach((p,i) => { const g = h.grade[i]; if(g && g.ok===false && p.w) add(p.w, h.submittedAt || h.createdAt); }));
+    const ws = Object.keys(cnt).sort((a,b) => cnt[b]-cnt[a] || last[b]-last[a]);
+    const many = ws.filter(w => cnt[w] >= 2), pre = new Set((many.length ? many : ws).slice(0, 10));
+    $("#kw", m).innerHTML = ws.length ? ws.map(w => `<button class="btn ${pre.has(w)?"on":""}" data-kw="${esc(w)}">${esc(w)} <span class="muted">${esc(dict[w][1])}</span> <b>×${cnt[w]}</b></button>`).join("") : `<div class="empty">아직 틀린 단어가 없어요 👍</div>`;
+    paintN();
+  });
+  let busy = false;
+  m.onclick = async ev => {
+    if(ev.target.closest("[data-x]")){ done = true; un && un(); return m.remove(); }
+    const kw = ev.target.closest("[data-kw]"); if(kw){ kw.classList.toggle("on"); return paintN(); }
+    const ka = ev.target.closest("[data-ka]"); if(ka) return ka.classList.toggle("on");
+    if(ev.target.closest("#kall")){ m.querySelectorAll("[data-kw]").forEach(b => b.classList.add("on")); return paintN(); }
+    if(ev.target.closest("#knone")){ m.querySelectorAll("[data-kw]").forEach(b => b.classList.remove("on")); return paintN(); }
+    if(!ev.target.closest("[data-ok]") || busy) return;
+    const t = $("#kt", m).value.trim(); if(!t) return toast("제목을 써 주세요");
+    const ws = [...m.querySelectorAll("[data-kw].on")].map(b => b.dataset.kw);
+    if(ws.length < 2) return toast("단어를 2개 이상 골라 주세요");
+    if(ws.length > 30) return toast("한 번에 30개까지만 낼 수 있어요");
+    const acts = [...m.querySelectorAll("[data-ka].on")].map(b => b.dataset.ka); if(!acts.length) return toast("공부 방법을 골라 주세요");
+    const u = "w:" + ws.join("|"), all = acts.map(a => ({u, a}));
+    busy = true;
+    try{
+      const doc = engHWDoc(t, u, acts[0]); if(all.length > 1) doc.parts = all;
+      await DB.createHW(Object.assign(doc, oatFields(m))); m.remove(); toast(`틀린 단어 ${ws.length}개로 과제를 냈어요!`);
+    }catch(e){ busy = false; toast("저장 실패: 인터넷을 확인해 주세요"); }
+  };
+}
 function wordTestModal(){
   const d = new Date();
   const m = modal(`<h3>✍️ 영어 단어 쓰기 시험</h3>
@@ -3191,6 +3250,7 @@ function wordTestModal(){
       <label class="row" style="gap:6px;font-weight:700"><input type="checkbox" id="wmix" checked style="width:20px;height:20px"> 순서 섞기</label>
       <label class="row" style="gap:6px;font-weight:700">시간 <select class="inp" id="wmin" style="width:auto">${[0,5,10,15,20].map(n => `<option value="${n}">${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></label>
     </div>
+    ${oatHTML()}
     <div class="mbtns"><button class="big gray" data-x>취소</button><button class="big" data-ok>시험 내기</button></div>`);
   $("#wset", m).onchange = () => $("#wl", m).value = WT_SETS[+$("#wset", m).value].text;
   m.onclick = async ev => {
@@ -3201,7 +3261,7 @@ function wordTestModal(){
     if($("#wmix", m).checked) ws = shuffle(ws);
     const nosay = !$("#wsay", m).checked, minutes = +$("#wmin", m).value;
     const problems = ws.map(x => ({q:`${x.e ? x.e+" " : ""}${x.k}`, ans:"", kind:"hand", w:x.w, ...(nosay ? {nosay:true} : {})}));
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", test:true, minutes, word:true}); m.remove(); toast(`단어 ${problems.length}개 시험을 냈어요!`); }
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", test:true, minutes, word:true, ...oatFields(m)}); m.remove(); toast(`단어 ${problems.length}개 시험을 냈어요!`); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
@@ -3212,7 +3272,7 @@ function teacherCreate(mode){
   app.onclick = null;
   app.innerHTML = `<div class="page"><div class="bar"><button class="link" id="back">← 목록</button></div>
     <div class="card" id="memoCard" style="display:none;background:var(--yel)"><h2>📌 지난 숙제 메모 (나만 보기)</h2><div id="lastMemo" style="white-space:pre-wrap"></div></div>
-    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">
+    <div class="card"><h2>${T ? "📝 시험 제목" : "숙제 제목"}</h2><input class="inp" id="title">${oatHTML()}
       ${T ? `<div class="row" style="margin-top:10px;align-items:center"><span class="muted">시험 시간</span><select class="inp" id="mins" style="max-width:150px">${[0,10,15,20,30,40,50].map(n => `<option value="${n}" ${n===20?"selected":""}>${n ? n+"분" : "제한 없음"}</option>`).join("")}</select></div>
       <div class="muted" style="margin-top:6px">시험은 다시 풀기 없이 한 번만 풀고, 제출할 때까지 정답이 안 보여요. 시간이 끝나면 자동으로 제출돼요.</div>` : ""}</div>
     <div class="card"><h2>단원 골라서 문제 넣기</h2>
@@ -3253,7 +3313,7 @@ function teacherCreate(mode){
     if(!problems.length) return toast("문제를 하나 이상 넣어 주세요");
     const minutes = T ? +$("#mins").value : 0;
     if(!await ask(T ? "시험을 낼까요?" : "숙제를 낼까요?", `${esc(title)} · ${problems.length}문제${T ? ` · ${minutes ? minutes+"분" : "시간 제한 없음"}` : ""}`, T ? "시험 내기" : "숙제 내기", "취소")) return;
-    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {})}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
+    try{ await DB.createHW({title, problems, createdAt:Date.now(), status:"assigned", round:1, st:{}, grade:{}, memo:"", ...(T ? {test:true, minutes} : {}), ...oatFields(document)}); toast(T ? "시험을 냈어요!" : "숙제를 냈어요!"); go(teacherHome); }
     catch(e){ toast("저장 실패: 인터넷을 확인해 주세요"); }
   };
 }
